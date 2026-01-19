@@ -54,12 +54,12 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         className="relative z-10"
       >
         <motion.div
-          className="w-44 h-44 rounded-3xl overflow-hidden floating-shadow"
+          className="w-60 h-60 overflow-hidden"
           animate={{ 
-            boxShadow: [
-              "0 20px 60px hsl(187 85% 43% / 0.2)",
-              "0 20px 80px hsl(187 85% 43% / 0.4)",
-              "0 20px 60px hsl(187 85% 43% / 0.2)"
+            filter: [
+              "drop-shadow(0 20px 30px rgba(0, 180, 216, 0.2))",
+              "drop-shadow(0 20px 40px rgba(0, 180, 216, 0.4))",
+              "drop-shadow(0 20px 30px rgba(0, 180, 216, 0.2))"
             ]
           }}
           transition={{ duration: 2, repeat: Infinity }}
@@ -67,7 +67,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           <img 
             src={logo} 
             alt="DialMap Logo" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain scale-125"
           />
         </motion.div>
       </motion.div>

@@ -37,7 +37,7 @@ export function SearchBar() {
     <>
       {/* Search bar */}
       <motion.div
-        className="absolute top-4 left-4 right-4 z-40"
+        className="absolute top-20 left-4 right-4 z-40"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -93,7 +93,7 @@ export function SearchBar() {
 
             {/* Filter panel */}
             <motion.div
-              className="fixed top-20 left-4 right-4 z-50 glass-card rounded-3xl p-6 max-h-[70vh] overflow-y-auto"
+              className="fixed top-36 left-4 right-4 z-50 glass-card rounded-3xl p-6 max-h-[60vh] overflow-y-auto"
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}

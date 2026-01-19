@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { MapView } from '@/components/MapView';
 import { SearchBar } from '@/components/SearchBar';
+import { AppHeader } from '@/components/AppHeader';
 import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { ProfileView } from '@/components/ProfileView';
@@ -31,6 +32,7 @@ function AppContent() {
       <AnimatePresence mode="wait">
         {activeTab === 'map' && (
           <div className="relative h-screen">
+            <AppHeader />
             <SearchBar />
             <MapView />
           </div>
