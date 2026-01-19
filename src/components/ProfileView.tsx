@@ -20,6 +20,7 @@ export function ProfileView() {
   const [isUploading, setIsUploading] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const favoriteCenters = centers.filter(c => favorites.includes(c.id));
@@ -84,7 +85,7 @@ export function ProfileView() {
       onClick: () => !isAuthenticated && navigate('/auth')
     },
     { icon: Bell, label: 'Notifiche', value: '', color: 'text-accent', onClick: () => {} },
-    { icon: Shield, label: 'Privacy', value: '', color: 'text-green-500', onClick: () => {} },
+    { icon: Shield, label: 'Privacy', value: '', color: 'text-green-500', onClick: () => setShowPrivacy(true) },
     { icon: HelpCircle, label: 'Aiuto & Supporto', value: '', color: 'text-primary', onClick: () => setShowHelp(true) },
     { icon: Settings, label: 'Impostazioni', value: '', color: 'text-muted-foreground', onClick: () => {} },
   ];
@@ -132,6 +133,130 @@ export function ProfileView() {
               giacomo748@gmail.com
             </a>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Privacy Policy Modal
+  if (showPrivacy) {
+    return (
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
+            <Shield className="w-5 h-5 text-green-500" />
+            Privacy Policy
+          </h2>
+          <button
+            onClick={() => setShowPrivacy(false)}
+            className="w-10 h-10 rounded-full glass-card flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
+
+        <div className="glass-card rounded-2xl p-6 space-y-6 text-sm">
+          <section>
+            <h3 className="font-bold text-foreground mb-2">1) Titolare del trattamento</h3>
+            <p className="text-muted-foreground">
+              Email: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">2) Scopo dell'app</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              DialMap permette di individuare su mappa i centri dialisi in Italia e consultare informazioni utili (indirizzo, contatti e dettagli della struttura) per aiutare le persone in dialisi a organizzare spostamenti e vacanze.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">3) Uso senza login</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              L'app è utilizzabile anche senza registrazione: mappa e consultazione dei centri sono disponibili a tutti.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">4) Dati raccolti</h3>
+            <div className="space-y-3 text-muted-foreground">
+              <div>
+                <p className="font-medium text-foreground">A) Dati account (solo se l'utente vuole recensire)</p>
+                <p className="leading-relaxed">Per pubblicare recensioni è necessario accedere/registrarsi. In questo caso possiamo trattare: Email (o identificativo dell'account), ID utente (tecnico), eventuale nome/alias se previsto. Le credenziali sono gestite in modo sicuro dal sistema di autenticazione utilizzato (password non salvate in chiaro).</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">B) Contenuti pubblicati</p>
+                <p className="leading-relaxed">Recensione, valutazione, commenti e data/ora di pubblicazione. Attenzione: le recensioni possono essere visibili ad altri utenti nell'app.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">C) Dati tecnici (eventuali)</p>
+                <p className="leading-relaxed">Dati tecnici minimi (es. versione app, log di errore) solo per sicurezza e funzionamento.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">D) Posizione (facoltativa)</p>
+                <p className="leading-relaxed">Se l'utente concede il permesso, la posizione può essere usata solo per mostrare i centri più vicini. In alternativa la ricerca resta manuale.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">E) Dati sanitari</p>
+                <p className="leading-relaxed">DialMap non raccoglie dati sanitari o clinici.</p>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">5) Finalità del trattamento</h3>
+            <ul className="text-muted-foreground list-disc list-inside space-y-1">
+              <li>Visualizzazione mappa e ricerca centri dialisi</li>
+              <li>Pubblicazione e gestione recensioni (solo per utenti registrati)</li>
+              <li>Moderazione e prevenzione abusi/spam nelle recensioni</li>
+              <li>Sicurezza, manutenzione e miglioramento dell'app</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">6) Base giuridica</h3>
+            <ul className="text-muted-foreground list-disc list-inside space-y-1">
+              <li>Esecuzione del servizio (account e recensioni richieste dall'utente)</li>
+              <li>Consenso per la posizione (se attivata)</li>
+              <li>Legittimo interesse per sicurezza e moderazione (anti-spam, abusi)</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">7) Condivisione dei dati</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              I dati possono essere trattati da fornitori tecnici necessari al funzionamento (es. mappe, autenticazione, hosting). DialMap non vende dati personali a terzi.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">8) Conservazione</h3>
+            <ul className="text-muted-foreground list-disc list-inside space-y-1">
+              <li>Dati account e recensioni: finché l'account resta attivo o finché necessario per il servizio e la moderazione.</li>
+              <li>Log tecnici (se presenti): per un tempo limitato e proporzionato.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">9) Eliminazione account e recensioni</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              L'utente può richiedere la cancellazione dell'account e dei dati associati (incluse le recensioni, salvo obblighi di legge o esigenze di sicurezza) scrivendo a: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>. Se presente, è disponibile la funzione "Elimina account" nelle impostazioni dell'app.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">10) Diritti dell'utente</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              Accesso, rettifica, cancellazione, limitazione, opposizione e portabilità (ove applicabile) ai sensi del GDPR. Contatto: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-bold text-foreground mb-2">11) Modifiche</h3>
+            <p className="text-muted-foreground leading-relaxed">
+              La presente informativa può essere aggiornata. La data di aggiornamento è indicata in alto.
+            </p>
+          </section>
         </div>
       </div>
     );
