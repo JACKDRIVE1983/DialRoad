@@ -49,10 +49,19 @@ const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
 `);
 
 const userMarkerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60">
-    <circle cx="30" cy="30" r="28" fill="#00b4d8" fill-opacity="0.25"/>
-    <circle cx="30" cy="30" r="16" fill="#00b4d8" stroke="white" stroke-width="3"/>
-    <circle cx="30" cy="30" r="6" fill="white"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 60" width="40" height="60">
+    <defs>
+      <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+      </linearGradient>
+      <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+      </filter>
+    </defs>
+    <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+          fill="url(#pinGrad)" stroke="white" stroke-width="2" filter="url(#shadow)"/>
+    <circle cx="20" cy="20" r="8" fill="white"/>
   </svg>
 `);
 
@@ -220,29 +229,42 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
 
           {userLocation && (
             <>
-              <MarkerF
+              <OverlayView
                 position={userLocation}
-                onClick={() => setShowUserPopup(true)}
-                icon={{
-                  url: userMarkerIcon,
-                  scaledSize: new google.maps.Size(60, 60),
-                  anchor: new google.maps.Point(30, 30),
-                }}
-                zIndex={1000}
-              />
+                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              >
+                <div 
+                  className="cursor-pointer"
+                  style={{ 
+                    transform: 'translate(-50%, -100%)',
+                    animation: 'bounce-slow 2s ease-in-out infinite'
+                  }}
+                  onClick={() => setShowUserPopup(true)}
+                >
+                  <svg viewBox="0 0 40 60" width="40" height="60">
+                    <defs>
+                      <linearGradient id="pinGradLive" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
+                        <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
+                      </linearGradient>
+                      <filter id="shadowLive" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3"/>
+                      </filter>
+                    </defs>
+                    <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+                          fill="url(#pinGradLive)" stroke="white" strokeWidth="2" filter="url(#shadowLive)"/>
+                    <circle cx="20" cy="20" r="8" fill="white"/>
+                  </svg>
+                </div>
+              </OverlayView>
               {showUserPopup && (
                 <InfoWindowF
                   position={userLocation}
                   onCloseClick={() => setShowUserPopup(false)}
+                  options={{ pixelOffset: new google.maps.Size(0, -50) }}
                 >
-                  <div className="p-3 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <div className="w-3 h-3 rounded-full bg-accent animate-pulse" />
-                      <span className="font-bold text-sm text-gray-900">Sei qui!</span>
-                    </div>
-                    <p className="text-xs text-gray-600">
-                      La tua posizione attuale
-                    </p>
+                  <div className="px-2 py-1 text-center" style={{ background: '#fbbf24', borderRadius: '8px', margin: '-8px' }}>
+                    <span className="font-bold text-xs text-gray-900">📍 Sei qui!</span>
                   </div>
                 </InfoWindowF>
               )}
@@ -432,37 +454,44 @@ function FallbackMap() {
               style={{
                 bottom: `${((userLocation.lat - 36) / 11) * 100}%`,
                 left: `${((userLocation.lng - 6) / 13) * 100}%`,
-                transform: 'translate(-50%, 50%)'
+                transform: 'translate(-50%, 100%)'
               }}
               initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', delay: 0.3 }}
+              animate={{ 
+                scale: 1,
+                y: [0, -8, 0]
+              }}
+              transition={{ 
+                scale: { type: 'spring', delay: 0.3 },
+                y: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+              }}
               onClick={() => setShowUserPopup(!showUserPopup)}
             >
               <div className="relative">
-                {/* Outer pulsing ring */}
-                <span className="absolute -inset-3 rounded-full bg-accent/30 animate-ping" />
-                <span className="absolute -inset-2 rounded-full bg-accent/20" />
-                {/* Main marker */}
-                <div className="relative w-10 h-10 rounded-full bg-accent border-4 border-white shadow-xl flex items-center justify-center">
-                  <div className="w-3 h-3 rounded-full bg-white" />
-                </div>
+                <svg viewBox="0 0 40 60" width="36" height="54" className="drop-shadow-lg">
+                  <defs>
+                    <linearGradient id="pinGradFallback" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
+                      <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
+                    </linearGradient>
+                  </defs>
+                  <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+                        fill="url(#pinGradFallback)" stroke="white" strokeWidth="2"/>
+                  <circle cx="20" cy="20" r="8" fill="white"/>
+                </svg>
                 
                 {/* Popup */}
                 {showUserPopup && (
                   <motion.div
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 pointer-events-none"
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <div className="glass-card px-4 py-2 rounded-xl shadow-lg whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                        <span className="font-semibold text-foreground text-sm">Sei qui!</span>
-                      </div>
+                    <div className="px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap" style={{ background: '#fbbf24' }}>
+                      <span className="font-bold text-xs text-gray-900">📍 Sei qui!</span>
                     </div>
                     {/* Arrow */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white/80" />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent" style={{ borderTopColor: '#fbbf24' }} />
                   </motion.div>
                 )}
               </div>
