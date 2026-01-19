@@ -46,31 +46,46 @@ export function CenterBottomSheet() {
 
     const { lat, lng } = selectedCenter.coordinates;
 
-    // Some environments (preview iframes, strict policies, extensions) can block opening google.com in a new tab.
-    // Prefer opening in the same tab and, on mobile, try deep-links first.
-    const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    // NOTE: In some setups (extensions, security policies, preview environments) Google can be blocked on certain hostnames.
+    // We try multiple URLs (maps.google.com first) and fall back to showing the link for manual copy.
+    const webPrimary = `https://maps.google.com/?daddr=${encodeURIComponent(`${lat},${lng}`)}`;
+    const webSecondary = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
 
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     const isIOS = /iPad|iPhone|iPod/.test(ua);
     const isAndroid = /Android/.test(ua);
 
-    // Deep links (best UX on mobile when the Maps app is installed)
-    const iosUrl = `maps://?daddr=${lat},${lng}`;
-    const androidUrl = `google.navigation:q=${lat},${lng}`;
+    // Deep links (mobile apps)
+    const deepLink = isIOS
+      ? `maps://?daddr=${lat},${lng}`
+      : isAndroid
+        ? `google.navigation:q=${lat},${lng}`
+        : null;
 
-    const deepLink = isIOS ? iosUrl : isAndroid ? androidUrl : null;
+    const tryOpen = (url: string) => {
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      return Boolean(opened);
+    };
 
     if (deepLink) {
-      // Try deep link, then fall back to web
+      // Attempt app deep-link in same tab, then fall back to web.
       window.location.assign(deepLink);
       window.setTimeout(() => {
-        window.location.assign(webUrl);
+        if (!tryOpen(webPrimary)) window.location.assign(webPrimary);
       }, 700);
       return;
     }
 
-    // Desktop/web fallback: same-tab navigation avoids popup blockers.
-    window.location.assign(webUrl);
+    // Desktop: try open new tab; if blocked, navigate same-tab.
+    if (!tryOpen(webPrimary)) {
+      window.location.assign(webPrimary);
+    }
+
+    // If the environment still blocks Google, at least show a copyable link.
+    window.setTimeout(() => {
+      // eslint-disable-next-line no-alert
+      alert(`Se il browser blocca l'apertura, copia e incolla questo link:\n\n${webSecondary}`);
+    }, 300);
   };
 
   return (
