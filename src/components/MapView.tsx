@@ -300,8 +300,8 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       </motion.button>
 
       <motion.div
-        className="absolute top-4 left-4 z-30 glass-card px-4 py-2 rounded-full"
-        initial={{ opacity: 0, y: -20 }}
+        className="absolute bottom-28 left-4 z-30 glass-card px-4 py-2 rounded-full"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <span className="text-sm font-medium text-foreground">
@@ -501,8 +501,8 @@ function FallbackMap() {
       </motion.button>
 
       <motion.div
-        className="absolute top-4 left-4 z-30 glass-card px-4 py-2 rounded-full flex items-center gap-2"
-        initial={{ opacity: 0, y: -20 }}
+        className="absolute bottom-28 left-4 z-30 glass-card px-4 py-2 rounded-full flex items-center gap-2"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <AlertTriangle className="w-4 h-4 text-yellow-500" />
@@ -511,16 +511,6 @@ function FallbackMap() {
         </span>
       </motion.div>
 
-      <motion.div
-        className="absolute bottom-28 left-4 z-30 glass-card px-4 py-3 rounded-xl max-w-xs"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <p className="text-xs text-muted-foreground">
-          Per la mappa Google Maps completa, abilita la <strong>Maps JavaScript API</strong> nella Google Cloud Console.
-        </p>
-      </motion.div>
     </div>
   );
 }
