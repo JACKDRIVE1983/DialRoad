@@ -233,12 +233,13 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
               mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
             >
               <div 
+                className="flex items-center gap-2"
                 style={{ 
-                  transform: 'translate(-50%, -100%)',
+                  transform: 'translate(-20px, -100%)',
                   animation: 'bounce-slow 2s ease-in-out infinite'
                 }}
               >
-                <svg viewBox="0 0 40 60" width="40" height="60">
+                <svg viewBox="0 0 40 60" width="40" height="60" className="flex-shrink-0">
                   <defs>
                     <linearGradient id="pinGradLive" x1="0%" y1="0%" x2="100%" y2="100%">
                       <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
@@ -252,6 +253,16 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
                         fill="url(#pinGradLive)" stroke="white" strokeWidth="2" filter="url(#shadowLive)"/>
                   <circle cx="20" cy="20" r="8" fill="white"/>
                 </svg>
+                <span 
+                  className="whitespace-nowrap text-xs font-display font-semibold tracking-wide px-2 py-1 rounded-full shadow-lg"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                    color: '#1a1a2e',
+                    textShadow: '0 1px 2px rgba(255,255,255,0.3)'
+                  }}
+                >
+                  La tua posizione
+                </span>
               </div>
             </OverlayView>
           )}
@@ -435,11 +446,11 @@ function FallbackMap() {
 
           {userLocation && (
             <motion.div
-              className="absolute z-30"
+              className="absolute z-30 flex items-center gap-2"
               style={{
                 bottom: `${((userLocation.lat - 36) / 11) * 100}%`,
                 left: `${((userLocation.lng - 6) / 13) * 100}%`,
-                transform: 'translate(-50%, 100%)'
+                transform: 'translate(-18px, 100%)'
               }}
               initial={{ scale: 0 }}
               animate={{ 
@@ -451,7 +462,7 @@ function FallbackMap() {
                 y: { duration: 2, repeat: Infinity, ease: "easeInOut" }
               }}
             >
-              <svg viewBox="0 0 40 60" width="36" height="54" className="drop-shadow-lg">
+              <svg viewBox="0 0 40 60" width="36" height="54" className="drop-shadow-lg flex-shrink-0">
                 <defs>
                   <linearGradient id="pinGradFallback" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
@@ -462,6 +473,16 @@ function FallbackMap() {
                       fill="url(#pinGradFallback)" stroke="white" strokeWidth="2"/>
                 <circle cx="20" cy="20" r="8" fill="white"/>
               </svg>
+              <span 
+                className="whitespace-nowrap text-xs font-display font-semibold tracking-wide px-2 py-1 rounded-full shadow-lg"
+                style={{ 
+                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                  color: '#1a1a2e',
+                  textShadow: '0 1px 2px rgba(255,255,255,0.3)'
+                }}
+              >
+                La tua posizione
+              </span>
             </motion.div>
           )}
         </div>
