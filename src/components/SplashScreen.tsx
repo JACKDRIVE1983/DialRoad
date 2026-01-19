@@ -54,7 +54,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         className="relative z-10"
       >
         <motion.div
-          className="w-32 h-32 rounded-3xl overflow-hidden floating-shadow"
+          className="w-44 h-44 rounded-3xl overflow-hidden floating-shadow"
           animate={{ 
             boxShadow: [
               "0 20px 60px hsl(187 85% 43% / 0.2)",

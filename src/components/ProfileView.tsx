@@ -151,11 +151,12 @@ export function ProfileView() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
-      {/* Hidden file input */}
+      {/* Hidden file input with camera capture for mobile */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
+        capture="environment"
         onChange={handleFileChange}
         className="hidden"
       />
