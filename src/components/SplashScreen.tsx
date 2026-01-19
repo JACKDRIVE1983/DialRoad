@@ -74,7 +74,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
       {/* App Name */}
       <motion.h1
-        className="mt-8 text-4xl font-display font-bold gradient-text"
+        className="relative z-10 mt-8 text-5xl font-display font-bold gradient-text"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.6 }}
@@ -84,7 +84,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
       {/* Tagline */}
       <motion.p
-        className="mt-3 text-slate-600 text-center max-w-xs"
+        className="relative z-10 mt-4 text-xl font-medium text-slate-700 text-center max-w-sm px-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.6 }}
