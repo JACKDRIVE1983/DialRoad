@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Star, Heart, Clock, Search } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
+import { useCenterStats } from '@/hooks/useCenterStats';
 import centerImage from '@/assets/center-placeholder.jpg';
 
 interface CentersListProps {
@@ -10,6 +11,7 @@ interface CentersListProps {
 
 export function CentersList({ onSelectCenter }: CentersListProps) {
   const { filteredCenters, searchQuery, setSearchQuery } = useApp();
+  const { getStats } = useCenterStats();
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
@@ -81,14 +83,26 @@ export function CentersList({ onSelectCenter }: CentersListProps) {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center">
-                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 mr-1" />
-                        <span className="text-xs font-medium text-foreground">{center.rating}</span>
-                      </div>
-                      <div className="flex items-center text-muted-foreground">
-                        <Heart className="w-3.5 h-3.5 mr-1" />
-                        <span className="text-xs">{center.likes}</span>
-                      </div>
+                      {(() => {
+                        const centerStats = getStats(center.id);
+                        return (
+                          <>
+                            <div className="flex items-center">
+                              <Star className={`w-3.5 h-3.5 mr-1 ${centerStats.reviewsCount > 0 ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`} />
+                              <span className="text-xs font-medium text-foreground">
+                                {centerStats.reviewsCount > 0 ? centerStats.avgRating.toFixed(1) : '-'}
+                              </span>
+                              {centerStats.reviewsCount > 0 && (
+                                <span className="text-xs text-muted-foreground ml-1">({centerStats.reviewsCount})</span>
+                              )}
+                            </div>
+                            <div className="flex items-center text-muted-foreground">
+                              <Heart className={`w-3.5 h-3.5 mr-1 ${centerStats.favoritesCount > 0 ? 'text-red-500 fill-red-500' : ''}`} />
+                              <span className="text-xs">{centerStats.favoritesCount}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center text-muted-foreground text-[10px]">
                       <Clock className="w-3 h-3 mr-1" />
