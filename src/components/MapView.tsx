@@ -61,6 +61,7 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [authFailure, setAuthFailure] = useState(false);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: apiKey,
@@ -94,6 +95,19 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
   }, [setUserLocation]);
 
   useEffect(() => {
+    // Called by Google Maps when the key / APIs / billing are misconfigured.
+    // https://developers.google.com/maps/documentation/javascript/events#authentication_errors
+    (window as any).gm_authFailure = () => setAuthFailure(true);
+    return () => {
+      try {
+        delete (window as any).gm_authFailure;
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     handleLocate();
   }, [handleLocate]);
 
@@ -119,8 +133,14 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
     fullscreenControl: false,
   };
 
+  if (authFailure) {
+    return (
+      <FallbackMap reason="Google Maps non è stata caricata: abilita la Maps JavaScript API e verifica billing/restrizioni della chiave." />
+    );
+  }
+
   if (loadError) {
-    return <FallbackMap />;
+    return <FallbackMap reason="Errore di rete nel caricamento di Google Maps." />;
   }
 
   if (!isLoaded) {
@@ -149,7 +169,7 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
         {/* Center markers */}
         {filteredCenters.map((center) => (
           <MarkerF
-            key={center.id}
+            key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
             position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
             onClick={() => handleMarkerClick(center)}
             icon={{
@@ -183,7 +203,7 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
               <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
               <button
                 onClick={() => handleViewDetails(selectedMarker)}
-                className="w-full px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-md hover:bg-blue-600 transition-colors"
+                className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
               >
                 Vedi dettagli
               </button>
@@ -259,14 +279,14 @@ export function MapView() {
 
   // Fallback to simple map if API key is not available
   if (!apiKey) {
-    return <FallbackMap />;
+    return <FallbackMap reason="API key mancante o non recuperabile." />;
   }
 
   return <GoogleMapComponent apiKey={apiKey} />;
 }
 
-// Fallback map component when API key is not available
-function FallbackMap() {
+// Fallback map component when API key is not available or Google Maps fails
+function FallbackMap({ reason }: { reason?: string }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
   const [isLocating, setIsLocating] = useState(false);
 
@@ -385,7 +405,7 @@ function FallbackMap() {
         animate={{ opacity: 1, y: 0 }}
       >
         <span className="text-sm font-medium text-foreground">
-          {filteredCenters.length} centri • API key richiesta per mappa completa
+          {filteredCenters.length} centri • {reason ?? 'Mappa semplificata attiva'}
         </span>
       </motion.div>
     </div>
