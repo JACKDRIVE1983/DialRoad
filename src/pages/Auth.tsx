@@ -14,7 +14,7 @@ const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratt
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -70,12 +70,38 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (mode === 'forgot') {
+      // Only validate email for forgot password
+      try {
+        emailSchema.parse(formData.email);
+      } catch (err) {
+        if (err instanceof z.ZodError) {
+          setErrors({ email: err.errors[0].message });
+          return;
+        }
+      }
+    } else if (!validateForm()) {
+      return;
+    }
     
     setIsLoading(true);
 
     try {
-      if (isLogin) {
+      if (mode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+          redirectTo: `${window.location.origin}/auth?reset=true`
+        });
+
+        if (error) {
+          toast.error('Errore', { description: error.message });
+          return;
+        }
+
+        toast.success('Email inviata!', {
+          description: 'Controlla la tua casella email per reimpostare la password.'
+        });
+        setMode('login');
+      } else if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
@@ -112,7 +138,7 @@ export default function Auth() {
             toast.error('Utente già registrato', {
               description: 'Questa email è già in uso. Prova ad accedere.'
             });
-            setIsLogin(true);
+            setMode('login');
           } else {
             toast.error('Errore di registrazione', {
               description: error.message
@@ -129,6 +155,22 @@ export default function Auth() {
       toast.error('Si è verificato un errore');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getTitle = () => {
+    switch (mode) {
+      case 'forgot': return 'Recupera Password';
+      case 'signup': return 'Crea Account';
+      default: return 'Bentornato!';
+    }
+  };
+
+  const getSubtitle = () => {
+    switch (mode) {
+      case 'forgot': return 'Inserisci la tua email per reimpostare la password';
+      case 'signup': return 'Registrati per salvare i tuoi preferiti';
+      default: return 'Accedi al tuo account DialMap';
     }
   };
 
@@ -165,17 +207,17 @@ export default function Auth() {
               <img src={logo} alt="DialMap" className="w-full h-full object-cover" />
             </motion.div>
             <h1 className="text-2xl font-display font-bold gradient-text">
-              {isLogin ? 'Bentornato!' : 'Crea Account'}
+              {getTitle()}
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {isLogin ? 'Accedi al tuo account DialMap' : 'Registrati per salvare i tuoi preferiti'}
+              {getSubtitle()}
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <AnimatePresence mode="wait">
-              {!isLogin && (
+              {mode === 'signup' && (
                 <motion.div
                   key="displayName"
                   initial={{ opacity: 0, height: 0 }}
@@ -216,31 +258,48 @@ export default function Auth() {
               )}
             </div>
 
-            <div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, password: e.target.value }));
-                    setErrors(prev => ({ ...prev, password: undefined }));
-                  }}
-                  className={`pl-10 pr-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.password ? 'border-destructive' : ''}`}
-                />
+            {mode !== 'forgot' && (
+              <div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, password: e.target.value }));
+                      setErrors(prev => ({ ...prev, password: undefined }));
+                    }}
+                    className={`pl-10 pr-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.password ? 'border-destructive' : ''}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-destructive text-xs mt-1 ml-1">{errors.password}</p>
+                )}
+              </div>
+            )}
+
+            {mode === 'login' && (
+              <div className="text-right">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setMode('forgot');
+                    setErrors({});
+                  }}
+                  className="text-sm text-primary hover:underline"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  Password dimenticata?
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-destructive text-xs mt-1 ml-1">{errors.password}</p>
-              )}
-            </div>
+            )}
 
             <Button
               type="submit"
@@ -249,7 +308,9 @@ export default function Auth() {
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
-              ) : isLogin ? (
+              ) : mode === 'forgot' ? (
+                'Invia email di recupero'
+              ) : mode === 'login' ? (
                 'Accedi'
               ) : (
                 'Registrati'
@@ -259,19 +320,32 @@ export default function Auth() {
 
           {/* Toggle */}
           <div className="mt-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              {isLogin ? 'Non hai un account?' : 'Hai già un account?'}
+            {mode === 'forgot' ? (
               <button
                 type="button"
                 onClick={() => {
-                  setIsLogin(!isLogin);
+                  setMode('login');
                   setErrors({});
                 }}
-                className="ml-1 text-primary font-medium hover:underline"
+                className="text-sm text-primary font-medium hover:underline"
               >
-                {isLogin ? 'Registrati' : 'Accedi'}
+                ← Torna al login
               </button>
-            </p>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                {mode === 'login' ? 'Non hai un account?' : 'Hai già un account?'}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode(mode === 'login' ? 'signup' : 'login');
+                    setErrors({});
+                  }}
+                  className="ml-1 text-primary font-medium hover:underline"
+                >
+                  {mode === 'login' ? 'Registrati' : 'Accedi'}
+                </button>
+              </p>
+            )}
           </div>
         </motion.div>
       </div>
