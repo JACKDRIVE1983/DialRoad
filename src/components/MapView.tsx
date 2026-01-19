@@ -228,47 +228,32 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
           ))}
 
           {userLocation && (
-            <>
-              <OverlayView
-                position={userLocation}
-                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            <OverlayView
+              position={userLocation}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div 
+                style={{ 
+                  transform: 'translate(-50%, -100%)',
+                  animation: 'bounce-slow 2s ease-in-out infinite'
+                }}
               >
-                <div 
-                  className="cursor-pointer"
-                  style={{ 
-                    transform: 'translate(-50%, -100%)',
-                    animation: 'bounce-slow 2s ease-in-out infinite'
-                  }}
-                  onClick={() => setShowUserPopup(true)}
-                >
-                  <svg viewBox="0 0 40 60" width="40" height="60">
-                    <defs>
-                      <linearGradient id="pinGradLive" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
-                        <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
-                      </linearGradient>
-                      <filter id="shadowLive" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3"/>
-                      </filter>
-                    </defs>
-                    <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
-                          fill="url(#pinGradLive)" stroke="white" strokeWidth="2" filter="url(#shadowLive)"/>
-                    <circle cx="20" cy="20" r="8" fill="white"/>
-                  </svg>
-                </div>
-              </OverlayView>
-              {showUserPopup && (
-                <InfoWindowF
-                  position={userLocation}
-                  onCloseClick={() => setShowUserPopup(false)}
-                  options={{ pixelOffset: new google.maps.Size(0, -50) }}
-                >
-                  <div className="px-2 py-1 text-center" style={{ background: '#fbbf24', borderRadius: '8px', margin: '-8px' }}>
-                    <span className="font-bold text-xs text-gray-900">📍 Sei qui!</span>
-                  </div>
-                </InfoWindowF>
-              )}
-            </>
+                <svg viewBox="0 0 40 60" width="40" height="60">
+                  <defs>
+                    <linearGradient id="pinGradLive" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
+                      <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
+                    </linearGradient>
+                    <filter id="shadowLive" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3"/>
+                    </filter>
+                  </defs>
+                  <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+                        fill="url(#pinGradLive)" stroke="white" strokeWidth="2" filter="url(#shadowLive)"/>
+                  <circle cx="20" cy="20" r="8" fill="white"/>
+                </svg>
+              </div>
+            </OverlayView>
           )}
 
           {selectedMarker && (
@@ -449,7 +434,7 @@ function FallbackMap() {
           })}
 
           {userLocation && (
-            <motion.button
+            <motion.div
               className="absolute z-30"
               style={{
                 bottom: `${((userLocation.lat - 36) / 11) * 100}%`,
@@ -465,37 +450,19 @@ function FallbackMap() {
                 scale: { type: 'spring', delay: 0.3 },
                 y: { duration: 2, repeat: Infinity, ease: "easeInOut" }
               }}
-              onClick={() => setShowUserPopup(!showUserPopup)}
             >
-              <div className="relative">
-                <svg viewBox="0 0 40 60" width="36" height="54" className="drop-shadow-lg">
-                  <defs>
-                    <linearGradient id="pinGradFallback" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
-                      <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
-                    </linearGradient>
-                  </defs>
-                  <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
-                        fill="url(#pinGradFallback)" stroke="white" strokeWidth="2"/>
-                  <circle cx="20" cy="20" r="8" fill="white"/>
-                </svg>
-                
-                {/* Popup */}
-                {showUserPopup && (
-                  <motion.div
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap" style={{ background: '#fbbf24' }}>
-                      <span className="font-bold text-xs text-gray-900">📍 Sei qui!</span>
-                    </div>
-                    {/* Arrow */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent" style={{ borderTopColor: '#fbbf24' }} />
-                  </motion.div>
-                )}
-              </div>
-            </motion.button>
+              <svg viewBox="0 0 40 60" width="36" height="54" className="drop-shadow-lg">
+                <defs>
+                  <linearGradient id="pinGradFallback" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
+                    <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
+                  </linearGradient>
+                </defs>
+                <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+                      fill="url(#pinGradFallback)" stroke="white" strokeWidth="2"/>
+                <circle cx="20" cy="20" r="8" fill="white"/>
+              </svg>
+            </motion.div>
           )}
         </div>
       </div>
