@@ -55,10 +55,18 @@ const capitalizeRegion = (region: string | null): string => {
 // Transform raw JSON data to DialysisCenter format
 const rawCenters = centersData as RawCenter[];
 
+// Filter and deduplicate centers by ID
+const seenIds = new Set<string>();
 export const mockCenters: DialysisCenter[] = rawCenters
-  .filter(center => center.geocode_status === 'OK' && center.lat && center.lng && center.region)
-  .map(center => ({
-    id: center.id,
+  .filter(center => {
+    if (!center.geocode_status || center.geocode_status !== 'OK') return false;
+    if (!center.lat || !center.lng || !center.region) return false;
+    if (seenIds.has(center.id)) return false;
+    seenIds.add(center.id);
+    return true;
+  })
+  .map((center, index) => ({
+    id: center.id || `center-${index}`,
     name: center.name || 'Centro Dialisi',
     address: center.address || '',
     city: center.city || '',
