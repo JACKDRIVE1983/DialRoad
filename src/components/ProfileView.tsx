@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail } from 'lucide-react';
-import { User, Heart, Star, Settings, ChevronRight, Bell, Shield, HelpCircle, LogOut, Camera, Loader2, LogIn, MapPin, X } from 'lucide-react';
+import { User, Heart, Star, Settings, ChevronRight, Shield, HelpCircle, LogOut, Camera, Loader2, LogIn, MapPin, X } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -84,7 +84,6 @@ export function ProfileView() {
       color: 'text-yellow-500',
       onClick: () => !isAuthenticated && navigate('/auth')
     },
-    { icon: Bell, label: 'Notifiche', value: '', color: 'text-accent', onClick: () => {} },
     { icon: Shield, label: 'Privacy', value: '', color: 'text-green-500', onClick: () => setShowPrivacy(true) },
     { icon: HelpCircle, label: 'Aiuto & Supporto', value: '', color: 'text-primary', onClick: () => setShowHelp(true) },
     { icon: Settings, label: 'Impostazioni', value: '', color: 'text-muted-foreground', onClick: () => {} },
