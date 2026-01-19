@@ -21,15 +21,23 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
       style={{ opacity, y: translateY, scale }}
     >
       <div 
-        className="mx-4 mt-4 mb-2 px-4 py-3 rounded-2xl flex flex-col items-center justify-center backdrop-blur-md"
+        className="mx-4 mt-4 mb-2 px-6 py-3 rounded-2xl flex items-center justify-center gap-3 backdrop-blur-md"
         style={{
           background: 'rgba(255, 255, 255, 0.25)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
           border: '1px solid rgba(255, 255, 255, 0.3)'
         }}
       >
-        {/* Logo centered - sized to fit naturally without white borders */}
-        <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center">
+        {/* "Dial" text on the left */}
+        <span 
+          className="text-2xl font-display font-bold tracking-wide"
+          style={{ color: '#0077b6' }}
+        >
+          Dial
+        </span>
+        
+        {/* Logo centered */}
+        <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
           <img 
             src={logo} 
             alt="DialMap" 
@@ -37,10 +45,13 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           />
         </div>
         
-        {/* Brand name below - blue and green like the icon */}
-        <h1 className="text-base font-display font-bold tracking-wide mt-1">
-          <span style={{ color: '#0077b6' }}>Dial</span><span style={{ color: '#2ecc71' }}>Map</span>
-        </h1>
+        {/* "Map" text on the right */}
+        <span 
+          className="text-2xl font-display font-bold tracking-wide"
+          style={{ color: '#2ecc71' }}
+        >
+          Map
+        </span>
       </div>
     </motion.div>
   );
