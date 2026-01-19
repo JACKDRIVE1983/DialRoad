@@ -32,7 +32,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           <img 
             src={logo} 
             alt="DialMap" 
-            className="w-full h-full object-cover scale-[1.8]"
+            className="w-full h-full object-cover scale-[2.2] -translate-y-1"
           />
         </div>
         
