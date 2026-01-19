@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useRef, Component, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
-import { GoogleMap, useLoadScript, MarkerF, InfoWindowF } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, MarkerF, InfoWindowF, OverlayView } from '@react-google-maps/api';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,9 +49,10 @@ const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
 `);
 
 const userMarkerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-    <circle cx="12" cy="12" r="10" fill="#00b4d8" stroke="white" stroke-width="2"/>
-    <circle cx="12" cy="12" r="4" fill="white"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60">
+    <circle cx="30" cy="30" r="28" fill="#00b4d8" fill-opacity="0.25"/>
+    <circle cx="30" cy="30" r="16" fill="#00b4d8" stroke="white" stroke-width="3"/>
+    <circle cx="30" cy="30" r="6" fill="white"/>
   </svg>
 `);
 
@@ -85,7 +86,9 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
+  const [showUserPopup, setShowUserPopup] = useState(false);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [mapZoom, setMapZoom] = useState(6);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const { isLoaded, loadError } = useLoadScript({
@@ -103,6 +106,8 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
           };
           setUserLocation(newLocation);
           setMapCenter(newLocation);
+          setMapZoom(12); // Zoom in when locating
+          setShowUserPopup(true); // Show popup
           setIsLocating(false);
         },
         (error) => {
@@ -203,7 +208,7 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
           center={mapCenter}
-          zoom={6}
+          zoom={mapZoom}
           options={mapOptions}
         >
           {filteredCenters.map((center) => (
@@ -220,14 +225,34 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
           ))}
 
           {userLocation && (
-            <MarkerF
-              position={userLocation}
-              icon={{
-                url: userMarkerIcon,
-                scaledSize: new google.maps.Size(24, 24),
-                anchor: new google.maps.Point(12, 12),
-              }}
-            />
+            <>
+              <MarkerF
+                position={userLocation}
+                onClick={() => setShowUserPopup(true)}
+                icon={{
+                  url: userMarkerIcon,
+                  scaledSize: new google.maps.Size(60, 60),
+                  anchor: new google.maps.Point(30, 30),
+                }}
+                zIndex={1000}
+              />
+              {showUserPopup && (
+                <InfoWindowF
+                  position={userLocation}
+                  onCloseClick={() => setShowUserPopup(false)}
+                >
+                  <div className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <div className="w-3 h-3 rounded-full bg-accent animate-pulse" />
+                      <span className="font-bold text-sm text-gray-900">Sei qui!</span>
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      La tua posizione attuale
+                    </p>
+                  </div>
+                </InfoWindowF>
+              )}
+            </>
           )}
 
           {selectedMarker && (
@@ -328,6 +353,7 @@ export function MapView() {
 function FallbackMap() {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
   const [isLocating, setIsLocating] = useState(false);
+  const [showUserPopup, setShowUserPopup] = useState(false);
 
   const handleLocate = useCallback(() => {
     setIsLocating(true);
@@ -338,6 +364,7 @@ function FallbackMap() {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           });
+          setShowUserPopup(true);
           setIsLocating(false);
         },
         () => {
@@ -406,8 +433,8 @@ function FallbackMap() {
           })}
 
           {userLocation && (
-            <motion.div
-              className="absolute z-20"
+            <motion.button
+              className="absolute z-30"
               style={{
                 bottom: `${((userLocation.lat - 36) / 11) * 100}%`,
                 left: `${((userLocation.lng - 6) / 13) * 100}%`,
@@ -416,12 +443,36 @@ function FallbackMap() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', delay: 0.3 }}
+              onClick={() => setShowUserPopup(!showUserPopup)}
             >
               <div className="relative">
-                <span className="absolute inset-0 w-6 h-6 rounded-full bg-accent/40 animate-ping" />
-                <div className="w-6 h-6 rounded-full bg-accent border-2 border-background shadow-lg" />
+                {/* Outer pulsing ring */}
+                <span className="absolute -inset-3 rounded-full bg-accent/30 animate-ping" />
+                <span className="absolute -inset-2 rounded-full bg-accent/20" />
+                {/* Main marker */}
+                <div className="relative w-10 h-10 rounded-full bg-accent border-4 border-white shadow-xl flex items-center justify-center">
+                  <div className="w-3 h-3 rounded-full bg-white" />
+                </div>
+                
+                {/* Popup */}
+                {showUserPopup && (
+                  <motion.div
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 pointer-events-none"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="glass-card px-4 py-2 rounded-xl shadow-lg whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                        <span className="font-semibold text-foreground text-sm">Sei qui!</span>
+                      </div>
+                    </div>
+                    {/* Arrow */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-white/80" />
+                  </motion.div>
+                )}
               </div>
-            </motion.div>
+            </motion.button>
           )}
         </div>
       </div>
