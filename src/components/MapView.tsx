@@ -98,7 +98,23 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
     // Called by Google Maps when the key / APIs / billing are misconfigured.
     // https://developers.google.com/maps/documentation/javascript/events#authentication_errors
     (window as any).gm_authFailure = () => setAuthFailure(true);
+
+    // Also detect common Maps JS API console errors like ApiNotActivatedMapError
+    const originalConsoleError = console.error;
+    console.error = (...args: unknown[]) => {
+      try {
+        const msg = args.map(String).join(' ');
+        if (msg.includes('ApiNotActivatedMapError') || msg.includes('Google Maps JavaScript API error')) {
+          setAuthFailure(true);
+        }
+      } catch {
+        // ignore
+      }
+      originalConsoleError(...args as any);
+    };
+
     return () => {
+      console.error = originalConsoleError;
       try {
         delete (window as any).gm_authFailure;
       } catch {
