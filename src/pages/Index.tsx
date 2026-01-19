@@ -68,12 +68,12 @@ function AppContent() {
   );
 }
 
-const Index = () => {
+function Index() {
   return (
     <AppProvider>
       <AppContent />
     </AppProvider>
   );
-};
+}
 
 export default Index;
