@@ -293,39 +293,52 @@ export function CenterBottomSheet() {
                 {/* Reviews section */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-foreground flex items-center">
-                      <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                    <h3 className="text-lg font-semibold text-foreground flex items-center">
+                      <Star className="w-5 h-5 mr-2 text-yellow-500 fill-yellow-500" />
                       Recensioni ({reviews.length})
                     </h3>
                   </div>
 
-                  {/* Add review */}
-                  <div className="glass-card rounded-xl p-4 mb-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-sm text-muted-foreground">La tua valutazione:</span>
-                      {renderStars(newRating, true, 'w-5 h-5')}
+                  {/* Add review box - prominent */}
+                  <motion.div 
+                    className="glass-card rounded-2xl p-5 mb-6 border-2 border-primary/20"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      Lascia una recensione
+                    </h4>
+                    
+                    {/* Star rating */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-sm text-muted-foreground">Valutazione:</span>
+                      {renderStars(newRating, true, 'w-6 h-6')}
+                      <span className="text-sm font-medium text-foreground">({newRating}/5)</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 glass-card rounded-xl overflow-hidden">
-                        <input
-                          type="text"
-                          placeholder={isAuthenticated ? "Scrivi una recensione..." : "Accedi per recensire..."}
-                          value={newReviewText}
-                          onChange={(e) => setNewReviewText(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleSubmitReview()}
-                          className="w-full px-4 py-3 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
-                        />
-                      </div>
-                      <Button
-                        onClick={handleSubmitReview}
-                        disabled={!newReviewText.trim()}
-                        size="icon"
-                        className="w-11 h-11 rounded-xl gradient-bg text-primary-foreground disabled:opacity-50"
-                      >
-                        <Send className="w-4 h-4" />
-                      </Button>
+                    
+                    {/* Review text */}
+                    <div className="mb-4">
+                      <textarea
+                        placeholder={isAuthenticated ? "Racconta la tua esperienza in questo centro..." : "Accedi per lasciare una recensione..."}
+                        value={newReviewText}
+                        onChange={(e) => setNewReviewText(e.target.value)}
+                        disabled={!isAuthenticated}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-muted/50 rounded-xl border border-border/50 outline-none text-foreground placeholder:text-muted-foreground text-sm resize-none focus:border-primary/50 transition-colors"
+                      />
                     </div>
-                  </div>
+                    
+                    {/* Submit button */}
+                    <Button
+                      onClick={handleSubmitReview}
+                      disabled={!newReviewText.trim() || !isAuthenticated}
+                      className="w-full gradient-bg text-primary-foreground disabled:opacity-50 rounded-xl py-3"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {isAuthenticated ? 'Pubblica Recensione' : 'Accedi per recensire'}
+                    </Button>
+                  </motion.div>
 
                   {/* Reviews list */}
                   <div className="space-y-4 pb-safe-area-bottom">
