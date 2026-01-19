@@ -35,30 +35,30 @@ export function SearchBar() {
 
   return (
     <>
-      {/* Search bar */}
+      {/* Search bar - compact, right-aligned */}
       <motion.div
-        className="absolute top-20 left-4 right-4 z-40"
+        className="absolute top-28 right-4 z-40"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <div className="glass-card rounded-2xl overflow-hidden">
-          <div className="flex items-center p-2">
-            <div className="flex-1 flex items-center px-4">
-              <Search className="w-5 h-5 text-muted-foreground mr-3" />
+        <div className="glass-card rounded-xl overflow-hidden">
+          <div className="flex items-center p-1.5 gap-1">
+            <div className="flex items-center px-2">
+              <Search className="w-4 h-4 text-muted-foreground mr-2" />
               <input
                 type="text"
                 placeholder="Cerca per nome, città..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-base"
+                className="w-[140px] bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="p-1 hover:bg-muted rounded-full transition-colors"
+                  className="p-0.5 hover:bg-muted rounded-full transition-colors"
                 >
-                  <X className="w-4 h-4 text-muted-foreground" />
+                  <X className="w-3 h-3 text-muted-foreground" />
                 </button>
               )}
             </div>
@@ -67,11 +67,11 @@ export function SearchBar() {
               variant="ghost"
               size="icon"
               onClick={() => setShowFilters(!showFilters)}
-              className={`relative rounded-xl ${hasActiveFilters ? 'text-primary' : 'text-muted-foreground'}`}
+              className={`relative rounded-lg h-7 w-7 ${hasActiveFilters ? 'text-primary' : 'text-muted-foreground'}`}
             >
-              <SlidersHorizontal className="w-5 h-5" />
+              <SlidersHorizontal className="w-4 h-4" />
               {hasActiveFilters && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
               )}
             </Button>
           </div>
@@ -93,7 +93,7 @@ export function SearchBar() {
 
             {/* Filter panel */}
             <motion.div
-              className="fixed top-36 left-4 right-4 z-50 glass-card rounded-3xl p-6 max-h-[60vh] overflow-y-auto"
+              className="fixed top-40 right-4 left-4 z-50 glass-card rounded-3xl p-6 max-h-[60vh] overflow-y-auto"
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
