@@ -42,10 +42,24 @@ export function CenterBottomSheet() {
   };
 
   const handleNavigate = () => {
-    if (selectedCenter) {
-      const { lat, lng } = selectedCenter.coordinates;
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-    }
+    if (!selectedCenter) return;
+
+    const { lat, lng } = selectedCenter.coordinates;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+    // Prefer anchor click to better respect browser security/sandbox rules
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // Fallback (some environments block _blank popups)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!opened) window.location.assign(url);
   };
 
   return (
