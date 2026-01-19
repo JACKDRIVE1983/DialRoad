@@ -124,9 +124,29 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews_with_author: {
+        Row: {
+          author_avatar: string | null
+          author_name: string | null
+          center_id: string | null
+          created_at: string | null
+          id: string | null
+          rating: number | null
+          text: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_public_profile_by_user_id: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
