@@ -1,38 +1,84 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
-  X, Phone, Navigation, Heart, MessageCircle, Star, Clock, 
-  MapPin, Send, ChevronUp, Share2, Copy
+  X, Phone, Navigation, Heart, Star, Clock, 
+  MapPin, Send, ChevronUp, Share2, Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useReviews, Review } from '@/hooks/useReviews';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import centerImage from '@/assets/center-placeholder.jpg';
 
 export function CenterBottomSheet() {
-  const { selectedCenter, setSelectedCenter, toggleLike, addComment } = useApp();
+  const navigate = useNavigate();
+  const { selectedCenter, setSelectedCenter } = useApp();
+  const { user, isAuthenticated, profile } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { reviews, isLoading: reviewsLoading, addReview, deleteReview, getAverageRating } = useReviews(selectedCenter?.id);
+  
   const [isExpanded, setIsExpanded] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [isLiked, setIsLiked] = useState(false);
+  const [newReviewText, setNewReviewText] = useState('');
+  const [newRating, setNewRating] = useState(5);
   const dragControls = useDragControls();
+
+  const isCurrentFavorite = selectedCenter ? isFavorite(selectedCenter.id) : false;
+  const averageRating = getAverageRating();
 
   const handleClose = () => {
     setSelectedCenter(null);
     setIsExpanded(false);
-    setNewComment('');
+    setNewReviewText('');
+    setNewRating(5);
   };
 
-  const handleLike = () => {
-    if (selectedCenter && !isLiked) {
-      toggleLike(selectedCenter.id);
-      setIsLiked(true);
+  const handleToggleFavorite = async () => {
+    if (!isAuthenticated) {
+      toast.error('Accedi per salvare i preferiti');
+      navigate('/auth');
+      return;
+    }
+    
+    if (selectedCenter) {
+      const { error } = await toggleFavorite(selectedCenter.id);
+      if (error) {
+        toast.error('Errore nel salvare il preferito');
+      } else {
+        toast.success(isCurrentFavorite ? 'Rimosso dai preferiti' : 'Aggiunto ai preferiti');
+      }
     }
   };
 
-  const handleSubmitComment = () => {
-    if (selectedCenter && newComment.trim()) {
-      addComment(selectedCenter.id, newComment.trim());
-      setNewComment('');
+  const handleSubmitReview = async () => {
+    if (!isAuthenticated) {
+      toast.error('Accedi per lasciare una recensione');
+      navigate('/auth');
+      return;
+    }
+
+    if (selectedCenter && newReviewText.trim()) {
+      const { error } = await addReview(selectedCenter.id, newRating, newReviewText.trim());
+      if (error) {
+        toast.error('Errore nel salvare la recensione');
+      } else {
+        toast.success('Recensione pubblicata!');
+        setNewReviewText('');
+        setNewRating(5);
+      }
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (selectedCenter) {
+      const { error } = await deleteReview(reviewId, selectedCenter.id);
+      if (error) {
+        toast.error('Errore nell\'eliminare la recensione');
+      } else {
+        toast.success('Recensione eliminata');
+      }
     }
   };
 
@@ -44,12 +90,45 @@ export function CenterBottomSheet() {
 
   const handleNavigate = () => {
     if (!selectedCenter) return;
-
     const { lat, lng } = selectedCenter.coordinates;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-
-    // Open Google Maps in a new tab (works on published app and direct preview)
     window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleShare = async () => {
+    if (!selectedCenter) return;
+    const shareData = {
+      title: selectedCenter.name,
+      text: `Centro Dialisi: ${selectedCenter.name} - ${selectedCenter.address}`,
+      url: window.location.href
+    };
+    
+    if (navigator.share) {
+      await navigator.share(shareData);
+    } else {
+      await navigator.clipboard.writeText(`${selectedCenter.name} - ${selectedCenter.address}`);
+      toast.success('Copiato negli appunti');
+    }
+  };
+
+  const renderStars = (rating: number, interactive = false, size = 'w-4 h-4') => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            disabled={!interactive}
+            onClick={() => interactive && setNewRating(star)}
+            className={interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'}
+          >
+            <Star 
+              className={`${size} ${star <= rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground/30'}`} 
+            />
+          </button>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -146,7 +225,8 @@ export function CenterBottomSheet() {
                   </div>
                   <div className="flex items-center bg-muted px-3 py-1.5 rounded-xl">
                     <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 mr-1" />
-                    <span className="font-semibold text-foreground">{selectedCenter.rating}</span>
+                    <span className="font-semibold text-foreground">{averageRating || selectedCenter.rating}</span>
+                    <span className="text-xs text-muted-foreground ml-1">({reviews.length})</span>
                   </div>
                 </div>
 
@@ -178,14 +258,15 @@ export function CenterBottomSheet() {
                     <span className="text-xs text-foreground">Naviga</span>
                   </Button>
                   <Button
-                    onClick={handleLike}
-                    className={`flex flex-col items-center py-4 h-auto glass-button border-none ${isLiked ? 'bg-red-500/10' : ''}`}
+                    onClick={handleToggleFavorite}
+                    className={`flex flex-col items-center py-4 h-auto glass-button border-none ${isCurrentFavorite ? 'bg-red-500/10' : ''}`}
                     variant="ghost"
                   >
-                    <Heart className={`w-5 h-5 mb-1 ${isLiked ? 'text-red-500 fill-red-500' : 'text-primary'}`} />
-                    <span className="text-xs text-foreground">{selectedCenter.likes + (isLiked ? 1 : 0)}</span>
+                    <Heart className={`w-5 h-5 mb-1 ${isCurrentFavorite ? 'text-red-500 fill-red-500' : 'text-primary'}`} />
+                    <span className="text-xs text-foreground">{isCurrentFavorite ? 'Salvato' : 'Salva'}</span>
                   </Button>
                   <Button
+                    onClick={handleShare}
                     className="flex flex-col items-center py-4 h-auto glass-button border-none"
                     variant="ghost"
                   >
@@ -209,70 +290,91 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Comments section */}
+                {/* Reviews section */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-foreground flex items-center">
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Commenti ({selectedCenter.comments.length})
+                      <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                      Recensioni ({reviews.length})
                     </h3>
                   </div>
 
-                  {/* Add comment */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="flex-1 glass-card rounded-xl overflow-hidden">
-                      <input
-                        type="text"
-                        placeholder="Scrivi un commento..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSubmitComment()}
-                        className="w-full px-4 py-3 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
-                      />
+                  {/* Add review */}
+                  <div className="glass-card rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-sm text-muted-foreground">La tua valutazione:</span>
+                      {renderStars(newRating, true, 'w-5 h-5')}
                     </div>
-                    <Button
-                      onClick={handleSubmitComment}
-                      disabled={!newComment.trim()}
-                      size="icon"
-                      className="w-11 h-11 rounded-xl gradient-bg text-primary-foreground disabled:opacity-50"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 glass-card rounded-xl overflow-hidden">
+                        <input
+                          type="text"
+                          placeholder={isAuthenticated ? "Scrivi una recensione..." : "Accedi per recensire..."}
+                          value={newReviewText}
+                          onChange={(e) => setNewReviewText(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleSubmitReview()}
+                          className="w-full px-4 py-3 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm"
+                        />
+                      </div>
+                      <Button
+                        onClick={handleSubmitReview}
+                        disabled={!newReviewText.trim()}
+                        size="icon"
+                        className="w-11 h-11 rounded-xl gradient-bg text-primary-foreground disabled:opacity-50"
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
-                  {/* Comments list */}
+                  {/* Reviews list */}
                   <div className="space-y-4 pb-safe-area-bottom">
-                    {selectedCenter.comments.map((comment) => (
+                    {reviews.map((review) => (
                       <motion.div
-                        key={comment.id}
+                        key={review.id}
                         className="glass-card p-4 rounded-xl"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                            {comment.userName.charAt(0)}
+                          <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-primary-foreground font-semibold text-sm overflow-hidden">
+                            {review.user_avatar ? (
+                              <img src={review.user_avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              review.user_name?.charAt(0) || 'U'
+                            )}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="font-medium text-foreground text-sm">{comment.userName}</span>
-                              <span className="text-xs text-muted-foreground">{comment.createdAt}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-foreground text-sm">{review.user_name}</span>
+                                {renderStars(review.rating)}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(review.created_at).toLocaleDateString('it-IT')}
+                                </span>
+                                {user?.id === review.user_id && (
+                                  <button
+                                    onClick={() => handleDeleteReview(review.id)}
+                                    className="text-destructive hover:text-destructive/80 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-sm text-muted-foreground">{comment.text}</p>
-                            <button className="flex items-center mt-2 text-xs text-muted-foreground hover:text-primary transition-colors">
-                              <Heart className="w-3 h-3 mr-1" />
-                              {comment.likes}
-                            </button>
+                            <p className="text-sm text-muted-foreground">{review.text}</p>
                           </div>
                         </div>
                       </motion.div>
                     ))}
 
-                    {selectedCenter.comments.length === 0 && (
+                    {reviews.length === 0 && !reviewsLoading && (
                       <div className="text-center py-8">
-                        <MessageCircle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                        <Star className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                         <p className="text-muted-foreground text-sm">
-                          Nessun commento ancora. Sii il primo!
+                          Nessuna recensione ancora. Sii il primo!
                         </p>
                       </div>
                     )}
