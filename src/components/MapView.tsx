@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2 } from 'lucide-react';
-import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,31 +35,36 @@ const lightModeStyles = [
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8e6c9" }] },
 ];
 
-export function MapView() {
+// SVG marker as data URL
+const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#0077b6;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#00b4d8;stop-opacity:1" />
+      </linearGradient>
+    </defs>
+    <circle cx="20" cy="20" r="18" fill="url(#grad)" stroke="white" stroke-width="3"/>
+    <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+`);
+
+const userMarkerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+    <circle cx="12" cy="12" r="10" fill="#00b4d8" stroke="white" stroke-width="2"/>
+    <circle cx="12" cy="12" r="4" fill="white"/>
+  </svg>
+`);
+
+function GoogleMapComponent({ apiKey }: { apiKey: string }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
 
-  // Fetch Google Maps API key from edge function
-  useEffect(() => {
-    const fetchApiKey = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-maps-key');
-        if (error) throw error;
-        if (data?.apiKey) {
-          setApiKey(data.apiKey);
-        }
-      } catch (error) {
-        console.error('Failed to fetch Google Maps API key:', error);
-      } finally {
-        setIsLoadingKey(false);
-      }
-    };
-    fetchApiKey();
-  }, []);
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: apiKey,
+  });
 
   const handleLocate = useCallback(() => {
     setIsLocating(true);
@@ -114,8 +119,11 @@ export function MapView() {
     fullscreenControl: false,
   };
 
-  // Show loading state while fetching API key
-  if (isLoadingKey) {
+  if (loadError) {
+    return <FallbackMap />;
+  }
+
+  if (!isLoaded) {
     return (
       <div className="relative w-full h-full bg-secondary flex items-center justify-center">
         <motion.div
@@ -130,82 +138,59 @@ export function MapView() {
     );
   }
 
-  // Fallback to simple map if API key is not available
-  if (!apiKey) {
-    return <FallbackMap />;
-  }
-
   return (
     <div className="relative w-full h-full">
-      <LoadScript googleMapsApiKey={apiKey}>
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={mapCenter}
-          zoom={6}
-          options={mapOptions}
-        >
-          {/* Center markers */}
-          {filteredCenters.map((center) => (
-            <Marker
-              key={center.id}
-              position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
-              onClick={() => handleMarkerClick(center)}
-              icon={{
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-                    <defs>
-                      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#0077b6;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#00b4d8;stop-opacity:1" />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="20" cy="20" r="18" fill="url(#grad)" stroke="white" stroke-width="3"/>
-                    <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-                  </svg>
-                `),
-                scaledSize: new google.maps.Size(40, 40),
-                anchor: new google.maps.Point(20, 20),
-              }}
-            />
-          ))}
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        center={mapCenter}
+        zoom={6}
+        options={mapOptions}
+      >
+        {/* Center markers */}
+        {filteredCenters.map((center) => (
+          <MarkerF
+            key={center.id}
+            position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
+            onClick={() => handleMarkerClick(center)}
+            icon={{
+              url: markerIcon,
+              scaledSize: new google.maps.Size(40, 40),
+              anchor: new google.maps.Point(20, 20),
+            }}
+          />
+        ))}
 
-          {/* User location marker */}
-          {userLocation && (
-            <Marker
-              position={userLocation}
-              icon={{
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                    <circle cx="12" cy="12" r="10" fill="#00b4d8" stroke="white" stroke-width="2"/>
-                    <circle cx="12" cy="12" r="4" fill="white"/>
-                  </svg>
-                `),
-                scaledSize: new google.maps.Size(24, 24),
-                anchor: new google.maps.Point(12, 12),
-              }}
-            />
-          )}
+        {/* User location marker */}
+        {userLocation && (
+          <MarkerF
+            position={userLocation}
+            icon={{
+              url: userMarkerIcon,
+              scaledSize: new google.maps.Size(24, 24),
+              anchor: new google.maps.Point(12, 12),
+            }}
+          />
+        )}
 
-          {/* Info window for selected marker */}
-          {selectedMarker && (
-            <InfoWindow
-              position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
-              onCloseClick={handleInfoWindowClose}
-            >
-              <div className="p-2 max-w-xs">
-                <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
-                <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
-                <button
-                  onClick={() => handleViewDetails(selectedMarker)}
-                  className="w-full px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-md hover:bg-blue-600 transition-colors"
-                >
-                  Vedi dettagli
-                </button>
-              </div>
-            </InfoWindow>
-          )}
-        </GoogleMap>
-      </LoadScript>
+        {/* Info window for selected marker */}
+        {selectedMarker && (
+          <InfoWindowF
+            position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
+            onCloseClick={handleInfoWindowClose}
+          >
+            <div className="p-2 max-w-xs">
+              <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
+              <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
+              <button
+                onClick={() => handleViewDetails(selectedMarker)}
+                className="w-full px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-md hover:bg-blue-600 transition-colors"
+              >
+                Vedi dettagli
+              </button>
+            </div>
+          </InfoWindowF>
+        )}
+      </GoogleMap>
 
       {/* Locate button */}
       <motion.button
@@ -232,6 +217,52 @@ export function MapView() {
       </motion.div>
     </div>
   );
+}
+
+export function MapView() {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [isLoadingKey, setIsLoadingKey] = useState(true);
+
+  // Fetch Google Maps API key from edge function
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-maps-key');
+        if (error) throw error;
+        if (data?.apiKey) {
+          setApiKey(data.apiKey);
+        }
+      } catch (error) {
+        console.error('Failed to fetch Google Maps API key:', error);
+      } finally {
+        setIsLoadingKey(false);
+      }
+    };
+    fetchApiKey();
+  }, []);
+
+  // Show loading state while fetching API key
+  if (isLoadingKey) {
+    return (
+      <div className="relative w-full h-full bg-secondary flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          <span className="text-muted-foreground">Caricamento mappa...</span>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Fallback to simple map if API key is not available
+  if (!apiKey) {
+    return <FallbackMap />;
+  }
+
+  return <GoogleMapComponent apiKey={apiKey} />;
 }
 
 // Fallback map component when API key is not available
