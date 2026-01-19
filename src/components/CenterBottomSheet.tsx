@@ -42,31 +42,14 @@ export function CenterBottomSheet() {
     }
   };
 
-  const handleNavigate = async () => {
+  const handleNavigate = () => {
     if (!selectedCenter) return;
 
     const { lat, lng } = selectedCenter.coordinates;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-    // In iframe/preview environments, navigation to Google is blocked.
-    // Best UX: copy the link and notify the user.
-    try {
-      await navigator.clipboard.writeText(mapsUrl);
-      toast.success('Link copiato!', {
-        description: 'Incolla il link in un nuovo tab per aprire Google Maps.',
-        duration: 5000,
-        action: {
-          label: 'Apri',
-          onClick: () => window.open(mapsUrl, '_blank'),
-        },
-      });
-    } catch {
-      // Fallback if clipboard API fails
-      toast.info('Copia questo link:', {
-        description: mapsUrl,
-        duration: 10000,
-      });
-    }
+    // Open Google Maps in a new tab (works on published app and direct preview)
+    window.open(mapsUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
