@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Mail } from 'lucide-react';
 import { User, Heart, Star, Settings, ChevronRight, Bell, Shield, HelpCircle, LogOut, Camera, Loader2, LogIn, MapPin, X } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,7 @@ export function ProfileView() {
   
   const [isUploading, setIsUploading] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const favoriteCenters = centers.filter(c => favorites.includes(c.id));
@@ -83,7 +85,7 @@ export function ProfileView() {
     },
     { icon: Bell, label: 'Notifiche', value: '', color: 'text-accent', onClick: () => {} },
     { icon: Shield, label: 'Privacy', value: '', color: 'text-green-500', onClick: () => {} },
-    { icon: HelpCircle, label: 'Aiuto & Supporto', value: '', color: 'text-primary', onClick: () => {} },
+    { icon: HelpCircle, label: 'Aiuto & Supporto', value: '', color: 'text-primary', onClick: () => setShowHelp(true) },
     { icon: Settings, label: 'Impostazioni', value: '', color: 'text-muted-foreground', onClick: () => {} },
   ];
 
@@ -91,6 +93,46 @@ export function ProfileView() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Help & Support Modal
+  if (showHelp) {
+    return (
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-primary" />
+            Aiuto & Supporto
+          </h2>
+          <button
+            onClick={() => setShowHelp(false)}
+            className="w-10 h-10 rounded-full glass-card flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
+
+        <div className="glass-card rounded-2xl p-6 space-y-4">
+          <p className="text-foreground leading-relaxed">
+            DialMap ti aiuta a trovare rapidamente i centri dialisi in tutta Italia tramite una mappa interattiva. Puoi cercare per zona o località e consultare informazioni utili come indirizzo, contatti e dettagli principali della struttura.
+          </p>
+          <p className="text-foreground leading-relaxed">
+            È pensata per le persone in dialisi che vogliono organizzare una vacanza o uno spostamento con più serenità: ti permette di individuare in anticipo i centri disponibili vicino alla tua destinazione e avere a portata di mano i riferimenti necessari per richiedere informazioni e pianificare il trattamento.
+          </p>
+          
+          <div className="pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground mb-3">Contatto supporto:</p>
+            <a 
+              href="mailto:giacomo748@gmail.com"
+              className="inline-flex items-center gap-2 text-primary font-medium hover:underline"
+            >
+              <Mail className="w-4 h-4" />
+              giacomo748@gmail.com
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
