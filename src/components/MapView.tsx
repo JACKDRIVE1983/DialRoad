@@ -180,6 +180,13 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
     styles: isDarkMode ? darkModeStyles : lightModeStyles,
     disableDefaultUI: true,
     zoomControl: true,
+    ...(typeof window !== 'undefined' && (window as any).google?.maps
+      ? {
+          zoomControlOptions: {
+            position: (window as any).google.maps.ControlPosition.LEFT_CENTER,
+          },
+        }
+      : {}),
     mapTypeControl: false,
     streetViewControl: false,
     fullscreenControl: false,
