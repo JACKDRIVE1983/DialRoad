@@ -31,33 +31,33 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
 
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className="relative flex flex-col items-center py-2 px-6 transition-colors"
-              >
-                {isActive && (
-                  <motion.div
-                    className="absolute inset-0 rounded-xl gradient-bg opacity-10"
-                    layoutId="activeTab"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <Icon 
-                  className={`w-6 h-6 mb-1 transition-colors ${
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  }`} 
-                />
-                <span 
-                  className={`text-xs font-medium transition-colors ${
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  }`}
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className="relative flex flex-col items-center py-2 px-6 transition-colors"
                 >
-                  {tab.label}
-                </span>
-              </button>
-            );
+                  {isActive && (
+                    <motion.div
+                      className="absolute inset-0 rounded-xl bg-primary/15"
+                      layoutId="activeTab"
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <Icon 
+                    className={`relative z-10 w-6 h-6 mb-1 transition-colors ${
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    }`} 
+                  />
+                  <span 
+                    className={`relative z-10 text-xs font-medium transition-colors ${
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {tab.label}
+                  </span>
+                </button>
+              );
           })}
 
           {/* Theme toggle */}
