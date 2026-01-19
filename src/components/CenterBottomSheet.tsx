@@ -45,21 +45,32 @@ export function CenterBottomSheet() {
     if (!selectedCenter) return;
 
     const { lat, lng } = selectedCenter.coordinates;
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-    // Prefer anchor click to better respect browser security/sandbox rules
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    // Some environments (preview iframes, strict policies, extensions) can block opening google.com in a new tab.
+    // Prefer opening in the same tab and, on mobile, try deep-links first.
+    const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-    // Fallback (some environments block _blank popups)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!opened) window.location.assign(url);
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+
+    // Deep links (best UX on mobile when the Maps app is installed)
+    const iosUrl = `maps://?daddr=${lat},${lng}`;
+    const androidUrl = `google.navigation:q=${lat},${lng}`;
+
+    const deepLink = isIOS ? iosUrl : isAndroid ? androidUrl : null;
+
+    if (deepLink) {
+      // Try deep link, then fall back to web
+      window.location.assign(deepLink);
+      window.setTimeout(() => {
+        window.location.assign(webUrl);
+      }, 700);
+      return;
+    }
+
+    // Desktop/web fallback: same-tab navigation avoids popup blockers.
+    window.location.assign(webUrl);
   };
 
   return (
