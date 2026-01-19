@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,21 +14,32 @@ const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratt
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [searchParams] = useSearchParams();
+  const isResetMode = searchParams.get('reset') === 'true';
+  
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'reset'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    displayName: ''
+    displayName: '',
+    confirmPassword: ''
   });
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [errors, setErrors] = useState<{email?: string; password?: string; confirmPassword?: string}>({});
 
   useEffect(() => {
-    // Check if already logged in
+    // Check for reset mode from URL
+    if (isResetMode) {
+      setMode('reset');
+    }
+  }, [isResetMode]);
+
+  useEffect(() => {
+    // Check if already logged in (but not in reset mode)
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      if (session && !isResetMode) {
         navigate('/');
       }
     };
@@ -36,13 +47,15 @@ export default function Auth() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('reset');
+      } else if (session && !isResetMode && mode !== 'reset') {
         navigate('/');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isResetMode, mode]);
 
   const validateForm = () => {
     const newErrors: {email?: string; password?: string} = {};
@@ -80,6 +93,26 @@ export default function Auth() {
           return;
         }
       }
+    } else if (mode === 'reset') {
+      // Validate new password and confirmation
+      const newErrors: {password?: string; confirmPassword?: string} = {};
+      
+      try {
+        passwordSchema.parse(formData.password);
+      } catch (err) {
+        if (err instanceof z.ZodError) {
+          newErrors.password = err.errors[0].message;
+        }
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Le password non corrispondono';
+      }
+      
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
     } else if (!validateForm()) {
       return;
     }
@@ -87,7 +120,23 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      if (mode === 'forgot') {
+      if (mode === 'reset') {
+        const { error } = await supabase.auth.updateUser({
+          password: formData.password
+        });
+
+        if (error) {
+          toast.error('Errore', { description: error.message });
+          return;
+        }
+
+        toast.success('Password aggiornata!', {
+          description: 'La tua password è stata reimpostata con successo.'
+        });
+        
+        // Clear the reset parameter and navigate to home
+        navigate('/');
+      } else if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
           redirectTo: `${window.location.origin}/auth?reset=true`
         });
@@ -162,6 +211,7 @@ export default function Auth() {
     switch (mode) {
       case 'forgot': return 'Recupera Password';
       case 'signup': return 'Crea Account';
+      case 'reset': return 'Nuova Password';
       default: return 'Bentornato!';
     }
   };
@@ -170,6 +220,7 @@ export default function Auth() {
     switch (mode) {
       case 'forgot': return 'Inserisci la tua email per reimpostare la password';
       case 'signup': return 'Registrati per salvare i tuoi preferiti';
+      case 'reset': return 'Inserisci la tua nuova password';
       default: return 'Accedi al tuo account DialMap';
     }
   };
@@ -239,32 +290,36 @@ export default function Auth() {
               )}
             </AnimatePresence>
 
-            <div>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, email: e.target.value }));
-                    setErrors(prev => ({ ...prev, email: undefined }));
-                  }}
-                  className={`pl-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.email ? 'border-destructive' : ''}`}
-                />
+            {/* Email field - not shown in reset mode */}
+            {mode !== 'reset' && (
+              <div>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, email: e.target.value }));
+                      setErrors(prev => ({ ...prev, email: undefined }));
+                    }}
+                    className={`pl-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.email ? 'border-destructive' : ''}`}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-destructive text-xs mt-1 ml-1">{errors.email}</p>
+                )}
               </div>
-              {errors.email && (
-                <p className="text-destructive text-xs mt-1 ml-1">{errors.email}</p>
-              )}
-            </div>
+            )}
 
+            {/* Password field - shown for login, signup, and reset */}
             {mode !== 'forgot' && (
               <div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Password"
+                    placeholder={mode === 'reset' ? 'Nuova password' : 'Password'}
                     value={formData.password}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, password: e.target.value }));
@@ -282,6 +337,28 @@ export default function Auth() {
                 </div>
                 {errors.password && (
                   <p className="text-destructive text-xs mt-1 ml-1">{errors.password}</p>
+                )}
+              </div>
+            )}
+
+            {/* Confirm password field - only in reset mode */}
+            {mode === 'reset' && (
+              <div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Conferma password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, confirmPassword: e.target.value }));
+                      setErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                    }}
+                    className={`pl-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                  />
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-destructive text-xs mt-1 ml-1">{errors.confirmPassword}</p>
                 )}
               </div>
             )}
@@ -310,6 +387,8 @@ export default function Auth() {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : mode === 'forgot' ? (
                 'Invia email di recupero'
+              ) : mode === 'reset' ? (
+                'Salva nuova password'
               ) : mode === 'login' ? (
                 'Accedi'
               ) : (
@@ -318,35 +397,37 @@ export default function Auth() {
             </Button>
           </form>
 
-          {/* Toggle */}
-          <div className="mt-6 text-center">
-            {mode === 'forgot' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login');
-                  setErrors({});
-                }}
-                className="text-sm text-primary font-medium hover:underline"
-              >
-                ← Torna al login
-              </button>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                {mode === 'login' ? 'Non hai un account?' : 'Hai già un account?'}
+          {/* Toggle - not shown in reset mode */}
+          {mode !== 'reset' && (
+            <div className="mt-6 text-center">
+              {mode === 'forgot' ? (
                 <button
                   type="button"
                   onClick={() => {
-                    setMode(mode === 'login' ? 'signup' : 'login');
+                    setMode('login');
                     setErrors({});
                   }}
-                  className="ml-1 text-primary font-medium hover:underline"
+                  className="text-sm text-primary font-medium hover:underline"
                 >
-                  {mode === 'login' ? 'Registrati' : 'Accedi'}
+                  ← Torna al login
                 </button>
-              </p>
-            )}
-          </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  {mode === 'login' ? 'Non hai un account?' : 'Hai già un account?'}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode(mode === 'login' ? 'signup' : 'login');
+                      setErrors({});
+                    }}
+                    className="ml-1 text-primary font-medium hover:underline"
+                  >
+                    {mode === 'login' ? 'Registrati' : 'Accedi'}
+                  </button>
+                </p>
+              )}
+            </div>
+          )}
         </motion.div>
       </div>
     </div>
