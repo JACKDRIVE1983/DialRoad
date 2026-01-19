@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          center_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -39,6 +60,36 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          center_id: string
+          created_at: string
+          id: string
+          rating: number
+          text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          id?: string
+          rating: number
+          text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          text?: string
           updated_at?: string
           user_id?: string
         }

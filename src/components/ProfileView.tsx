@@ -1,21 +1,26 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Heart, MessageCircle, Settings, ChevronRight, Bell, Shield, HelpCircle, LogOut, Camera, Loader2, LogIn } from 'lucide-react';
+import { User, Heart, Star, Settings, ChevronRight, Bell, Shield, HelpCircle, LogOut, Camera, Loader2, LogIn, MapPin, X } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useReviews } from '@/hooks/useReviews';
 import { toast } from 'sonner';
 import logo from '@/assets/dialmap-logo.png';
 
 export function ProfileView() {
   const navigate = useNavigate();
-  const { centers } = useApp();
+  const { centers, setSelectedCenter } = useApp();
   const { user, profile, isAuthenticated, isLoading, signOut, uploadAvatar } = useAuth();
+  const { favorites, isLoading: favoritesLoading } = useFavorites();
+  const { userReviewsCount } = useReviews();
+  
   const [isUploading, setIsUploading] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const totalLikes = centers.reduce((acc, center) => acc + center.likes, 0);
-  const totalComments = centers.reduce((acc, center) => acc + center.comments.length, 0);
+  const favoriteCenters = centers.filter(c => favorites.includes(c.id));
 
   const handleAvatarClick = () => {
     if (isAuthenticated) {
@@ -53,19 +58,93 @@ export function ProfileView() {
     toast.success('Disconnesso');
   };
 
+  const handleOpenCenter = (centerId: string) => {
+    const center = centers.find(c => c.id === centerId);
+    if (center) {
+      setSelectedCenter(center);
+      setShowFavorites(false);
+    }
+  };
+
   const menuItems = [
-    { icon: Heart, label: 'Centri Preferiti', value: '0', color: 'text-red-500' },
-    { icon: MessageCircle, label: 'I Miei Commenti', value: '0', color: 'text-accent' },
-    { icon: Bell, label: 'Notifiche', value: '', color: 'text-yellow-500' },
-    { icon: Shield, label: 'Privacy', value: '', color: 'text-green-500' },
-    { icon: HelpCircle, label: 'Aiuto & Supporto', value: '', color: 'text-primary' },
-    { icon: Settings, label: 'Impostazioni', value: '', color: 'text-muted-foreground' },
+    { 
+      icon: Heart, 
+      label: 'Centri Preferiti', 
+      value: isAuthenticated ? favorites.length.toString() : '0', 
+      color: 'text-red-500',
+      onClick: () => isAuthenticated ? setShowFavorites(true) : navigate('/auth')
+    },
+    { 
+      icon: Star, 
+      label: 'Le Mie Recensioni', 
+      value: isAuthenticated ? userReviewsCount.toString() : '0', 
+      color: 'text-yellow-500',
+      onClick: () => !isAuthenticated && navigate('/auth')
+    },
+    { icon: Bell, label: 'Notifiche', value: '', color: 'text-accent', onClick: () => {} },
+    { icon: Shield, label: 'Privacy', value: '', color: 'text-green-500', onClick: () => {} },
+    { icon: HelpCircle, label: 'Aiuto & Supporto', value: '', color: 'text-primary', onClick: () => {} },
+    { icon: Settings, label: 'Impostazioni', value: '', color: 'text-muted-foreground', onClick: () => {} },
   ];
 
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Favorites Modal
+  if (showFavorites) {
+    return (
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
+            <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+            Centri Preferiti
+          </h2>
+          <button
+            onClick={() => setShowFavorites(false)}
+            className="w-10 h-10 rounded-full glass-card flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
+
+        {favoriteCenters.length === 0 ? (
+          <div className="text-center py-12">
+            <Heart className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground">Nessun centro salvato</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Tocca il cuore su un centro per salvarlo
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {favoriteCenters.map((center) => (
+              <motion.button
+                key={center.id}
+                onClick={() => handleOpenCenter(center.id)}
+                className="w-full glass-card rounded-xl p-4 flex items-center gap-4 text-left hover:scale-[1.02] transition-transform"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center">
+                  <Heart className="w-6 h-6 text-primary-foreground fill-primary-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium text-foreground truncate">{center.name}</h3>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    <span className="truncate">{center.city}, {center.region}</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+              </motion.button>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -155,12 +234,12 @@ export function ProfileView() {
             <p className="text-xs text-muted-foreground">Centri</p>
           </div>
           <div className="text-center p-3 rounded-xl bg-muted/50">
-            <p className="text-2xl font-bold text-foreground">{totalLikes}</p>
-            <p className="text-xs text-muted-foreground">Like Totali</p>
+            <p className="text-2xl font-bold text-foreground">{isAuthenticated ? favorites.length : 0}</p>
+            <p className="text-xs text-muted-foreground">Preferiti</p>
           </div>
           <div className="text-center p-3 rounded-xl bg-muted/50">
-            <p className="text-2xl font-bold text-foreground">{totalComments}</p>
-            <p className="text-xs text-muted-foreground">Commenti</p>
+            <p className="text-2xl font-bold text-foreground">{isAuthenticated ? userReviewsCount : 0}</p>
+            <p className="text-xs text-muted-foreground">Recensioni</p>
           </div>
         </div>
       </motion.div>
@@ -183,6 +262,7 @@ export function ProfileView() {
           return (
             <motion.button
               key={item.label}
+              onClick={item.onClick}
               className="w-full glass-card rounded-xl p-4 flex items-center justify-between group hover:scale-[1.02] transition-transform"
               variants={{
                 hidden: { opacity: 0, x: -20 },
