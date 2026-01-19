@@ -21,10 +21,11 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
       style={{ opacity, y: translateY, scale }}
     >
       <div 
-        className="mx-4 mt-4 mb-2 px-4 py-3 rounded-2xl flex flex-col items-center justify-center"
+        className="mx-4 mt-4 mb-2 px-4 py-3 rounded-2xl flex flex-col items-center justify-center backdrop-blur-md"
         style={{
-          background: 'linear-gradient(135deg, #0077b6 0%, #00b4d8 100%)',
-          boxShadow: '0 4px 20px rgba(0, 119, 182, 0.3)'
+          background: 'rgba(255, 255, 255, 0.25)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.3)'
         }}
       >
         {/* Logo centered - sized to fit naturally without white borders */}
@@ -36,9 +37,9 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           />
         </div>
         
-        {/* Brand name below */}
-        <h1 className="text-base font-display font-bold text-white tracking-wide mt-1">
-          Dial<span className="text-cyan-200">Map</span>
+        {/* Brand name below - blue and green like the icon */}
+        <h1 className="text-base font-display font-bold tracking-wide mt-1">
+          <span style={{ color: '#0077b6' }}>Dial</span><span style={{ color: '#2ecc71' }}>Map</span>
         </h1>
       </div>
     </motion.div>
