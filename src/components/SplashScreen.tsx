@@ -10,20 +10,20 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 2500);
+    }, 4500); // Increased from 2500ms to 4500ms
 
     return () => clearTimeout(timer);
   }, [onComplete]);
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 via-white to-cyan-50"
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.6 }}
     >
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+      {/* Light background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-white to-accent/10" />
       
       {/* Animated rings */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -77,17 +77,17 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         className="mt-8 text-4xl font-display font-bold gradient-text"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
+        transition={{ delay: 0.6, duration: 0.6 }}
       >
         DialMap
       </motion.h1>
 
       {/* Tagline */}
       <motion.p
-        className="mt-3 text-muted-foreground text-center max-w-xs"
+        className="mt-3 text-slate-600 text-center max-w-xs"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
+        transition={{ delay: 0.9, duration: 0.6 }}
       >
         Trova il centro dialisi più vicino a te in tutta Italia
       </motion.p>
@@ -97,7 +97,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         className="mt-12 flex space-x-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        transition={{ delay: 1.2 }}
       >
         {[0, 1, 2].map((i) => (
           <motion.div
