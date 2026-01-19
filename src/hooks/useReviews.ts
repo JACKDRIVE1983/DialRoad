@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 
 export interface Review {
   id: string;
+  user_id: string;
   center_id: string;
   rating: number;
   text: string;
@@ -17,6 +18,7 @@ export interface Review {
 // Type for the reviews_with_author view
 interface ReviewWithAuthor {
   id: string;
+  user_id: string;
   center_id: string;
   rating: number;
   text: string;
@@ -47,10 +49,11 @@ export function useReviews(centerId?: string) {
   const fetchReviews = async (centerId: string) => {
     setIsLoading(true);
     
-    // Use the reviews_with_author view which includes author info without exposing user_id
+    // Use the reviews_with_author view which includes author info
+    // The view joins reviews with profiles to get display names and avatars
     const { data: reviewsData, error: reviewsError } = await supabase
       .from('reviews_with_author' as any)
-      .select('*')
+      .select('id, user_id, center_id, rating, text, created_at, updated_at, author_name, author_avatar')
       .eq('center_id', centerId)
       .order('created_at', { ascending: false });
 
@@ -61,8 +64,9 @@ export function useReviews(centerId?: string) {
     }
 
     if (reviewsData && reviewsData.length > 0) {
-      const enrichedReviews: Review[] = (reviewsData as ReviewWithAuthor[]).map(review => ({
+      const enrichedReviews: Review[] = (reviewsData as unknown as ReviewWithAuthor[]).map(review => ({
         id: review.id,
+        user_id: review.user_id,
         center_id: review.center_id,
         rating: review.rating,
         text: review.text,
