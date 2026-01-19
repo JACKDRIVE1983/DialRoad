@@ -288,7 +288,7 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       </MapErrorBoundary>
 
       <motion.button
-        className="absolute bottom-28 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
+        className="absolute bottom-36 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
         onClick={handleLocate}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -300,7 +300,7 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       </motion.button>
 
       <motion.div
-        className="absolute bottom-28 left-4 z-30 glass-card px-4 py-2 rounded-full"
+        className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -489,7 +489,7 @@ function FallbackMap() {
       </div>
 
       <motion.button
-        className="absolute bottom-28 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center"
+        className="absolute bottom-36 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center"
         onClick={handleLocate}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -501,7 +501,7 @@ function FallbackMap() {
       </motion.button>
 
       <motion.div
-        className="absolute bottom-28 left-4 z-30 glass-card px-4 py-2 rounded-full flex items-center gap-2"
+        className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full flex items-center gap-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
