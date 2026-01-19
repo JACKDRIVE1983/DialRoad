@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import logo from '@/assets/dialmap-logo.png';
+import logo from '@/assets/dialmap-logo-new.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
