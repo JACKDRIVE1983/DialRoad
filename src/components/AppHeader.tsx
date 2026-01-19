@@ -27,12 +27,12 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           boxShadow: '0 4px 20px rgba(0, 119, 182, 0.3)'
         }}
       >
-        {/* Logo centered - maximized */}
-        <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 backdrop-blur-sm">
+        {/* Logo centered - maximized and cropped to hide white background */}
+        <div className="w-16 h-16 rounded-xl overflow-hidden">
           <img 
             src={logo} 
             alt="DialMap" 
-            className="w-full h-full object-contain scale-110"
+            className="w-full h-full object-cover scale-150"
           />
         </div>
         
