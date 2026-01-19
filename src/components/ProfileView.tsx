@@ -37,8 +37,8 @@ export function ProfileView() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('L\'immagine deve essere inferiore a 2MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('L\'immagine deve essere inferiore a 5MB');
       return;
     }
 
