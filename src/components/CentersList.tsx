@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MapPin, Star, Heart, Clock } from 'lucide-react';
+import { MapPin, Star, Heart, Clock, Search } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import centerImage from '@/assets/center-placeholder.jpg';
@@ -9,10 +9,21 @@ interface CentersListProps {
 }
 
 export function CentersList({ onSelectCenter }: CentersListProps) {
-  const { filteredCenters } = useApp();
+  const { filteredCenters, searchQuery, setSearchQuery } = useApp();
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+      {/* Search Bar */}
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Cerca centro per nome o città..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-10 pr-4 py-3 rounded-xl glass-card border-0 bg-background/60 backdrop-blur-sm text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+        />
+      </div>
       <motion.div
         className="space-y-4"
         initial="hidden"
