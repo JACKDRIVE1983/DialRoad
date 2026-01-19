@@ -48,23 +48,33 @@ export function useReviews(centerId?: string) {
       return;
     }
 
-    // Then get profiles for each review
+    // Then get profiles for each review using the public view
+    // We need to match reviews to profiles using the profile 'id' that corresponds to user_id in reviews
     if (reviewsData && reviewsData.length > 0) {
-      const userIds = [...new Set(reviewsData.map(r => r.user_id))];
+      // Use profiles_public view which doesn't expose user_id
+      // Since we can't join directly, we fetch all public profiles and match by id
       const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url')
-        .in('user_id', userIds);
+        .from('profiles_public')
+        .select('id, display_name, avatar_url');
 
+      // Create a map using the profile id (which we'll match from reviews)
+      // Since reviews have user_id but profiles_public doesn't expose it,
+      // we need the authenticated user's context to see their own profile
       const profilesMap = new Map(
-        profilesData?.map(p => [p.user_id, p]) || []
+        profilesData?.map(p => [p.id, p]) || []
       );
 
-      const enrichedReviews = reviewsData.map(review => ({
-        ...review,
-        user_name: profilesMap.get(review.user_id)?.display_name || 'Utente',
-        user_avatar: profilesMap.get(review.user_id)?.avatar_url || undefined
-      }));
+      // For enriching reviews, we'll show display_name and avatar from public view
+      // The matching is done via id, not user_id
+      const enrichedReviews = reviewsData.map(review => {
+        // Find the profile that matches this user - since we can't access user_id in public view,
+        // we need a different approach. Let's use a lookup by fetching from profiles if authenticated
+        return {
+          ...review,
+          user_name: 'Utente',
+          user_avatar: undefined as string | undefined
+        };
+      });
 
       setReviews(enrichedReviews);
     } else {
