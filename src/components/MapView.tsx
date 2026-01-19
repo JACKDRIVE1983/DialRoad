@@ -87,8 +87,6 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
   const [showUserPopup, setShowUserPopup] = useState(false);
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [mapZoom, setMapZoom] = useState(6);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const { isLoaded, loadError } = useLoadScript({
@@ -105,21 +103,17 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
             lng: position.coords.longitude
           };
           setUserLocation(newLocation);
-          setMapCenter(newLocation);
-          setMapZoom(12); // Zoom in when locating
-          setShowUserPopup(true); // Show popup
+          setShowUserPopup(true);
           setIsLocating(false);
         },
         (error) => {
           console.error('Geolocation error:', error);
           setUserLocation(defaultCenter);
-          setMapCenter(defaultCenter);
           setIsLocating(false);
         }
       );
     } else {
       setUserLocation(defaultCenter);
-      setMapCenter(defaultCenter);
       setIsLocating(false);
     }
   }, [setUserLocation]);
@@ -207,8 +201,8 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       <MapErrorBoundary onError={onError}>
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
-          center={mapCenter}
-          zoom={mapZoom}
+          center={defaultCenter}
+          zoom={6}
           options={mapOptions}
         >
           {filteredCenters.map((center) => (
