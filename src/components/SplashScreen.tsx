@@ -17,13 +17,13 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-sky-50 via-white to-cyan-50"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white"
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Light background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-white to-accent/10" />
+      {/* Light background overlay */}
+      <div className="absolute inset-0 bg-white" />
       
       {/* Animated rings */}
       <div className="absolute inset-0 flex items-center justify-center">
