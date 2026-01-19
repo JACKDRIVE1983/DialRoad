@@ -1,11 +1,12 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Heart, MessageCircle, Star, Clock, 
-  MapPin, Send, ChevronUp, Share2
+  MapPin, Send, ChevronUp, Share2, Copy
 } from 'lucide-react';
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import centerImage from '@/assets/center-placeholder.jpg';
 
 export function CenterBottomSheet() {
@@ -41,51 +42,31 @@ export function CenterBottomSheet() {
     }
   };
 
-  const handleNavigate = () => {
+  const handleNavigate = async () => {
     if (!selectedCenter) return;
 
     const { lat, lng } = selectedCenter.coordinates;
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-    // NOTE: In some setups (extensions, security policies, preview environments) Google can be blocked on certain hostnames.
-    // We try multiple URLs (maps.google.com first) and fall back to showing the link for manual copy.
-    const webPrimary = `https://maps.google.com/?daddr=${encodeURIComponent(`${lat},${lng}`)}`;
-    const webSecondary = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
-
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-    const isIOS = /iPad|iPhone|iPod/.test(ua);
-    const isAndroid = /Android/.test(ua);
-
-    // Deep links (mobile apps)
-    const deepLink = isIOS
-      ? `maps://?daddr=${lat},${lng}`
-      : isAndroid
-        ? `google.navigation:q=${lat},${lng}`
-        : null;
-
-    const tryOpen = (url: string) => {
-      const opened = window.open(url, '_blank', 'noopener,noreferrer');
-      return Boolean(opened);
-    };
-
-    if (deepLink) {
-      // Attempt app deep-link in same tab, then fall back to web.
-      window.location.assign(deepLink);
-      window.setTimeout(() => {
-        if (!tryOpen(webPrimary)) window.location.assign(webPrimary);
-      }, 700);
-      return;
+    // In iframe/preview environments, navigation to Google is blocked.
+    // Best UX: copy the link and notify the user.
+    try {
+      await navigator.clipboard.writeText(mapsUrl);
+      toast.success('Link copiato!', {
+        description: 'Incolla il link in un nuovo tab per aprire Google Maps.',
+        duration: 5000,
+        action: {
+          label: 'Apri',
+          onClick: () => window.open(mapsUrl, '_blank'),
+        },
+      });
+    } catch {
+      // Fallback if clipboard API fails
+      toast.info('Copia questo link:', {
+        description: mapsUrl,
+        duration: 10000,
+      });
     }
-
-    // Desktop: try open new tab; if blocked, navigate same-tab.
-    if (!tryOpen(webPrimary)) {
-      window.location.assign(webPrimary);
-    }
-
-    // If the environment still blocks Google, at least show a copyable link.
-    window.setTimeout(() => {
-      // eslint-disable-next-line no-alert
-      alert(`Se il browser blocca l'apertura, copia e incolla questo link:\n\n${webSecondary}`);
-    }, 300);
   };
 
   return (
