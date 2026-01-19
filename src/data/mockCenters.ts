@@ -46,36 +46,44 @@ export interface DialysisCenter {
   isOpen: boolean;
 }
 
+// Helper function to capitalize region name safely
+const capitalizeRegion = (region: string | null): string => {
+  if (!region) return 'Sconosciuta';
+  return region.charAt(0).toUpperCase() + region.slice(1).toLowerCase();
+};
+
 // Transform raw JSON data to DialysisCenter format
 const rawCenters = centersData as RawCenter[];
 
 export const mockCenters: DialysisCenter[] = rawCenters
-  .filter(center => center.geocode_status === 'OK' && center.lat && center.lng)
+  .filter(center => center.geocode_status === 'OK' && center.lat && center.lng && center.region)
   .map(center => ({
     id: center.id,
-    name: center.name,
-    address: center.address,
-    city: center.city,
-    province: center.province,
-    region: center.region.charAt(0) + center.region.slice(1).toLowerCase(), // Capitalize properly
-    phone: center.phone,
+    name: center.name || 'Centro Dialisi',
+    address: center.address || '',
+    city: center.city || '',
+    province: center.province || '',
+    region: capitalizeRegion(center.region),
+    phone: center.phone || '',
     email: center.email,
     coordinates: {
       lat: center.lat,
       lng: center.lng
     },
-    services: ['Emodialisi'], // Default service, can be expanded
-    rating: 4.0 + Math.random() * 0.9, // Random rating between 4.0-4.9
+    services: ['Emodialisi'],
+    rating: 4.0 + Math.random() * 0.9,
     likes: Math.floor(Math.random() * 200) + 10,
     comments: [],
     openingHours: 'Lun-Sab: 6:00-20:00',
     isOpen: true
   }));
 
-// Extract unique regions from the data
-const uniqueRegions = [...new Set(rawCenters.map(c => 
-  c.region.charAt(0) + c.region.slice(1).toLowerCase()
-))].sort();
+// Extract unique regions from the data (filtering out null values)
+const uniqueRegions = [...new Set(
+  rawCenters
+    .filter(c => c.region)
+    .map(c => capitalizeRegion(c.region))
+)].sort();
 
 export const regions = ['Tutte le Regioni', ...uniqueRegions];
 
