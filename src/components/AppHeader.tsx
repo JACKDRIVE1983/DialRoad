@@ -21,14 +21,14 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
       style={{ opacity, y: translateY, scale }}
     >
       <div 
-        className="mx-4 mt-4 mb-2 px-4 py-2.5 rounded-2xl flex items-center gap-3"
+        className="mx-4 mt-4 mb-2 px-4 py-3 rounded-2xl flex flex-col items-center justify-center"
         style={{
           background: 'linear-gradient(135deg, #0077b6 0%, #00b4d8 100%)',
           boxShadow: '0 4px 20px rgba(0, 119, 182, 0.3)'
         }}
       >
-        {/* Logo */}
-        <div className="w-9 h-9 rounded-xl overflow-hidden bg-white/10 backdrop-blur-sm flex-shrink-0">
+        {/* Logo centered */}
+        <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 backdrop-blur-sm">
           <img 
             src={logo} 
             alt="DialMap" 
@@ -36,15 +36,10 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           />
         </div>
         
-        {/* Brand name */}
-        <div className="flex-1">
-          <h1 className="text-lg font-display font-bold text-white tracking-wide">
-            Dial<span className="text-cyan-200">Map</span>
-          </h1>
-          <p className="text-[10px] text-white/70 font-medium -mt-0.5">
-            Trova il tuo centro dialisi
-          </p>
-        </div>
+        {/* Brand name below */}
+        <h1 className="text-base font-display font-bold text-white tracking-wide mt-1">
+          Dial<span className="text-cyan-200">Map</span>
+        </h1>
       </div>
     </motion.div>
   );
