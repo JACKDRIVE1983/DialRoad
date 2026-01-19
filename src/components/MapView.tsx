@@ -1,6 +1,6 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef, Component, ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Navigation, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
 import { GoogleMap, useLoadScript, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
@@ -35,7 +35,6 @@ const lightModeStyles = [
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8e6c9" }] },
 ];
 
-// SVG marker as data URL
 const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
     <defs>
@@ -56,12 +55,38 @@ const userMarkerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
   </svg>
 `);
 
-function GoogleMapComponent({ apiKey }: { apiKey: string }) {
+// Error Boundary to catch Google Maps rendering errors
+class MapErrorBoundary extends Component<
+  { children: ReactNode; onError: () => void },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; onError: () => void }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch() {
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
+function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
-  const [authFailure, setAuthFailure] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: apiKey,
@@ -94,34 +119,37 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
     }
   }, [setUserLocation]);
 
+  // Detect Google Maps auth failures
   useEffect(() => {
-    // Called by Google Maps when the key / APIs / billing are misconfigured.
-    // https://developers.google.com/maps/documentation/javascript/events#authentication_errors
-    (window as any).gm_authFailure = () => setAuthFailure(true);
-
-    // Also detect common Maps JS API console errors like ApiNotActivatedMapError
-    const originalConsoleError = console.error;
-    console.error = (...args: unknown[]) => {
-      try {
-        const msg = args.map(String).join(' ');
-        if (msg.includes('ApiNotActivatedMapError') || msg.includes('Google Maps JavaScript API error')) {
-          setAuthFailure(true);
-        }
-      } catch {
-        // ignore
-      }
-      originalConsoleError(...args as any);
+    (window as any).gm_authFailure = () => {
+      console.log('Google Maps auth failure detected');
+      onError();
     };
 
+    // Check for error overlays in the DOM periodically
+    const checkForErrors = () => {
+      if (mapContainerRef.current) {
+        const errorElement = mapContainerRef.current.querySelector('.gm-err-container, .dismissButton');
+        if (errorElement) {
+          console.log('Google Maps error element detected in DOM');
+          onError();
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkForErrors, 500);
+    const timeoutId = setTimeout(() => clearInterval(intervalId), 5000);
+
     return () => {
-      console.error = originalConsoleError;
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
       try {
         delete (window as any).gm_authFailure;
       } catch {
         // ignore
       }
     };
-  }, []);
+  }, [onError]);
 
   useEffect(() => {
     handleLocate();
@@ -149,14 +177,9 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
     fullscreenControl: false,
   };
 
-  if (authFailure) {
-    return (
-      <FallbackMap reason="Google Maps non è stata caricata: abilita la Maps JavaScript API e verifica billing/restrizioni della chiave." />
-    );
-  }
-
   if (loadError) {
-    return <FallbackMap reason="Errore di rete nel caricamento di Google Maps." />;
+    onError();
+    return null;
   }
 
   if (!isLoaded) {
@@ -175,60 +198,58 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
   }
 
   return (
-    <div className="relative w-full h-full">
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={mapCenter}
-        zoom={6}
-        options={mapOptions}
-      >
-        {/* Center markers */}
-        {filteredCenters.map((center) => (
-          <MarkerF
-            key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
-            position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
-            onClick={() => handleMarkerClick(center)}
-            icon={{
-              url: markerIcon,
-              scaledSize: new google.maps.Size(40, 40),
-              anchor: new google.maps.Point(20, 20),
-            }}
-          />
-        ))}
+    <div ref={mapContainerRef} className="relative w-full h-full">
+      <MapErrorBoundary onError={onError}>
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={mapCenter}
+          zoom={6}
+          options={mapOptions}
+        >
+          {filteredCenters.map((center) => (
+            <MarkerF
+              key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
+              position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
+              onClick={() => handleMarkerClick(center)}
+              icon={{
+                url: markerIcon,
+                scaledSize: new google.maps.Size(40, 40),
+                anchor: new google.maps.Point(20, 20),
+              }}
+            />
+          ))}
 
-        {/* User location marker */}
-        {userLocation && (
-          <MarkerF
-            position={userLocation}
-            icon={{
-              url: userMarkerIcon,
-              scaledSize: new google.maps.Size(24, 24),
-              anchor: new google.maps.Point(12, 12),
-            }}
-          />
-        )}
+          {userLocation && (
+            <MarkerF
+              position={userLocation}
+              icon={{
+                url: userMarkerIcon,
+                scaledSize: new google.maps.Size(24, 24),
+                anchor: new google.maps.Point(12, 12),
+              }}
+            />
+          )}
 
-        {/* Info window for selected marker */}
-        {selectedMarker && (
-          <InfoWindowF
-            position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
-            onCloseClick={handleInfoWindowClose}
-          >
-            <div className="p-2 max-w-xs">
-              <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
-              <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
-              <button
-                onClick={() => handleViewDetails(selectedMarker)}
-                className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
-              >
-                Vedi dettagli
-              </button>
-            </div>
-          </InfoWindowF>
-        )}
-      </GoogleMap>
+          {selectedMarker && (
+            <InfoWindowF
+              position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
+              onCloseClick={handleInfoWindowClose}
+            >
+              <div className="p-2 max-w-xs">
+                <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
+                <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
+                <button
+                  onClick={() => handleViewDetails(selectedMarker)}
+                  className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+                >
+                  Vedi dettagli
+                </button>
+              </div>
+            </InfoWindowF>
+          )}
+        </GoogleMap>
+      </MapErrorBoundary>
 
-      {/* Locate button */}
       <motion.button
         className="absolute bottom-28 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
         onClick={handleLocate}
@@ -241,7 +262,6 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
         />
       </motion.button>
 
-      {/* Center count badge */}
       <motion.div
         className="absolute top-4 left-4 z-30 glass-card px-4 py-2 rounded-full"
         initial={{ opacity: 0, y: -20 }}
@@ -258,8 +278,8 @@ function GoogleMapComponent({ apiKey }: { apiKey: string }) {
 export function MapView() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isLoadingKey, setIsLoadingKey] = useState(true);
+  const [useFallback, setUseFallback] = useState(false);
 
-  // Fetch Google Maps API key from edge function
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
@@ -270,6 +290,7 @@ export function MapView() {
         }
       } catch (error) {
         console.error('Failed to fetch Google Maps API key:', error);
+        setUseFallback(true);
       } finally {
         setIsLoadingKey(false);
       }
@@ -277,7 +298,11 @@ export function MapView() {
     fetchApiKey();
   }, []);
 
-  // Show loading state while fetching API key
+  const handleGoogleMapsError = useCallback(() => {
+    console.log('Switching to fallback map');
+    setUseFallback(true);
+  }, []);
+
   if (isLoadingKey) {
     return (
       <div className="relative w-full h-full bg-secondary flex items-center justify-center">
@@ -293,16 +318,14 @@ export function MapView() {
     );
   }
 
-  // Fallback to simple map if API key is not available
-  if (!apiKey) {
-    return <FallbackMap reason="API key mancante o non recuperabile." />;
+  if (!apiKey || useFallback) {
+    return <FallbackMap />;
   }
 
-  return <GoogleMapComponent apiKey={apiKey} />;
+  return <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />;
 }
 
-// Fallback map component when API key is not available or Google Maps fails
-function FallbackMap({ reason }: { reason?: string }) {
+function FallbackMap() {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
   const [isLocating, setIsLocating] = useState(false);
 
@@ -416,13 +439,25 @@ function FallbackMap({ reason }: { reason?: string }) {
       </motion.button>
 
       <motion.div
-        className="absolute top-4 left-4 z-30 glass-card px-4 py-2 rounded-full"
+        className="absolute top-4 left-4 z-30 glass-card px-4 py-2 rounded-full flex items-center gap-2"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
+        <AlertTriangle className="w-4 h-4 text-yellow-500" />
         <span className="text-sm font-medium text-foreground">
-          {filteredCenters.length} centri • {reason ?? 'Mappa semplificata attiva'}
+          {filteredCenters.length} centri • Mappa semplificata
         </span>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-28 left-4 z-30 glass-card px-4 py-3 rounded-xl max-w-xs"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <p className="text-xs text-muted-foreground">
+          Per la mappa Google Maps completa, abilita la <strong>Maps JavaScript API</strong> nella Google Cloud Console.
+        </p>
       </motion.div>
     </div>
   );
