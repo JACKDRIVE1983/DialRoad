@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import dialroadLogo from '@/assets/dialroad-logo-no-bg.png';
+import headerItalyMap from '@/assets/header-italy-map.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -38,8 +38,12 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-cyan-50 to-sky-100" />
+          {/* Background image - covers entire bar */}
+          <img
+            src={headerItalyMap}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
 
 
           <div className="relative flex items-center justify-between px-4 h-full">
