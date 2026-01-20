@@ -45,7 +45,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
               alt="" 
               className="w-auto h-auto max-w-none"
               style={{
-                transform: 'scale(0.25)',
+                transform: 'scale(0.20)',
                 transformOrigin: 'center center'
               }}
             />
