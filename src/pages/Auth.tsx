@@ -137,8 +137,12 @@ export default function Auth() {
         // Clear the reset parameter and navigate to home
         navigate('/');
       } else if (mode === 'forgot') {
+        // Use edge function for smart redirect that can open the native app
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const redirectUrl = `${supabaseUrl}/functions/v1/auth-redirect`;
+        
         const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-          redirectTo: `${window.location.origin}/auth?reset=true`
+          redirectTo: redirectUrl
         });
 
         if (error) {
