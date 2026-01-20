@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Heart, Star, Settings, ChevronRight, LogOut, Camera, Loader2, LogIn, MapPin, X } from 'lucide-react';
+import { User, Heart, Star, Settings, ChevronRight, LogOut, Camera, Loader2, LogIn, MapPin, X, Info, UserCog, Trash2 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -18,6 +18,7 @@ export function ProfileView() {
   
   const [isUploading, setIsUploading] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const favoriteCenters = centers.filter(c => favorites.includes(c.id));
@@ -81,13 +82,103 @@ export function ProfileView() {
       color: 'text-yellow-500',
       onClick: () => !isAuthenticated && navigate('/auth')
     },
-    { icon: Settings, label: 'Impostazioni', value: '', color: 'text-muted-foreground', onClick: () => {} },
+    { 
+      icon: Settings, 
+      label: 'Impostazioni', 
+      value: '', 
+      color: 'text-muted-foreground', 
+      onClick: () => setShowSettings(true) 
+    },
   ];
 
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Settings View
+  if (showSettings) {
+    return (
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
+            <Settings className="w-5 h-5 text-muted-foreground" />
+            Impostazioni
+          </h2>
+          <button
+            onClick={() => setShowSettings(false)}
+            className="w-10 h-10 rounded-full glass-card flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {/* Account Management */}
+          {isAuthenticated && (
+            <motion.div
+              className="glass-card rounded-xl p-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <UserCog className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Gestione Account</h3>
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  toast.info('Per eliminare il tuo account, contatta giacomo748@gmail.com');
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span className="font-medium">Richiedi eliminazione account</span>
+              </button>
+            </motion.div>
+          )}
+
+          {/* App Info */}
+          <motion.div
+            className="glass-card rounded-xl p-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Info className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <h3 className="font-medium text-foreground">Informazioni App</h3>
+                <p className="text-sm text-muted-foreground">Dettagli su DialRoad</p>
+              </div>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Versione</span>
+                <span className="text-foreground font-medium">1.0.0</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Centri dialisi</span>
+                <span className="text-foreground font-medium">{centers.length}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-muted-foreground">Contatto</span>
+                <a href="mailto:giacomo748@gmail.com" className="text-primary font-medium">
+                  giacomo748@gmail.com
+                </a>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     );
   }
