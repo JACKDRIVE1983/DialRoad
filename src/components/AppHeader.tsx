@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import headerDialroadBg from '@/assets/header-dialroad-bg.png';
+import headerDialroadBg from '@/assets/header-dialroad-small.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -32,7 +32,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-36"
+          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-16"
           style={{
             boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
             border: '1px solid rgba(255, 255, 255, 0.5)'
