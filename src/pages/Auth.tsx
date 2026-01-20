@@ -35,28 +35,68 @@ export default function Auth() {
   const [errors, setErrors] = useState<{email?: string; password?: string; confirmPassword?: string}>({});
 
   useEffect(() => {
-    // If we arrived from a password-recovery link, verify the token and enter reset mode.
-    // This makes the flow work even when the link comes from the app deep link.
+    // Handle password recovery: tokens can come in query params OR hash fragment
     const maybeVerifyRecovery = async () => {
-      if (!isResetMode) return;
-      setMode('reset');
-
-      // If token/type are present, verify them to establish the recovery session.
-      // For recovery links Supabase expects token_hash + type.
-      if (recoveryToken && recoveryType) {
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: recoveryToken,
-          type: recoveryType as any,
+      // Merge query and hash params
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const queryParams = searchParams;
+      
+      const type = queryParams.get('type') || hashParams.get('type');
+      const tokenHash = queryParams.get('token_hash') || queryParams.get('token') || hashParams.get('token_hash') || hashParams.get('token');
+      const accessToken = queryParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
+      const code = queryParams.get('code') || hashParams.get('code');
+      
+      const isRecovery = type === 'recovery' || isResetMode;
+      
+      if (!isRecovery && !accessToken && !code) return;
+      
+      // If we have access_token + refresh_token, set session directly
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
         });
-
-        if (error) {
-          toast.error('Link non valido o scaduto', { description: error.message });
+        if (!error) {
+          setMode('reset');
+          // Clean URL
+          window.history.replaceState({}, '', '/auth');
+          return;
         }
+      }
+      
+      // PKCE code exchange
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) {
+          setMode('reset');
+          window.history.replaceState({}, '', '/auth');
+          return;
+        }
+      }
+      
+      // Token hash verification
+      if (tokenHash && type) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: type as any,
+        });
+        if (!error) {
+          setMode('reset');
+          window.history.replaceState({}, '', '/auth');
+          return;
+        }
+        toast.error('Link non valido o scaduto', { description: error.message });
+      }
+      
+      // Fallback: if isResetMode was set but no tokens, just show reset form
+      if (isResetMode) {
+        setMode('reset');
       }
     };
 
     maybeVerifyRecovery();
-  }, [isResetMode, recoveryToken, recoveryType]);
+  }, [isResetMode, searchParams]);
 
   useEffect(() => {
     // Check if already logged in (but not in reset mode)
@@ -165,12 +205,10 @@ export default function Auth() {
         // Clear the reset parameter and navigate to home
         navigate('/');
       } else if (mode === 'forgot') {
-        // Redirect to a web route that can read hash fragments (#access_token=...)
-        // and then open the native app via custom scheme/intent.
-        // On native (Capacitor), window.location.origin is typically capacitor://localhost
-        // which is NOT a valid redirect URL for the email link.
+        // Redirect to /auth which is system-managed and already whitelisted.
+        // The Auth page will detect recovery tokens and handle them.
         const origin = Capacitor.isNativePlatform() ? WEB_APP_ORIGIN : window.location.origin;
-        const redirectUrl = `${origin}/auth-redirect`;
+        const redirectUrl = `${origin}/auth`;
         
         const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
           redirectTo: redirectUrl
