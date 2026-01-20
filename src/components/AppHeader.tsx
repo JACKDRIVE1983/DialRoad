@@ -45,6 +45,18 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             className="absolute inset-0 w-full h-full object-cover"
           />
 
+          {/* DialRoad title - centered, elegant modern style */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <h1 
+              className="text-3xl font-bold tracking-wide text-white drop-shadow-lg"
+              style={{
+                textShadow: '0 2px 8px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2)',
+                letterSpacing: '0.05em'
+              }}
+            >
+              DialRoad
+            </h1>
+          </div>
 
           <div className="relative flex items-center justify-between px-4 h-full">
             {/* Menu button on the left */}
