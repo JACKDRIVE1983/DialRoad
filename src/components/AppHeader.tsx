@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import logo from '@/assets/dialmap-logo-new.png';
+import logo from '@/assets/dialmap-logo-icon.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -71,27 +71,19 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           </button>
 
           {/* Logo centered */}
-          <div className="flex items-center gap-3">
-            <span 
-              className="text-2xl font-display font-bold tracking-wide"
-              style={{ color: '#0077b6' }}
-            >
-              Dial
-            </span>
-            
-            <div className="w-12 h-12 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
               <img 
                 src={logo} 
                 alt="DialMap" 
-                className="w-[180%] h-[180%] max-w-none object-contain"
+                className="w-full h-full object-contain"
               />
             </div>
             
             <span 
-              className="text-2xl font-display font-bold tracking-wide"
-              style={{ color: '#2ecc71' }}
+              className="text-xl font-display font-bold tracking-wide text-foreground"
             >
-              Map
+              DialMap
             </span>
           </div>
 

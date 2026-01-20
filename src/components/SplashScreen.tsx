@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import logo from '@/assets/dialmap-logo-new.png';
+import splashVideo from '@/assets/splash-video.mp4';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -10,7 +10,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 4500); // Increased from 2500ms to 4500ms
+    }, 4500);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -22,54 +22,30 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Light background overlay */}
-      <div className="absolute inset-0 bg-white" />
-      
-      {/* Animated rings */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          className="absolute w-64 h-64 rounded-full border border-primary/20"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: [0.8, 1.2, 1.5], opacity: [0, 0.5, 0] }}
-          transition={{ duration: 2, repeat: Infinity, repeatDelay: 0.5 }}
-        />
-        <motion.div
-          className="absolute w-48 h-48 rounded-full border border-accent/30"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: [0.8, 1.3, 1.6], opacity: [0, 0.4, 0] }}
-          transition={{ duration: 2, repeat: Infinity, repeatDelay: 0.5, delay: 0.3 }}
-        />
-      </div>
-
-      {/* Logo */}
+      {/* Video container */}
       <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
+        initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ 
           type: "spring",
           stiffness: 200,
           damping: 15,
-          delay: 0.2
+          delay: 0.1
         }}
-        className="relative z-10"
+        className="relative z-10 w-72 h-72 rounded-3xl overflow-hidden shadow-2xl"
+        style={{
+          boxShadow: '0 25px 50px -12px rgba(0, 180, 216, 0.25)'
+        }}
       >
-        <motion.div
-          className="w-60 h-60 overflow-hidden"
-          animate={{ 
-            filter: [
-              "drop-shadow(0 20px 30px rgba(0, 180, 216, 0.2))",
-              "drop-shadow(0 20px 40px rgba(0, 180, 216, 0.4))",
-              "drop-shadow(0 20px 30px rgba(0, 180, 216, 0.2))"
-            ]
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
+        <video
+          autoPlay
+          muted
+          playsInline
+          loop
+          className="w-full h-full object-cover"
         >
-          <img 
-            src={logo} 
-            alt="DialMap Logo" 
-            className="w-full h-full object-contain scale-125"
-          />
-        </motion.div>
+          <source src={splashVideo} type="video/mp4" />
+        </video>
       </motion.div>
 
       {/* App Name */}

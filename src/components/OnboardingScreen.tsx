@@ -2,6 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import { MapPin, Heart, MessageCircle, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/dialmap-logo-icon.png';
+import backgroundImage from '@/assets/onboarding-bg.jpeg';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -46,24 +48,47 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col bg-background"
+      className="fixed inset-0 z-50 flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
+      {/* Background image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      />
+      
+      {/* Overlay for readability */}
+      <div className="absolute inset-0 bg-white/85 backdrop-blur-sm" />
+
+      {/* Logo at top */}
+      <motion.div
+        className="relative z-10 flex justify-center pt-12 pb-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <img 
+          src={logo} 
+          alt="DialMap" 
+          className="w-24 h-24 object-contain drop-shadow-lg"
+        />
+      </motion.div>
+
       {/* Skip button */}
-      <div className="flex justify-end p-4 pt-8">
+      <div className="relative z-10 flex justify-end px-4">
         <Button 
           variant="ghost" 
           onClick={handleComplete}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground hover:bg-white/50"
         >
           Salta
         </Button>
       </div>
 
       {/* Slides */}
-      <div className="flex-1 flex items-center justify-center px-8">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -75,10 +100,13 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           >
             {/* Icon */}
             <motion.div
-              className={`w-32 h-32 rounded-full bg-gradient-to-br ${slides[currentSlide].color} flex items-center justify-center mb-8 glow-effect`}
+              className={`w-32 h-32 rounded-full bg-gradient-to-br ${slides[currentSlide].color} flex items-center justify-center mb-8 shadow-xl`}
               initial={{ scale: 0.5 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              style={{
+                boxShadow: '0 20px 40px rgba(0, 180, 216, 0.3)'
+              }}
             >
               {(() => {
                 const Icon = slides[currentSlide].icon;
@@ -110,7 +138,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </div>
 
       {/* Progress dots and button */}
-      <div className="p-8 pb-12">
+      <div className="relative z-10 p-8 pb-12">
         {/* Dots */}
         <div className="flex justify-center space-x-3 mb-8">
           {slides.map((_, index) => (
@@ -129,7 +157,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         {/* Next/Start button */}
         <Button
           onClick={handleNext}
-          className="w-full h-14 text-lg font-semibold rounded-2xl gradient-bg text-primary-foreground hover:opacity-90 transition-opacity"
+          className="w-full h-14 text-lg font-semibold rounded-2xl gradient-bg text-primary-foreground hover:opacity-90 transition-opacity shadow-lg"
+          style={{
+            boxShadow: '0 10px 30px rgba(0, 180, 216, 0.3)'
+          }}
         >
           {currentSlide === slides.length - 1 ? (
             "Inizia ad Esplorare"
