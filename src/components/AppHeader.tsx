@@ -24,15 +24,15 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
     setActiveModal(modal);
   };
 
-  // Pin positions for the stylized map
+  // Pin positions for the stylized map - medical cross pins
   const pins = [
-    { left: '15%', top: '35%', delay: 0, size: 'w-3 h-3' },
-    { left: '25%', top: '55%', delay: 0.1, size: 'w-2 h-2' },
-    { left: '40%', top: '30%', delay: 0.2, size: 'w-4 h-4' },
-    { left: '55%', top: '50%', delay: 0.3, size: 'w-3 h-3' },
-    { left: '70%', top: '35%', delay: 0.4, size: 'w-2 h-2' },
-    { left: '80%', top: '55%', delay: 0.5, size: 'w-3 h-3' },
-    { left: '48%', top: '65%', delay: 0.15, size: 'w-2 h-2' },
+    { left: '18%', top: '30%', delay: 0, size: 16 },
+    { left: '30%', top: '55%', delay: 0.15, size: 12 },
+    { left: '45%', top: '25%', delay: 0.1, size: 18 },
+    { left: '50%', top: '60%', delay: 0.25, size: 14 },
+    { left: '65%', top: '35%', delay: 0.2, size: 16 },
+    { left: '75%', top: '55%', delay: 0.3, size: 12 },
+    { left: '85%', top: '30%', delay: 0.35, size: 14 },
   ];
 
   return (
@@ -42,28 +42,52 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden backdrop-blur-md relative"
+          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-16"
           style={{
-            background: 'linear-gradient(135deg, rgba(167, 243, 208, 0.7) 0%, rgba(134, 239, 172, 0.6) 30%, rgba(74, 222, 128, 0.5) 60%, rgba(34, 197, 94, 0.4) 100%)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.4)'
+            background: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 25%, #34d399 50%, #10b981 75%, #059669 100%)',
+            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.4)',
+            border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Stylized map roads/paths */}
-          <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none">
-            <path d="M0,30 Q50,20 100,35 T200,25 T300,40 T400,30" stroke="white" strokeWidth="2" fill="none" />
-            <path d="M0,50 Q80,60 150,45 T280,55 T400,45" stroke="white" strokeWidth="1.5" fill="none" />
-            <path d="M50,0 Q60,40 45,80" stroke="white" strokeWidth="1" fill="none" />
-            <path d="M150,0 Q140,35 160,70" stroke="white" strokeWidth="1" fill="none" />
-            <path d="M280,0 Q290,30 275,65" stroke="white" strokeWidth="1" fill="none" />
+          {/* Terrain texture overlay */}
+          <div 
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: `
+                radial-gradient(circle at 20% 40%, rgba(255,255,255,0.3) 0%, transparent 25%),
+                radial-gradient(circle at 60% 30%, rgba(255,255,255,0.2) 0%, transparent 30%),
+                radial-gradient(circle at 80% 60%, rgba(255,255,255,0.25) 0%, transparent 20%)
+              `
+            }}
+          />
+
+          {/* Stylized map roads/paths - more detailed */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 64" preserveAspectRatio="none">
+            {/* Main highways */}
+            <path d="M0,32 C40,28 80,38 120,32 S180,24 220,30 S280,40 320,32 S380,26 400,30" 
+                  stroke="rgba(255,255,255,0.5)" strokeWidth="3" fill="none" strokeLinecap="round"/>
+            <path d="M0,48 C60,52 100,42 160,48 S240,56 300,48 S360,44 400,50" 
+                  stroke="rgba(255,255,255,0.35)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+            <path d="M0,18 C50,14 100,22 150,16 S220,12 280,20 S350,18 400,14" 
+                  stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            
+            {/* Vertical roads */}
+            <path d="M60,0 Q65,32 55,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
+            <path d="M140,0 Q135,30 145,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
+            <path d="M220,0 Q225,35 215,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
+            <path d="M300,0 Q295,28 305,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
+            <path d="M360,0 Q365,32 355,64" stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none"/>
           </svg>
 
-          <div className="relative flex items-center justify-between px-4 py-3">
+          <div className="relative flex items-center justify-between px-4 py-3 h-full">
             {/* Menu button on the left */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/30 pointer-events-auto z-10 bg-white/20"
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/40 pointer-events-auto z-10 bg-white/25 backdrop-blur-sm"
               aria-label="Menu"
+              style={{
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5)'
+              }}
             >
               <AnimatePresence mode="wait">
                 {isMenuOpen ? (
@@ -74,7 +98,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                     exit={{ rotate: 90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <X className="w-5 h-5 text-white drop-shadow-md" />
+                    <X className="w-5 h-5 text-emerald-800" />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -84,34 +108,53 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                     exit={{ rotate: -90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Menu className="w-5 h-5 text-white drop-shadow-md" />
+                    <Menu className="w-5 h-5 text-emerald-800" />
                   </motion.div>
                 )}
               </AnimatePresence>
             </button>
 
-            {/* Animated pins in the center area */}
-            <div className="absolute inset-0 pointer-events-none">
+            {/* Animated medical pins */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
               {pins.map((pin, index) => (
                 <motion.div
                   key={index}
                   className="absolute"
                   style={{ left: pin.left, top: pin.top }}
-                  initial={{ scale: 0, y: -10 }}
+                  initial={{ scale: 0, y: -20, opacity: 0 }}
                   animate={{ 
                     scale: 1, 
-                    y: [0, -3, 0],
+                    y: [0, -4, 0],
+                    opacity: 1
                   }}
                   transition={{ 
-                    scale: { delay: pin.delay, duration: 0.3 },
-                    y: { delay: pin.delay + 0.3, duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+                    scale: { delay: pin.delay, duration: 0.4, type: "spring", stiffness: 300 },
+                    opacity: { delay: pin.delay, duration: 0.3 },
+                    y: { delay: pin.delay + 0.5, duration: 2, repeat: Infinity, ease: "easeInOut" }
                   }}
                 >
-                  <div className={`${pin.size} relative`}>
-                    <MapPin className="w-full h-full text-red-500 fill-red-500 drop-shadow-lg" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-1 h-1 bg-white rounded-full mt-[-2px]" />
-                    </div>
+                  {/* Pin with shadow */}
+                  <div 
+                    className="relative"
+                    style={{ 
+                      filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.25))',
+                      width: pin.size,
+                      height: pin.size * 1.3
+                    }}
+                  >
+                    {/* Pin body */}
+                    <svg viewBox="0 0 24 32" className="w-full h-full">
+                      {/* Pin shape */}
+                      <path 
+                        d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20c0-6.6-5.4-12-12-12z" 
+                        fill="#ef4444"
+                      />
+                      {/* Highlight */}
+                      <ellipse cx="8" cy="8" rx="4" ry="3" fill="rgba(255,255,255,0.3)" />
+                      {/* Medical cross */}
+                      <rect x="10" y="6" width="4" height="12" rx="0.5" fill="white"/>
+                      <rect x="6" y="10" width="12" height="4" rx="0.5" fill="white"/>
+                    </svg>
                   </div>
                 </motion.div>
               ))}
