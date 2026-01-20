@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import logo from '@/assets/dialroad-logo-login.png';
 
 const WEB_APP_ORIGIN = 'https://id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app';
+const NATIVE_OAUTH_REDIRECT = 'dialroad://auth';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -34,12 +35,14 @@ export default function Auth() {
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
-    const origin = Capacitor.isNativePlatform() ? WEB_APP_ORIGIN : window.location.origin;
+    const redirectTo = Capacitor.isNativePlatform()
+      ? NATIVE_OAUTH_REDIRECT
+      : `${window.location.origin}/auth`;
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${origin}/auth`,
+        redirectTo,
       }
     });
 
