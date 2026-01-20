@@ -68,7 +68,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     return true;
   });
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash once per session (survives navigations but not app restarts)
+    if (typeof window !== 'undefined') {
+      return !sessionStorage.getItem('dialroad-splash-seen');
+    }
+    return true;
+  });
+
+  // Persist splash completion to sessionStorage
+  useEffect(() => {
+    if (!showSplash && typeof window !== 'undefined') {
+      sessionStorage.setItem('dialroad-splash-seen', 'true');
+    }
+  }, [showSplash]);
 
   useEffect(() => {
     if (isDarkMode) {
