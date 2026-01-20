@@ -30,6 +30,7 @@ export default function ResetPassword() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifyErrorDetails, setVerifyErrorDetails] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
@@ -49,6 +50,7 @@ export default function ResetPassword() {
 
           if (error) {
             setVerifyError('Link scaduto o non valido. Richiedi un nuovo link di reset password.');
+            setVerifyErrorDetails(error.message);
             setIsVerifying(false);
             return;
           }
@@ -63,6 +65,7 @@ export default function ResetPassword() {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             setVerifyError('Link scaduto o non valido. Richiedi un nuovo link di reset password.');
+            setVerifyErrorDetails(error.message);
             setIsVerifying(false);
             return;
           }
@@ -91,6 +94,7 @@ export default function ResetPassword() {
 
       if (error) {
         setVerifyError('Link scaduto o non valido. Richiedi un nuovo link di reset password.');
+        setVerifyErrorDetails(error.message);
         setIsVerifying(false);
         return;
       }
@@ -176,6 +180,7 @@ export default function ResetPassword() {
 
   // Error state if token is invalid
   if (verifyError) {
+    const safe = (v: string | null) => (v ? `${v.slice(0, 6)}…${v.slice(-4)}` : '(manca)');
     return (
       <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-cyan-50 flex items-center justify-center px-6">
         <motion.div
@@ -186,6 +191,22 @@ export default function ResetPassword() {
           <XCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
           <h1 className="text-xl font-bold text-foreground mb-2">Link non valido</h1>
           <p className="text-muted-foreground mb-6">{verifyError}</p>
+
+          {/* Debug (non mostra token completo) */}
+          <div className="text-left rounded-lg border border-border bg-white/70 backdrop-blur-sm p-3 mb-6">
+            <div className="text-xs text-muted-foreground">Dettagli (debug)</div>
+            <div className="mt-1 text-xs text-foreground break-all">
+              <div><span className="text-muted-foreground">type:</span> {type || '(manca)'}</div>
+              <div><span className="text-muted-foreground">token_hash/token:</span> {safe(tokenHash)}</div>
+              <div><span className="text-muted-foreground">code:</span> {safe(code)}</div>
+              <div><span className="text-muted-foreground">access_token:</span> {safe(accessToken)}</div>
+              <div><span className="text-muted-foreground">refresh_token:</span> {safe(refreshToken)}</div>
+              {verifyErrorDetails && (
+                <div className="mt-2"><span className="text-muted-foreground">errore:</span> {verifyErrorDetails}</div>
+              )}
+            </div>
+          </div>
+
           <Button
             onClick={() => navigate('/auth')}
             className="gradient-bg text-primary-foreground"
