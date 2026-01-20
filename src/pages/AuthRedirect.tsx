@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function isAndroidUA(ua: string) {
@@ -22,6 +22,8 @@ function mergeParams(search: string, hash: string) {
 
 export default function AuthRedirect() {
   const navigate = useNavigate();
+  const fallbackTimerRef = useRef<number | null>(null);
+  const [didUserClick, setDidUserClick] = useState(false);
 
   const { isAndroid, isIOS, hasAny, webFallback, appSchemeUrl, androidIntentUrl } = useMemo(() => {
     const ua = navigator.userAgent || "";
@@ -62,6 +64,11 @@ export default function AuthRedirect() {
 
   const openNative = useCallback(() => {
     if (!hasAny) return;
+    setDidUserClick(true);
+    if (fallbackTimerRef.current) {
+      window.clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
     if (isAndroid) {
       // user gesture (button) should allow intent navigation in most browsers
       window.location.href = androidIntentUrl;
@@ -76,9 +83,15 @@ export default function AuthRedirect() {
     // Some Android browsers block automatic intent:// navigation without user gesture.
     // We still try once, then fall back to the web reset page.
     if (isAndroid || isIOS) {
+      // Try once; if blocked, user can tap the button below.
       openNative();
-      setTimeout(() => navigate(webFallback, { replace: true }), 900);
-      return;
+      fallbackTimerRef.current = window.setTimeout(
+        () => navigate(webFallback, { replace: true }),
+        1500
+      );
+      return () => {
+        if (fallbackTimerRef.current) window.clearTimeout(fallbackTimerRef.current);
+      };
     }
     navigate(webFallback, { replace: true });
   }, [isAndroid, isIOS, navigate, openNative, webFallback]);
@@ -93,14 +106,15 @@ export default function AuthRedirect() {
 
         <div className="mt-6 flex flex-col gap-2">
           {(isAndroid || isIOS) && (
-            <button
-              type="button"
-              onClick={openNative}
-              className="h-11 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
-              disabled={!hasAny}
+            <a
+              href={isAndroid ? androidIntentUrl : appSchemeUrl}
+              onClick={() => openNative()}
+              className={`h-11 rounded-md bg-primary text-primary-foreground text-sm font-medium grid place-items-center ${
+                !hasAny ? "pointer-events-none opacity-50" : ""
+              }`}
             >
               Apri l’app
-            </button>
+            </a>
           )}
           <button
             type="button"
@@ -109,6 +123,10 @@ export default function AuthRedirect() {
           >
             Continua nel browser
           </button>
+        </div>
+
+        <div className="mt-4 text-xs text-muted-foreground">
+          debug: params {hasAny ? "presenti" : "mancanti"} • click {didUserClick ? "si" : "no"}
         </div>
       </div>
     </main>
