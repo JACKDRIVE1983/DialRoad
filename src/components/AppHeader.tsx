@@ -51,7 +51,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             src={headerMapBg}
             alt=""
             className="absolute inset-0 w-full h-full object-contain"
-            style={{ transform: 'scale(1.3)', transformOrigin: 'center center' }}
+            style={{ transform: 'scale(1.5)', transformOrigin: 'center center' }}
           />
 
           <div className="relative flex items-center justify-between px-4 h-full">
