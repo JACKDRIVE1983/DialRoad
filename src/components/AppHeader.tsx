@@ -32,21 +32,27 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-16"
+          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-20"
           style={{
             boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Background image - centered to show the logo */}
-          <img 
-            src={headerMapBg} 
-            alt="" 
-            className="absolute inset-0 w-full h-full object-cover object-center"
-            style={{
-              objectPosition: 'center 40%'
-            }}
-          />
+          {/* Background image - scaled down to show full logo */}
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+            <img 
+              src={headerMapBg} 
+              alt="" 
+              className="min-w-full min-h-full object-contain"
+              style={{
+                transform: 'scale(0.55)',
+                transformOrigin: 'center center'
+              }}
+            />
+          </div>
+          
+          {/* Gradient overlay for edges */}
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-400/30 via-transparent to-teal-400/30" />
 
           <div className="relative flex items-center justify-between px-4 h-full">
             {/* Menu button on the left */}
