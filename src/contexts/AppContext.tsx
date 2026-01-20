@@ -40,7 +40,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dialmap-theme');
+      const saved = localStorage.getItem('dialroad-theme');
       if (saved) return saved === 'dark';
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
@@ -50,7 +50,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user] = useState<User>({
     id: 'demo-user',
     name: 'Utente Demo',
-    email: 'demo@dialmap.it',
+    email: 'demo@dialroad.it',
     favorites: [],
     likedCenters: []
   });
@@ -63,7 +63,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window !== 'undefined') {
-      return !localStorage.getItem('dialmap-onboarding-seen');
+      return !localStorage.getItem('dialroad-onboarding-seen');
     }
     return true;
   });
@@ -75,7 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('dialmap-theme', isDarkMode ? 'dark' : 'light');
+    localStorage.setItem('dialroad-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);

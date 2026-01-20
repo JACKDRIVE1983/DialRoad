@@ -36,7 +36,7 @@
 
     --radius: 1rem;
 
-    /* DialMap Custom Tokens */
+    /* DialRoad Custom Tokens */
     --glass-bg: 0 0% 100% / 0.7;
     --glass-border: 0 0% 100% / 0.3;
     --glass-blur: 20px;
@@ -88,7 +88,7 @@
     --input: 217 33% 17%;
     --ring: 187 85% 53%;
 
-    /* DialMap Dark Custom Tokens */
+    /* DialRoad Dark Custom Tokens */
     --glass-bg: 222 47% 11% / 0.6;
     --glass-border: 0 0% 100% / 0.1;
     --glass-blur: 24px;

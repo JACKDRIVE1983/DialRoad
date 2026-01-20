@@ -194,7 +194,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                 <section>
                   <h3 className="font-bold text-foreground mb-2">2) Scopo dell'app</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    DialMap permette di individuare su mappa i centri dialisi in Italia e consultare informazioni utili (indirizzo, contatti e dettagli della struttura) per aiutare le persone in dialisi a organizzare spostamenti e vacanze.
+                    DialRoad permette di individuare su mappa i centri dialisi in Italia e consultare informazioni utili (indirizzo, contatti e dettagli della struttura) per aiutare le persone in dialisi a organizzare spostamenti e vacanze.
                   </p>
                 </section>
 
@@ -226,7 +226,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                     </div>
                     <div>
                       <p className="font-medium text-foreground">E) Dati sanitari</p>
-                      <p className="leading-relaxed">DialMap non raccoglie dati sanitari o clinici.</p>
+                      <p className="leading-relaxed">DialRoad non raccoglie dati sanitari o clinici.</p>
                     </div>
                   </div>
                 </section>
@@ -253,7 +253,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                 <section>
                   <h3 className="font-bold text-foreground mb-2">7) Condivisione dei dati</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    I dati possono essere trattati da fornitori tecnici necessari al funzionamento (es. mappe, autenticazione, hosting). DialMap non vende dati personali a terzi.
+                    I dati possono essere trattati da fornitori tecnici necessari al funzionamento (es. mappe, autenticazione, hosting). DialRoad non vende dati personali a terzi.
                   </p>
                 </section>
 
@@ -325,7 +325,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
 
               <div className="p-6 space-y-4">
                 <p className="text-foreground leading-relaxed">
-                  DialMap ti aiuta a trovare rapidamente i centri dialisi in tutta Italia tramite una mappa interattiva. Puoi cercare per zona o località e consultare informazioni utili come indirizzo, contatti e dettagli principali della struttura.
+                  DialRoad ti aiuta a trovare rapidamente i centri dialisi in tutta Italia tramite una mappa interattiva. Puoi cercare per zona o località e consultare informazioni utili come indirizzo, contatti e dettagli principali della struttura.
                 </p>
                 <p className="text-foreground leading-relaxed">
                   È pensata per le persone in dialisi che vogliono organizzare una vacanza o uno spostamento con più serenità: ti permette di individuare in anticipo i centri disponibili vicino alla tua destinazione e avere a portata di mano i riferimenti necessari per richiedere informazioni e pianificare il trattamento.
