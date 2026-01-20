@@ -11,6 +11,7 @@ import { z } from 'zod';
 import logo from '@/assets/dialroad-logo-login.png';
 
 const WEB_APP_ORIGIN = 'https://id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app';
+const NATIVE_SCHEME_ORIGIN = 'dialroad://';
 
 const emailSchema = z.string().email('Email non valida');
 const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratteri');
@@ -34,12 +35,80 @@ export default function Auth() {
   });
   const [errors, setErrors] = useState<{email?: string; password?: string; confirmPassword?: string}>({});
 
+  const isLikelyMobileBrowser =
+    !Capacitor.isNativePlatform() &&
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const buildNativeRecoveryUrl = (params: URLSearchParams) => {
+    // Forward only the auth-related params to the app deep link
+    const allow = ['type', 'token_hash', 'token', 'access_token', 'refresh_token', 'code'];
+    const out = new URLSearchParams();
+    for (const k of allow) {
+      const v = params.get(k);
+      if (v) out.set(k, v);
+    }
+
+    // The app already has a /reset-password route; deep link handler will route there.
+    // We still include a path for clarity.
+    const qs = out.toString();
+    return `${NATIVE_SCHEME_ORIGIN}reset-password${qs ? `?${qs}` : ''}`;
+  };
+
+  const getMergedAuthParams = () => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const merged = new URLSearchParams(searchParams);
+    for (const [k, v] of hashParams.entries()) {
+      if (!merged.has(k)) merged.set(k, v);
+    }
+    return merged;
+  };
+
+  const mergedAuthParams = getMergedAuthParams();
+  const nativeRecoveryUrl = buildNativeRecoveryUrl(mergedAuthParams);
+  const shouldShowOpenInApp =
+    isLikelyMobileBrowser &&
+    (mergedAuthParams.get('type') === 'recovery' || isResetMode) &&
+    (mergedAuthParams.has('token_hash') ||
+      mergedAuthParams.has('token') ||
+      mergedAuthParams.has('access_token') ||
+      mergedAuthParams.has('code') ||
+      isResetMode);
+
   useEffect(() => {
     // Handle password recovery: tokens can come in query params OR hash fragment
     const maybeVerifyRecovery = async () => {
       // Merge query and hash params
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
       const queryParams = searchParams;
+
+      // If user is on mobile browser and the app is installed, try to open the app directly.
+      // This avoids relying on redirect allow-lists for /reset-password or /auth-redirect.
+      if (isLikelyMobileBrowser) {
+        const mergedForNative = new URLSearchParams(queryParams);
+        for (const [k, v] of hashParams.entries()) {
+          if (!mergedForNative.has(k)) mergedForNative.set(k, v);
+        }
+        const typeForNative = mergedForNative.get('type');
+        const hasAnyAuthParam =
+          !!mergedForNative.get('token_hash') ||
+          !!mergedForNative.get('token') ||
+          !!mergedForNative.get('access_token') ||
+          !!mergedForNative.get('code') ||
+          isResetMode;
+
+        if ((typeForNative === 'recovery' || isResetMode) && hasAnyAuthParam) {
+          // Try auto-open once per page load to reduce loops.
+          const alreadyTried = sessionStorage.getItem('tried_native_recovery') === '1';
+          if (!alreadyTried) {
+            sessionStorage.setItem('tried_native_recovery', '1');
+            const nativeUrl = buildNativeRecoveryUrl(mergedForNative);
+            // Small delay so the page renders (and user can cancel if needed)
+            setTimeout(() => {
+              window.location.href = nativeUrl;
+            }, 250);
+          }
+        }
+      }
       
       const type = queryParams.get('type') || hashParams.get('type');
       const tokenHash = queryParams.get('token_hash') || queryParams.get('token') || hashParams.get('token_hash') || hashParams.get('token');
@@ -337,6 +406,37 @@ export default function Auth() {
               {getSubtitle()}
             </p>
           </div>
+
+          {shouldShowOpenInApp && (
+            <div className="mb-4 rounded-xl border border-border/60 bg-background/70 backdrop-blur-sm p-3">
+              <p className="text-sm text-foreground">
+                Se hai l’app installata, aprila per completare il reset della password.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={() => {
+                    sessionStorage.setItem('tried_native_recovery', '1');
+                    window.location.href = nativeRecoveryUrl;
+                  }}
+                >
+                  Apri nell’app
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    // User chooses to proceed in browser
+                    sessionStorage.setItem('tried_native_recovery', '1');
+                  }}
+                >
+                  Continua qui
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
