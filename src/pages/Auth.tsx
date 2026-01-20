@@ -111,10 +111,19 @@ export default function Auth() {
       }
       
       const type = queryParams.get('type') || hashParams.get('type');
-      const tokenHash = queryParams.get('token_hash') || queryParams.get('token') || hashParams.get('token_hash') || hashParams.get('token');
+
       const accessToken = queryParams.get('access_token') || hashParams.get('access_token');
       const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
       const code = queryParams.get('code') || hashParams.get('code');
+
+      // IMPORTANT: some providers/flows use `token` to mean an access_token (JWT).
+      // verifyOtp expects a *token_hash*, so never pass a JWT there.
+      const rawTokenParam =
+        queryParams.get('token') || hashParams.get('token') || '';
+      const rawTokenHashParam =
+        queryParams.get('token_hash') || hashParams.get('token_hash') || '';
+      const looksLikeJwt = (v: string) => v.includes('.') && v.split('.').length >= 3;
+      const tokenHash = rawTokenHashParam || (!looksLikeJwt(rawTokenParam) ? rawTokenParam : '');
       
       const isRecovery = type === 'recovery' || isResetMode;
       
@@ -144,7 +153,7 @@ export default function Auth() {
         }
       }
       
-      // Token hash verification
+      // Token hash verification (ONLY when we actually have a token_hash)
       if (tokenHash && type) {
         const { error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
