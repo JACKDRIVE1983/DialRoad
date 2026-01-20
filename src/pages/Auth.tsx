@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import logo from '@/assets/dialroad-logo-no-bg.png';
+import logo from '@/assets/dialroad-logo-login.png';
 
 const emailSchema = z.string().email('Email non valida');
 const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratteri');
