@@ -38,12 +38,19 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Full background image with logo */}
-          <img 
-            src={headerMapBg} 
-            alt="" 
+          {/* Background: fill the bar */}
+          <img
+            src={headerMapBg}
+            alt=""
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: 'center 35%' }}
+            style={{ objectPosition: 'center 50%' }}
+          />
+
+          {/* Foreground: ensure full logo is always visible */}
+          <img
+            src={headerMapBg}
+            alt=""
+            className="absolute inset-0 w-full h-full object-contain"
           />
 
           <div className="relative flex items-center justify-between px-4 h-full">
