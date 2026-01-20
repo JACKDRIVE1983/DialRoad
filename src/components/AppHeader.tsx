@@ -43,9 +43,9 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             <img 
               src={headerMapBg} 
               alt="" 
-              className="min-w-full min-h-full object-contain"
+              className="w-auto h-auto max-w-none"
               style={{
-                transform: 'scale(0.55)',
+                transform: 'scale(0.35)',
                 transformOrigin: 'center center'
               }}
             />
