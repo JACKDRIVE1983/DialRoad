@@ -117,6 +117,10 @@ export default function Auth() {
           <p className="text-xs text-muted-foreground text-center mt-6">
             Accedendo, accetti i nostri Termini di Servizio e la Privacy Policy
           </p>
+
+          <p className="text-[11px] text-muted-foreground text-center mt-3">
+            build {__BUILD_ID__} • {__BUILD_TIME__}
+          </p>
         </motion.div>
       </div>
     </div>

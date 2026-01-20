@@ -687,6 +687,7 @@ export function ProfileView() {
         <img src={logo} alt="DialRoad" className="w-24 h-24 object-contain mb-3" />
         <p className="text-sm font-display font-semibold gradient-text">DialRoad</p>
         <p className="text-xs text-muted-foreground mt-1">Versione 1.0.0</p>
+        <p className="text-[11px] text-muted-foreground mt-1">build {__BUILD_ID__}</p>
       </motion.div>
     </div>
   );
