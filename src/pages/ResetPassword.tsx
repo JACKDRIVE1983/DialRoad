@@ -19,7 +19,11 @@ export default function ResetPassword() {
   // - token_hash + type=recovery (query)
   // - access_token + refresh_token + type=recovery (hash/query)
   // - code (PKCE)
-  const tokenHash = searchParams.get('token_hash') || searchParams.get('token');
+  // IMPORTANT: `token` can sometimes be a JWT access_token; verifyOtp expects token_hash.
+  const rawTokenHash = searchParams.get('token_hash') || '';
+  const rawToken = searchParams.get('token') || '';
+  const looksLikeJwt = (v: string) => v.includes('.') && v.split('.').length >= 3;
+  const tokenHash = rawTokenHash || (!looksLikeJwt(rawToken) ? rawToken : null);
   const type = searchParams.get('type');
   const accessToken = searchParams.get('access_token');
   const refreshToken = searchParams.get('refresh_token');
@@ -40,7 +44,7 @@ export default function ResetPassword() {
   useEffect(() => {
     const verifyToken = async () => {
       // If no token, check if we already have a recovery session
-      if (!tokenHash || !type) {
+       if (!tokenHash || !type) {
         // If we have session tokens, establish session first.
         if (accessToken && refreshToken) {
           const { error } = await supabase.auth.setSession({
@@ -87,8 +91,8 @@ export default function ResetPassword() {
       }
 
       // Verify the OTP token
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: tokenHash,
+       const { error } = await supabase.auth.verifyOtp({
+         token_hash: tokenHash,
         type: type as any,
       });
 
