@@ -2,7 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import { MapPin, Heart, MessageCircle, Navigation, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logo from '@/assets/dialroad-logo-transparent.png';
+import logoIcon from '@/assets/dialmap-logo-icon.png';
+import mapBackground from '@/assets/onboarding-map-bg.png';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -53,28 +54,31 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-background via-background to-muted/30"
+      className="fixed inset-0 z-50 flex flex-col"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-accent/10 blur-3xl" />
-      </div>
+      {/* Stylized map background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${mapBackground})` }}
+      />
+      
+      {/* Light overlay for better readability */}
+      <div className="absolute inset-0 bg-white/60" />
 
-      {/* Logo at top */}
+      {/* Logo icon at top - larger */}
       <motion.div
-        className="relative z-10 flex flex-col items-center pt-16 pb-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        className="relative z-10 flex flex-col items-center pt-12 pb-4"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
       >
         <img 
-          src={logo} 
+          src={logoIcon} 
           alt="DialRoad" 
-          className="w-48 h-auto object-contain drop-shadow-lg"
+          className="w-32 h-32 object-contain drop-shadow-xl"
         />
       </motion.div>
 
@@ -83,7 +87,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         <Button 
           variant="ghost" 
           onClick={handleComplete}
-          className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          className="text-muted-foreground hover:text-foreground hover:bg-white/50"
         >
           Salta
         </Button>
