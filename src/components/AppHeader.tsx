@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import logo from '@/assets/dialmap-logo-icon.png';
+import { Menu, X, Shield, HelpCircle, Mail, MapPin } from 'lucide-react';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -25,6 +24,17 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
     setActiveModal(modal);
   };
 
+  // Pin positions for the stylized map
+  const pins = [
+    { left: '15%', top: '35%', delay: 0, size: 'w-3 h-3' },
+    { left: '25%', top: '55%', delay: 0.1, size: 'w-2 h-2' },
+    { left: '40%', top: '30%', delay: 0.2, size: 'w-4 h-4' },
+    { left: '55%', top: '50%', delay: 0.3, size: 'w-3 h-3' },
+    { left: '70%', top: '35%', delay: 0.4, size: 'w-2 h-2' },
+    { left: '80%', top: '55%', delay: 0.5, size: 'w-3 h-3' },
+    { left: '48%', top: '65%', delay: 0.15, size: 'w-2 h-2' },
+  ];
+
   return (
     <>
       <motion.div
@@ -32,63 +42,84 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 px-4 py-3 rounded-2xl flex items-center justify-between backdrop-blur-md"
+          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden backdrop-blur-md relative"
           style={{
-            background: 'rgba(255, 255, 255, 0.25)',
+            background: 'linear-gradient(135deg, rgba(167, 243, 208, 0.7) 0%, rgba(134, 239, 172, 0.6) 30%, rgba(74, 222, 128, 0.5) 60%, rgba(34, 197, 94, 0.4) 100%)',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.3)'
+            border: '1px solid rgba(255, 255, 255, 0.4)'
           }}
         >
-          {/* Menu button on the left */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/30 pointer-events-auto"
-            aria-label="Menu"
-          >
-            <AnimatePresence mode="wait">
-              {isMenuOpen ? (
-                <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <X className="w-5 h-5 text-foreground" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="menu"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Menu className="w-5 h-5 text-foreground" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </button>
+          {/* Stylized map roads/paths */}
+          <svg className="absolute inset-0 w-full h-full opacity-30" preserveAspectRatio="none">
+            <path d="M0,30 Q50,20 100,35 T200,25 T300,40 T400,30" stroke="white" strokeWidth="2" fill="none" />
+            <path d="M0,50 Q80,60 150,45 T280,55 T400,45" stroke="white" strokeWidth="1.5" fill="none" />
+            <path d="M50,0 Q60,40 45,80" stroke="white" strokeWidth="1" fill="none" />
+            <path d="M150,0 Q140,35 160,70" stroke="white" strokeWidth="1" fill="none" />
+            <path d="M280,0 Q290,30 275,65" stroke="white" strokeWidth="1" fill="none" />
+          </svg>
 
-          {/* Logo centered */}
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
-              <img 
-                src={logo} 
-                alt="DialMap" 
-                className="w-full h-full object-contain"
-              />
-            </div>
-            
-            <span 
-              className="text-xl font-display font-bold tracking-wide text-foreground"
+          <div className="relative flex items-center justify-between px-4 py-3">
+            {/* Menu button on the left */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/30 pointer-events-auto z-10 bg-white/20"
+              aria-label="Menu"
             >
-              DialMap
-            </span>
-          </div>
+              <AnimatePresence mode="wait">
+                {isMenuOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <X className="w-5 h-5 text-white drop-shadow-md" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Menu className="w-5 h-5 text-white drop-shadow-md" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
 
-          {/* Spacer for balance */}
-          <div className="w-10 h-10" />
+            {/* Animated pins in the center area */}
+            <div className="absolute inset-0 pointer-events-none">
+              {pins.map((pin, index) => (
+                <motion.div
+                  key={index}
+                  className="absolute"
+                  style={{ left: pin.left, top: pin.top }}
+                  initial={{ scale: 0, y: -10 }}
+                  animate={{ 
+                    scale: 1, 
+                    y: [0, -3, 0],
+                  }}
+                  transition={{ 
+                    scale: { delay: pin.delay, duration: 0.3 },
+                    y: { delay: pin.delay + 0.3, duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+                  }}
+                >
+                  <div className={`${pin.size} relative`}>
+                    <MapPin className="w-full h-full text-red-500 fill-red-500 drop-shadow-lg" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-1 h-1 bg-white rounded-full mt-[-2px]" />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Spacer for balance */}
+            <div className="w-10 h-10" />
+          </div>
         </div>
 
         {/* Dropdown Menu */}
