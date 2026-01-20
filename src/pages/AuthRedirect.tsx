@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 function isAndroidUA(ua: string) {
@@ -23,11 +23,10 @@ function mergeParams(search: string, hash: string) {
 export default function AuthRedirect() {
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const { isAndroid, isIOS, hasAny, webFallback, appSchemeUrl, androidIntentUrl } = useMemo(() => {
     const ua = navigator.userAgent || "";
     const params = mergeParams(window.location.search, window.location.hash);
 
-    // Normalize param names for our ResetPassword page
     const normalized = new URLSearchParams();
     const type = params.get("type") || "recovery";
     const tokenHash = params.get("token_hash") || params.get("token") || "";
@@ -41,29 +40,43 @@ export default function AuthRedirect() {
     if (accessToken) normalized.set("access_token", accessToken);
     if (refreshToken) normalized.set("refresh_token", refreshToken);
 
-    // If we didn't get anything useful, go straight to reset page (it will show error)
-    const hasAny = tokenHash || code || accessToken || refreshToken;
-
-    const webFallback = `/reset-password?${normalized.toString()}`;
-    const appSchemeUrl = `dialroad://reset-password?${normalized.toString()}`;
+    const has = !!(tokenHash || code || accessToken || refreshToken);
+    const fallback = `/reset-password?${normalized.toString()}`;
+    const appUrl = `dialroad://reset-password?${normalized.toString()}`;
     const androidPackage = "com.dialroad.map";
-    const androidIntentUrl = `intent://reset-password?${normalized.toString()}#Intent;scheme=dialroad;package=${androidPackage};end`;
+    const intentUrl = `intent://reset-password?${normalized.toString()}#Intent;scheme=dialroad;package=${androidPackage};end`;
 
-    // Tryorei: open native app on mobile, otherwise go to web reset
-    if (isAndroidUA(ua)) {
-      if (hasAny) window.location.href = androidIntentUrl;
-      setTimeout(() => navigate(webFallback, { replace: true }), 600);
+    return {
+      isAndroid: isAndroidUA(ua),
+      isIOS: isIOSUA(ua),
+      hasAny: has,
+      webFallback: fallback,
+      appSchemeUrl: appUrl,
+      androidIntentUrl: intentUrl,
+    };
+  }, []);
+
+  const openNative = useCallback(() => {
+    if (!hasAny) return;
+    if (isAndroid) {
+      window.location.href = androidIntentUrl;
       return;
     }
+    if (isIOS) {
+      window.location.href = appSchemeUrl;
+    }
+  }, [androidIntentUrl, appSchemeUrl, hasAny, isAndroid, isIOS]);
 
-    if (isIOSUA(ua)) {
-      if (hasAny) window.location.href = appSchemeUrl;
-      setTimeout(() => navigate(webFallback, { replace: true }), 600);
+  useEffect(() => {
+    // Some Android browsers block automatic intent:// navigation without user gesture.
+    // We still try once, then fall back to the web reset page.
+    if (isAndroid || isIOS) {
+      openNative();
+      setTimeout(() => navigate(webFallback, { replace: true }), 900);
       return;
     }
-
     navigate(webFallback, { replace: true });
-  }, [navigate]);
+  }, [isAndroid, isIOS, navigate, openNative, webFallback]);
 
   return (
     <main className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -72,6 +85,26 @@ export default function AuthRedirect() {
         <p className="mt-2 text-sm text-muted-foreground">
           Se l’app non si apre automaticamente, verrai reindirizzato alla pagina di reset nel browser.
         </p>
+
+        <div className="mt-6 flex flex-col gap-2">
+          {(isAndroid || isIOS) && (
+            <button
+              type="button"
+              onClick={openNative}
+              className="h-11 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+              disabled={!hasAny}
+            >
+              Apri l’app
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate(webFallback, { replace: true })}
+            className="h-11 rounded-md border border-border bg-background text-foreground text-sm font-medium"
+          >
+            Continua nel browser
+          </button>
+        </div>
       </div>
     </main>
   );
