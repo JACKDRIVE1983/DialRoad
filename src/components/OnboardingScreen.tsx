@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import { MapPin, Heart, MessageCircle, Navigation, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logoIcon from '@/assets/dialmap-logo-icon.png';
+import logoIcon from '@/assets/dialroad-logo-login.png';
 import mapBackground from '@/assets/onboarding-map-bg.png';
 
 interface OnboardingScreenProps {
@@ -78,7 +78,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         <img 
           src={logoIcon} 
           alt="DialRoad" 
-          className="w-32 h-32 object-contain drop-shadow-xl"
+          className="w-40 h-40 object-contain"
         />
       </motion.div>
 
