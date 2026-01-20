@@ -125,56 +125,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     if (!query) return baseFiltered;
     
-    // Check if query matches any city name exactly or city starts with query
-    const hasExactCityMatch = baseFiltered.some(center => 
-      center.city.toLowerCase() === query ||
-      center.city.toLowerCase().startsWith(query)
-    );
-    
-    // If query matches a city exactly or starts with it, ONLY show results from that city
-    // Do NOT include name matches to avoid "VENEZIALE" appearing when searching "Venezia"
+    const hasExactCityMatch = baseFiltered.some(center => center.city.toLowerCase() === query);
+    const hasStartsWithCityMatch = baseFiltered.some(center => center.city.toLowerCase().startsWith(query));
+    const hasContainsCityMatch = baseFiltered.some(center => center.city.toLowerCase().includes(query));
+
+    // If there's an exact city match (e.g. "Roma"), show ONLY that city to avoid false positives like "Romagna".
     if (hasExactCityMatch) {
       return baseFiltered
-        .filter(center => 
-          center.city.toLowerCase() === query ||
-          center.city.toLowerCase().startsWith(query) ||
-          center.city.toLowerCase().includes(query)
-        )
-        .sort((a, b) => {
-          // Priority 1: Exact city match
-          const aCityExact = a.city.toLowerCase() === query;
-          const bCityExact = b.city.toLowerCase() === query;
-          if (aCityExact && !bCityExact) return -1;
-          if (!aCityExact && bCityExact) return 1;
-          
-          // Priority 2: City starts with query
-          const aCityStarts = a.city.toLowerCase().startsWith(query);
-          const bCityStarts = b.city.toLowerCase().startsWith(query);
-          if (aCityStarts && !bCityStarts) return -1;
-          if (!aCityStarts && bCityStarts) return 1;
-          
-          return 0;
-        });
+        .filter(center => center.city.toLowerCase() === query)
+        .sort((a, b) => a.name.localeCompare(b.name));
     }
-    
-    // Check if query partially matches a city (but not exact/starts with)
-    const hasPartialCityMatch = baseFiltered.some(center => 
-      center.city.toLowerCase().includes(query)
-    );
-    
-    if (hasPartialCityMatch) {
-      // Show city matches first, then name matches
+
+    // If there's a starts-with city match (e.g. "Venezia" matches "Venezia Lido"), show ONLY those cities.
+    // Avoid name matches here to prevent cases like "VENEZIALE" in other cities.
+    if (hasStartsWithCityMatch) {
       return baseFiltered
-        .filter(center => 
+        .filter(center => center.city.toLowerCase().startsWith(query))
+        .sort((a, b) => a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
+    }
+
+    // If the query matches some city partially, prioritize those city matches, then allow name matches.
+    if (hasContainsCityMatch) {
+      return baseFiltered
+        .filter(center =>
           center.city.toLowerCase().includes(query) ||
           center.name.toLowerCase().includes(query)
         )
         .sort((a, b) => {
-          const aCityContains = a.city.toLowerCase().includes(query);
-          const bCityContains = b.city.toLowerCase().includes(query);
-          if (aCityContains && !bCityContains) return -1;
-          if (!aCityContains && bCityContains) return 1;
-          return 0;
+          const aCity = a.city.toLowerCase().includes(query);
+          const bCity = b.city.toLowerCase().includes(query);
+          if (aCity && !bCity) return -1;
+          if (!aCity && bCity) return 1;
+          return a.name.localeCompare(b.name);
         });
     }
     
