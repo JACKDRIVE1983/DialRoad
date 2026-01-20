@@ -112,18 +112,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const filteredCenters = centers.filter(center => {
-    const matchesSearch = center.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      center.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      center.address.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRegion = selectedRegion === 'Tutte le Regioni' || center.region === selectedRegion;
-    
-    const matchesServices = selectedServices.length === 0 ||
-      selectedServices.some(service => center.services.includes(service));
-    
-    return matchesSearch && matchesRegion && matchesServices;
-  });
+  const filteredCenters = centers
+    .filter(center => {
+      const query = searchQuery.toLowerCase().trim();
+      if (!query) return true;
+      
+      const matchesSearch = center.name.toLowerCase().includes(query) ||
+        center.city.toLowerCase().includes(query) ||
+        center.address.toLowerCase().includes(query);
+      
+      const matchesRegion = selectedRegion === 'Tutte le Regioni' || center.region === selectedRegion;
+      
+      const matchesServices = selectedServices.length === 0 ||
+        selectedServices.some(service => center.services.includes(service));
+      
+      return matchesSearch && matchesRegion && matchesServices;
+    })
+    .sort((a, b) => {
+      const query = searchQuery.toLowerCase().trim();
+      if (!query) return 0;
+      
+      // Priority 1: Exact city match
+      const aCityExact = a.city.toLowerCase() === query;
+      const bCityExact = b.city.toLowerCase() === query;
+      if (aCityExact && !bCityExact) return -1;
+      if (!aCityExact && bCityExact) return 1;
+      
+      // Priority 2: City starts with query
+      const aCityStarts = a.city.toLowerCase().startsWith(query);
+      const bCityStarts = b.city.toLowerCase().startsWith(query);
+      if (aCityStarts && !bCityStarts) return -1;
+      if (!aCityStarts && bCityStarts) return 1;
+      
+      // Priority 3: City contains query
+      const aCityContains = a.city.toLowerCase().includes(query);
+      const bCityContains = b.city.toLowerCase().includes(query);
+      if (aCityContains && !bCityContains) return -1;
+      if (!aCityContains && bCityContains) return 1;
+      
+      // Priority 4: Name contains query
+      const aNameContains = a.name.toLowerCase().includes(query);
+      const bNameContains = b.name.toLowerCase().includes(query);
+      if (aNameContains && !bNameContains) return -1;
+      if (!aNameContains && bNameContains) return 1;
+      
+      return 0;
+    });
 
   return (
     <AppContext.Provider value={{
