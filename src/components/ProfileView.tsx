@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useReviews } from '@/hooks/useReviews';
 import { toast } from 'sonner';
-import logo from '@/assets/dialmap-logo.png';
+import logo from '@/assets/dialmap-logo-icon.png';
 
 export function ProfileView() {
   const navigate = useNavigate();
