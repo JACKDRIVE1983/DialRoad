@@ -45,15 +45,19 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             className="absolute inset-0 w-full h-full object-cover"
           />
 
-          {/* DialRoad title - centered, elegant italic style in blue */}
+          {/* DialRoad title - centered, matching logo style */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <h1 
-              className="text-4xl italic font-semibold tracking-wide drop-shadow-lg"
+              className="text-4xl font-bold tracking-wide drop-shadow-lg"
               style={{
-                color: '#1a4a6e',
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                textShadow: '0 2px 4px rgba(255,255,255,0.6), 0 1px 2px rgba(255,255,255,0.8)',
-                letterSpacing: '0.03em'
+                background: 'linear-gradient(180deg, #2d7cb5 0%, #1a5a8a 50%, #0d3a5c 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: "'Arial', 'Helvetica', sans-serif",
+                textShadow: 'none',
+                filter: 'drop-shadow(0 2px 3px rgba(255,255,255,0.7))',
+                letterSpacing: '0.02em'
               }}
             >
               DialRoad
