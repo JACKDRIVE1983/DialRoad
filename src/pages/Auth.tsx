@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import logo from '@/assets/dialroad-logo-login.png';
+
+const WEB_APP_ORIGIN = 'https://id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app';
 
 const emailSchema = z.string().email('Email non valida');
 const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratteri');
@@ -164,7 +167,10 @@ export default function Auth() {
       } else if (mode === 'forgot') {
         // Redirect to a web route that can read hash fragments (#access_token=...)
         // and then open the native app via custom scheme/intent.
-        const redirectUrl = `${window.location.origin}/auth-redirect`;
+        // On native (Capacitor), window.location.origin is typically capacitor://localhost
+        // which is NOT a valid redirect URL for the email link.
+        const origin = Capacitor.isNativePlatform() ? WEB_APP_ORIGIN : window.location.origin;
+        const redirectUrl = `${origin}/auth-redirect`;
         
         const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
           redirectTo: redirectUrl
