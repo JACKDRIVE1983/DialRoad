@@ -113,13 +113,45 @@ export function useAuth() {
   };
 
   const updatePassword = async (newPassword: string) => {
-    if (!user) return { error: new Error('Not authenticated') };
+    if (!session) return { error: new Error('Not authenticated') };
 
     const { error } = await supabase.auth.updateUser({
       password: newPassword
     });
 
     return { error };
+  };
+
+  const deleteAccount = async () => {
+    if (!session) return { error: new Error('Not authenticated') };
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { error: new Error(data.error || 'Failed to delete account') };
+      }
+
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('Failed to delete account') };
+    }
   };
 
   const signOut = async () => {
@@ -138,6 +170,7 @@ export function useAuth() {
     updateProfile,
     uploadAvatar,
     updatePassword,
+    deleteAccount,
     signOut,
     refetchProfile: () => user && fetchProfile(user.id)
   };
