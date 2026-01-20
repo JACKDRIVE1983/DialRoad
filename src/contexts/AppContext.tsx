@@ -1,3 +1,4 @@
+// App Context - Global state management for DialRoad
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DialysisCenter, mockCenters } from '@/data/mockCenters';
 
