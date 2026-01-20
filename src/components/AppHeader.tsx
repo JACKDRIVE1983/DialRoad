@@ -48,7 +48,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           {/* DialRoad title - centered, matching logo style */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <h1 
-              className="text-4xl font-bold tracking-wide drop-shadow-lg"
+              className="text-4xl font-extrabold tracking-wide uppercase drop-shadow-lg"
               style={{
                 background: 'linear-gradient(180deg, #2d7cb5 0%, #1a5a8a 50%, #0d3a5c 100%)',
                 WebkitBackgroundClip: 'text',
@@ -57,7 +57,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                 fontFamily: "'Arial', 'Helvetica', sans-serif",
                 textShadow: 'none',
                 filter: 'drop-shadow(0 2px 3px rgba(255,255,255,0.7))',
-                letterSpacing: '0.02em'
+                letterSpacing: '0.08em'
               }}
             >
               DialRoad
