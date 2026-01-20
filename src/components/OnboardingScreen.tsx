@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import { MapPin, Heart, MessageCircle, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logo from '@/assets/dialroad-logo-no-bg.png';
+import logo from '@/assets/dialmap-logo-icon.png';
 import backgroundImage from '@/assets/onboarding-bg.jpeg';
 
 interface OnboardingScreenProps {
