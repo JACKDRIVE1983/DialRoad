@@ -18,42 +18,57 @@ export function useDeepLinks() {
       
       try {
         const parsedUrl = new URL(url);
-        const token = parsedUrl.searchParams.get('token');
-        const type = parsedUrl.searchParams.get('type');
+        // Supabase may send recovery data as query params OR hash fragment.
+        // Also, for custom schemes (dialroad://reset-password) the "path" may appear
+        // in the hostname, not pathname.
+        const mergedParams = new URLSearchParams(parsedUrl.searchParams);
+        if (parsedUrl.hash?.startsWith('#')) {
+          const hashParams = new URLSearchParams(parsedUrl.hash.slice(1));
+          for (const [k, v] of hashParams.entries()) {
+            if (!mergedParams.has(k)) mergedParams.set(k, v);
+          }
+        }
+
+        const token = mergedParams.get('token') || mergedParams.get('token_hash');
+        const type = mergedParams.get('type');
+        const host = parsedUrl.hostname;
+        const pathname = parsedUrl.pathname;
+
+        // Normalize route: dialroad://reset-password?... => hostname="reset-password", pathname="/"
+        const looksLikeResetRoute =
+          pathname === '/reset-password' ||
+          pathname.includes('/reset-password') ||
+          host === 'reset-password';
+
+        const looksLikeAuthRoute =
+          pathname === '/auth' || pathname.includes('/auth') || host === 'auth';
         
         console.log('[DeepLink] Parsed:', { 
-          pathname: parsedUrl.pathname, 
+          pathname,
+          host,
           token: token ? 'present' : 'missing', 
           type 
         });
 
-        // If we have token and type, it's a password reset - navigate immediately
-        if (token && type === 'recovery') {
-          const targetPath = `/reset-password?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`;
-          console.log('[DeepLink] Navigating to reset-password');
-          navigate(targetPath, { replace: true });
-          return true;
-        }
-
-        // Handle explicit /reset-password path
-        if (parsedUrl.pathname === '/reset-password' || parsedUrl.pathname.includes('/reset-password')) {
+        // Password reset: navigate even if token is missing (so user sees the reset page + error state).
+        if (looksLikeResetRoute || (token && type === 'recovery')) {
           const qs = new URLSearchParams();
-          if (token) qs.set('token', token);
-          if (type) qs.set('type', type);
+          for (const [k, v] of mergedParams.entries()) qs.set(k, v);
+          console.log('[DeepLink] Navigating to /reset-password');
           navigate(`/reset-password?${qs.toString()}`, { replace: true });
           return true;
         }
 
-        // Handle /auth path
-        if (parsedUrl.pathname === '/auth' || parsedUrl.pathname.includes('/auth')) {
+        // Auth
+        if (looksLikeAuthRoute) {
           navigate('/auth', { replace: true });
           return true;
         }
 
         // Handle other paths
-        const slug = parsedUrl.pathname;
+        const slug = pathname;
         if (slug && slug !== '/') {
-          navigate(slug + parsedUrl.search, { replace: true });
+          navigate(slug + (mergedParams.toString() ? `?${mergedParams.toString()}` : ''), { replace: true });
           return true;
         }
       } catch (e) {

@@ -15,8 +15,15 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const token = searchParams.get('token');
+  // Supabase recovery links can arrive in multiple shapes:
+  // - token_hash + type=recovery (query)
+  // - access_token + refresh_token + type=recovery (hash/query)
+  // - code (PKCE)
+  const tokenHash = searchParams.get('token_hash') || searchParams.get('token');
   const type = searchParams.get('type');
+  const accessToken = searchParams.get('access_token');
+  const refreshToken = searchParams.get('refresh_token');
+  const code = searchParams.get('code');
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +39,39 @@ export default function ResetPassword() {
   useEffect(() => {
     const verifyToken = async () => {
       // If no token, check if we already have a recovery session
-      if (!token || !type) {
+      if (!tokenHash || !type) {
+        // If we have session tokens, establish session first.
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            setVerifyError('Link scaduto o non valido. Richiedi un nuovo link di reset password.');
+            setIsVerifying(false);
+            return;
+          }
+
+          setIsVerified(true);
+          setIsVerifying(false);
+          return;
+        }
+
+        // PKCE code exchange
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            setVerifyError('Link scaduto o non valido. Richiedi un nuovo link di reset password.');
+            setIsVerifying(false);
+            return;
+          }
+
+          setIsVerified(true);
+          setIsVerifying(false);
+          return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setIsVerified(true);
@@ -46,7 +85,7 @@ export default function ResetPassword() {
 
       // Verify the OTP token
       const { error } = await supabase.auth.verifyOtp({
-        token_hash: token,
+        token_hash: tokenHash,
         type: type as any,
       });
 
@@ -61,7 +100,7 @@ export default function ResetPassword() {
     };
 
     verifyToken();
-  }, [token, type]);
+  }, [tokenHash, type, accessToken, refreshToken, code]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
