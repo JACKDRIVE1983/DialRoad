@@ -250,7 +250,7 @@ export default function Auth() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <motion.div
-              className="w-24 h-24 mb-4"
+              className="w-32 h-32 mb-4"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
