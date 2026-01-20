@@ -17,11 +17,17 @@ export function useDeepLinks() {
       const url = new URL(event.url);
       
       // Handle password reset deep link
-      // Expected format: dialroad://auth?reset=true or https://yourdomain.com/auth?reset=true
+      // Expected format: dialroad://auth?reset=true&token=...&type=recovery
       if (url.pathname === '/auth' || url.pathname.includes('/auth')) {
         const resetParam = url.searchParams.get('reset');
         if (resetParam === 'true') {
-          navigate('/auth?reset=true');
+          const token = url.searchParams.get('token');
+          const type = url.searchParams.get('type');
+          const qs = new URLSearchParams();
+          qs.set('reset', 'true');
+          if (token) qs.set('token', token);
+          if (type) qs.set('type', type);
+          navigate(`/auth?${qs.toString()}`);
           return;
         }
         navigate('/auth');

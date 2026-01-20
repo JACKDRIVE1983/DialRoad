@@ -4,20 +4,21 @@ serve(async (req) => {
   const url = new URL(req.url);
   const params = url.searchParams;
   
-  // Get all the auth parameters from Supabase
+  // Get all the auth parameters from the request URL
   const token = params.get('token') || '';
   const type = params.get('type') || '';
-  const redirectTo = params.get('redirect_to') || '/auth?reset=true';
-  
+
   // Detect if the request is from a mobile device
   const userAgent = req.headers.get('user-agent') || '';
   const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
-  const isAndroid = /Android/i.test(userAgent);
-  const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
 
-  // Build the deep link URL
+  // Build the deep link + web fallback URLs
   const appScheme = 'dialroad://';
-  const webUrl = 'https://id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app';
+  const webBase = 'https://id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app';
+
+  // We forward token + type to both app and web so the client can verify the recovery token
+  const appTarget = `${appScheme}auth?reset=true&token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`;
+  const webTarget = `${webBase}/auth?reset=true&token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`;
   
   // Create the redirect page HTML
   const html = `
@@ -93,16 +94,16 @@ serve(async (req) => {
     <p id="message">Apertura dell'app in corso...</p>
     <div class="loader" id="loader"></div>
     <div id="buttons" style="display: none;">
-      <a href="${appScheme}auth?reset=true&token=${token}&type=${type}" class="btn">Apri nell'App</a>
+      <a href="${appTarget}" class="btn">Apri nell'App</a>
       <br>
-      <a href="${webUrl}/auth?reset=true" class="btn btn-secondary">Continua nel Browser</a>
+      <a href="${webTarget}" class="btn btn-secondary">Continua nel Browser</a>
     </div>
   </div>
   
   <script>
     const isMobile = ${isMobile};
-    const appScheme = '${appScheme}auth?reset=true&token=${token}&type=${type}';
-    const webUrl = '${webUrl}/auth?reset=true';
+    const appScheme = ${JSON.stringify(appTarget)};
+    const webUrl = ${JSON.stringify(webTarget)};
     
     if (isMobile) {
       // Try to open the app
