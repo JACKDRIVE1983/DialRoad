@@ -146,7 +146,12 @@ export default function Auth() {
         });
 
         if (error) {
-          toast.error('Errore', { description: error.message });
+          const msg = error.message || '';
+          if (msg.includes('different from the old password') || msg.includes('same_password')) {
+            toast.error('La nuova password deve essere diversa da quella precedente');
+          } else {
+            toast.error('Errore', { description: msg });
+          }
           return;
         }
 
