@@ -1,186 +1,23 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import logo from '@/assets/dialroad-logo-login.png';
 
 const WEB_APP_ORIGIN = 'https://id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app';
-const NATIVE_SCHEME_ORIGIN = 'dialroad://';
-
-const emailSchema = z.string().email('Email non valida');
-const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratteri');
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  const isResetMode = searchParams.get('reset') === 'true';
-  const recoveryToken = searchParams.get('token');
-  const recoveryType = searchParams.get('type');
-
-  const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'reset'>('login');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    displayName: '',
-    confirmPassword: ''
-  });
-  const [errors, setErrors] = useState<{email?: string; password?: string; confirmPassword?: string}>({});
-
-  const isLikelyMobileBrowser =
-    !Capacitor.isNativePlatform() &&
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  const buildNativeRecoveryUrl = (params: URLSearchParams) => {
-    // Forward only the auth-related params to the app deep link
-    const allow = ['type', 'token_hash', 'token', 'access_token', 'refresh_token', 'code'];
-    const out = new URLSearchParams();
-    for (const k of allow) {
-      const v = params.get(k);
-      if (v) out.set(k, v);
-    }
-
-    // The app already has a /reset-password route; deep link handler will route there.
-    // We still include a path for clarity.
-    const qs = out.toString();
-    return `${NATIVE_SCHEME_ORIGIN}reset-password${qs ? `?${qs}` : ''}`;
-  };
-
-  const getMergedAuthParams = () => {
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const merged = new URLSearchParams(searchParams);
-    for (const [k, v] of hashParams.entries()) {
-      if (!merged.has(k)) merged.set(k, v);
-    }
-    return merged;
-  };
-
-  const mergedAuthParams = getMergedAuthParams();
-  const nativeRecoveryUrl = buildNativeRecoveryUrl(mergedAuthParams);
-  const shouldShowOpenInApp =
-    isLikelyMobileBrowser &&
-    (mergedAuthParams.get('type') === 'recovery' || isResetMode) &&
-    (mergedAuthParams.has('token_hash') ||
-      mergedAuthParams.has('token') ||
-      mergedAuthParams.has('access_token') ||
-      mergedAuthParams.has('code') ||
-      isResetMode);
 
   useEffect(() => {
-    // Handle password recovery: tokens can come in query params OR hash fragment
-    const maybeVerifyRecovery = async () => {
-      // Merge query and hash params
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-      const queryParams = searchParams;
-
-      // If user is on mobile browser and the app is installed, try to open the app directly.
-      // This avoids relying on redirect allow-lists for /reset-password or /auth-redirect.
-      if (isLikelyMobileBrowser) {
-        const mergedForNative = new URLSearchParams(queryParams);
-        for (const [k, v] of hashParams.entries()) {
-          if (!mergedForNative.has(k)) mergedForNative.set(k, v);
-        }
-        const typeForNative = mergedForNative.get('type');
-        const hasAnyAuthParam =
-          !!mergedForNative.get('token_hash') ||
-          !!mergedForNative.get('token') ||
-          !!mergedForNative.get('access_token') ||
-          !!mergedForNative.get('code') ||
-          isResetMode;
-
-        if ((typeForNative === 'recovery' || isResetMode) && hasAnyAuthParam) {
-          // Try auto-open once per page load to reduce loops.
-          const alreadyTried = sessionStorage.getItem('tried_native_recovery') === '1';
-          if (!alreadyTried) {
-            sessionStorage.setItem('tried_native_recovery', '1');
-            const nativeUrl = buildNativeRecoveryUrl(mergedForNative);
-            // Small delay so the page renders (and user can cancel if needed)
-            setTimeout(() => {
-              window.location.href = nativeUrl;
-            }, 250);
-          }
-        }
-      }
-      
-      const type = queryParams.get('type') || hashParams.get('type');
-
-      const accessToken = queryParams.get('access_token') || hashParams.get('access_token');
-      const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
-      const code = queryParams.get('code') || hashParams.get('code');
-
-      // IMPORTANT: some providers/flows use `token` to mean an access_token (JWT).
-      // verifyOtp expects a *token_hash*, so never pass a JWT there.
-      const rawTokenParam =
-        queryParams.get('token') || hashParams.get('token') || '';
-      const rawTokenHashParam =
-        queryParams.get('token_hash') || hashParams.get('token_hash') || '';
-      const looksLikeJwt = (v: string) => v.includes('.') && v.split('.').length >= 3;
-      const tokenHash = rawTokenHashParam || (!looksLikeJwt(rawTokenParam) ? rawTokenParam : '');
-      
-      const isRecovery = type === 'recovery' || isResetMode;
-      
-      if (!isRecovery && !accessToken && !code) return;
-      
-      // If we have access_token + refresh_token, set session directly
-      if (accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (!error) {
-          setMode('reset');
-          // Clean URL
-          window.history.replaceState({}, '', '/auth');
-          return;
-        }
-      }
-      
-      // PKCE code exchange
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
-          setMode('reset');
-          window.history.replaceState({}, '', '/auth');
-          return;
-        }
-      }
-      
-      // Token hash verification (ONLY when we actually have a token_hash)
-      if (tokenHash && type) {
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: type as any,
-        });
-        if (!error) {
-          setMode('reset');
-          window.history.replaceState({}, '', '/auth');
-          return;
-        }
-        toast.error('Link non valido o scaduto', { description: error.message });
-      }
-      
-      // Fallback: if isResetMode was set but no tokens, just show reset form
-      if (isResetMode) {
-        setMode('reset');
-      }
-    };
-
-    maybeVerifyRecovery();
-  }, [isResetMode, searchParams]);
-
-  useEffect(() => {
-    // Check if already logged in (but not in reset mode)
+    // Check if already logged in
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session && !isResetMode) {
+      if (session) {
         navigate('/');
       }
     };
@@ -188,191 +25,26 @@ export default function Auth() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setMode('reset');
-      } else if (session && !isResetMode && mode !== 'reset') {
+      if (session) {
         navigate('/');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, isResetMode, mode]);
+  }, [navigate]);
 
-  const validateForm = () => {
-    const newErrors: {email?: string; password?: string} = {};
+  const handleGoogleLogin = async () => {
+    const origin = Capacitor.isNativePlatform() ? WEB_APP_ORIGIN : window.location.origin;
     
-    try {
-      emailSchema.parse(formData.email);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.email = e.errors[0].message;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth`,
       }
-    }
+    });
 
-    try {
-      passwordSchema.parse(formData.password);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.password = e.errors[0].message;
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (mode === 'forgot') {
-      // Only validate email for forgot password
-      try {
-        emailSchema.parse(formData.email);
-      } catch (err) {
-        if (err instanceof z.ZodError) {
-          setErrors({ email: err.errors[0].message });
-          return;
-        }
-      }
-    } else if (mode === 'reset') {
-      // Validate new password and confirmation
-      const newErrors: {password?: string; confirmPassword?: string} = {};
-      
-      try {
-        passwordSchema.parse(formData.password);
-      } catch (err) {
-        if (err instanceof z.ZodError) {
-          newErrors.password = err.errors[0].message;
-        }
-      }
-      
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Le password non corrispondono';
-      }
-      
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
-      }
-    } else if (!validateForm()) {
-      return;
-    }
-    
-    setIsLoading(true);
-
-    try {
-      if (mode === 'reset') {
-        const { error } = await supabase.auth.updateUser({
-          password: formData.password
-        });
-
-        if (error) {
-          const msg = error.message || '';
-          if (msg.includes('different from the old password') || msg.includes('same_password')) {
-            toast.error('La nuova password deve essere diversa da quella precedente');
-          } else {
-            toast.error('Errore', { description: msg });
-          }
-          return;
-        }
-
-        toast.success('Password aggiornata!', {
-          description: 'La tua password è stata reimpostata con successo.'
-        });
-        
-        // Clear the reset parameter and navigate to home
-        navigate('/');
-      } else if (mode === 'forgot') {
-        // Redirect to /auth which is system-managed and already whitelisted.
-        // The Auth page will detect recovery tokens and handle them.
-        const origin = Capacitor.isNativePlatform() ? WEB_APP_ORIGIN : window.location.origin;
-        const redirectUrl = `${origin}/auth`;
-        
-        const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-          redirectTo: redirectUrl
-        });
-
-        if (error) {
-          toast.error('Errore', { description: error.message });
-          return;
-        }
-
-        toast.success('Email inviata!', {
-          description: 'Controlla la tua casella email per reimpostare la password.'
-        });
-        setMode('login');
-      } else if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('Credenziali non valide', {
-              description: 'Email o password errati. Riprova.'
-            });
-          } else {
-            toast.error('Errore di accesso', {
-              description: error.message
-            });
-          }
-          return;
-        }
-
-        toast.success('Accesso effettuato!');
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              display_name: formData.displayName || formData.email.split('@')[0]
-            }
-          }
-        });
-
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('Utente già registrato', {
-              description: 'Questa email è già in uso. Prova ad accedere.'
-            });
-            setMode('login');
-          } else {
-            toast.error('Errore di registrazione', {
-              description: error.message
-            });
-          }
-          return;
-        }
-
-        toast.success('Registrazione completata!', {
-          description: 'Benvenuto in DialRoad!'
-        });
-      }
-    } catch (error) {
-      toast.error('Si è verificato un errore');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getTitle = () => {
-    switch (mode) {
-      case 'forgot': return 'Recupera Password';
-      case 'signup': return 'Crea Account';
-      case 'reset': return 'Nuova Password';
-      default: return 'Bentornato!';
-    }
-  };
-
-  const getSubtitle = () => {
-    switch (mode) {
-      case 'forgot': return 'Inserisci la tua email per reimpostare la password';
-      case 'signup': return 'Registrati per salvare i tuoi preferiti';
-      case 'reset': return 'Inserisci la tua nuova password';
-      default: return 'Accedi al tuo account DialRoad';
+    if (error) {
+      toast.error('Errore', { description: error.message });
     }
   };
 
@@ -409,207 +81,42 @@ export default function Auth() {
               <img src={logo} alt="DialRoad" className="w-full h-full object-contain" />
             </motion.div>
             <h1 className="text-2xl font-display font-bold gradient-text">
-              {getTitle()}
+              Benvenuto!
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {getSubtitle()}
+            <p className="text-muted-foreground text-sm mt-1 text-center">
+              Accedi con il tuo account Google per salvare i tuoi preferiti
             </p>
           </div>
 
-          {shouldShowOpenInApp && (
-            <div className="mb-4 rounded-xl border border-border/60 bg-background/70 backdrop-blur-sm p-3">
-              <p className="text-sm text-foreground">
-                Se hai l’app installata, aprila per completare il reset della password.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <Button
-                  type="button"
-                  className="flex-1"
-                  onClick={() => {
-                    sessionStorage.setItem('tried_native_recovery', '1');
-                    window.location.href = nativeRecoveryUrl;
-                  }}
-                >
-                  Apri nell’app
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    // User chooses to proceed in browser
-                    sessionStorage.setItem('tried_native_recovery', '1');
-                  }}
-                >
-                  Continua qui
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Google Login Button */}
+          <Button
+            onClick={handleGoogleLogin}
+            className="w-full h-12 rounded-xl bg-white border border-border/50 text-foreground font-semibold text-base hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
+            </svg>
+            Continua con Google
+          </Button>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <AnimatePresence mode="wait">
-              {mode === 'signup' && (
-                <motion.div
-                  key="displayName"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Nome visualizzato"
-                      value={formData.displayName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                      className="pl-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white"
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Email field - not shown in reset mode */}
-            {mode !== 'reset' && (
-              <div>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, email: e.target.value }));
-                      setErrors(prev => ({ ...prev, email: undefined }));
-                    }}
-                    className={`pl-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.email ? 'border-destructive' : ''}`}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-destructive text-xs mt-1 ml-1">{errors.email}</p>
-                )}
-              </div>
-            )}
-
-            {/* Password field - shown for login, signup, and reset */}
-            {mode !== 'forgot' && (
-              <div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder={mode === 'reset' ? 'Nuova password' : 'Password'}
-                    value={formData.password}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, password: e.target.value }));
-                      setErrors(prev => ({ ...prev, password: undefined }));
-                    }}
-                    className={`pl-10 pr-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.password ? 'border-destructive' : ''}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-destructive text-xs mt-1 ml-1">{errors.password}</p>
-                )}
-              </div>
-            )}
-
-            {/* Confirm password field - only in reset mode */}
-            {mode === 'reset' && (
-              <div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Conferma password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, confirmPassword: e.target.value }));
-                      setErrors(prev => ({ ...prev, confirmPassword: undefined }));
-                    }}
-                    className={`pl-10 h-12 rounded-xl border-border/50 bg-white/80 backdrop-blur-sm focus:bg-white ${errors.confirmPassword ? 'border-destructive' : ''}`}
-                  />
-                </div>
-                {errors.confirmPassword && (
-                  <p className="text-destructive text-xs mt-1 ml-1">{errors.confirmPassword}</p>
-                )}
-              </div>
-            )}
-
-            {mode === 'login' && (
-              <div className="text-right">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('forgot');
-                    setErrors({});
-                  }}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Password dimenticata?
-                </button>
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-12 rounded-xl gradient-bg text-primary-foreground font-semibold text-base hover:opacity-90 transition-opacity"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : mode === 'forgot' ? (
-                'Invia email di recupero'
-              ) : mode === 'reset' ? (
-                'Salva nuova password'
-              ) : mode === 'login' ? (
-                'Accedi'
-              ) : (
-                'Registrati'
-              )}
-            </Button>
-          </form>
-
-          {/* Toggle - not shown in reset mode */}
-          {mode !== 'reset' && (
-            <div className="mt-6 text-center">
-              {mode === 'forgot' ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('login');
-                    setErrors({});
-                  }}
-                  className="text-sm text-primary font-medium hover:underline"
-                >
-                  ← Torna al login
-                </button>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  {mode === 'login' ? 'Non hai un account?' : 'Hai già un account?'}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode(mode === 'login' ? 'signup' : 'login');
-                      setErrors({});
-                    }}
-                    className="ml-1 text-primary font-medium hover:underline"
-                  >
-                    {mode === 'login' ? 'Registrati' : 'Accedi'}
-                  </button>
-                </p>
-              )}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            Accedendo, accetti i nostri Termini di Servizio e la Privacy Policy
+          </p>
         </motion.div>
       </div>
     </div>
