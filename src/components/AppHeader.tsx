@@ -45,7 +45,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           <img
             src={dialroadLogo}
             alt="DialRoad"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-20 w-auto object-contain drop-shadow-md"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-auto object-contain drop-shadow-md"
           />
 
           <div className="relative flex items-center justify-between px-4 h-full">
