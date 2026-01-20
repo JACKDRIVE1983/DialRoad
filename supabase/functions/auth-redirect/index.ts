@@ -22,7 +22,7 @@ serve(async (req) => {
 
   // Android Chrome works best with intent:// links (they support a built-in browser fallback)
   // NOTE: keep package name in sync with your Android app id.
-  const androidPackage = "com.dialroad.map";
+  const androidPackage = "com.dialroad.app";
   const androidIntent = `intent://reset-password?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}#Intent;scheme=dialroad;package=${androidPackage};S.browser_fallback_url=${encodeURIComponent(webTarget)};end`;
 
   // For mobile we redirect immediately (no HTML page) so the browser can trigger the deep link.
