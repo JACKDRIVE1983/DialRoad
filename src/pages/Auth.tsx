@@ -197,7 +197,7 @@ export default function Auth() {
         }
 
         toast.success('Registrazione completata!', {
-          description: 'Benvenuto in DialMap!'
+          description: 'Benvenuto in DialRoad!'
         });
       }
     } catch (error) {
@@ -221,7 +221,7 @@ export default function Auth() {
       case 'forgot': return 'Inserisci la tua email per reimpostare la password';
       case 'signup': return 'Registrati per salvare i tuoi preferiti';
       case 'reset': return 'Inserisci la tua nuova password';
-      default: return 'Accedi al tuo account DialMap';
+      default: return 'Accedi al tuo account DialRoad';
     }
   };
 
@@ -255,7 +255,7 @@ export default function Auth() {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
             >
-              <img src={logo} alt="DialMap" className="w-full h-full object-cover" />
+              <img src={logo} alt="DialRoad" className="w-full h-full object-cover" />
             </motion.div>
             <h1 className="text-2xl font-display font-bold gradient-text">
               {getTitle()}

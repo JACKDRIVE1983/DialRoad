@@ -34,7 +34,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const handleComplete = useCallback(() => {
-    localStorage.setItem('dialmap-onboarding-seen', 'true');
+    localStorage.setItem('dialroad-onboarding-seen', 'true');
     onComplete();
   }, [onComplete]);
 
@@ -71,7 +71,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       >
         <img 
           src={logo} 
-          alt="DialMap" 
+          alt="DialRoad" 
           className="w-24 h-24 object-contain drop-shadow-lg"
         />
       </motion.div>
