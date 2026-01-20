@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useReviews } from '@/hooks/useReviews';
 import { toast } from 'sonner';
-import logo from '@/assets/dialroad-logo-no-bg.png';
+import logo from '@/assets/dialroad-logo-transparent.png';
 
 export function ProfileView() {
   const navigate = useNavigate();
