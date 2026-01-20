@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Map, List, User, Moon, Sun } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import bottomNavBg from '@/assets/bottom-nav-bg.png';
 
 type TabType = 'map' | 'list' | 'profile';
 
@@ -25,8 +26,23 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       animate={{ y: 0 }}
       transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
     >
-      <div className="glass-card rounded-2xl mb-2">
-        <div className="flex items-center justify-around py-2">
+      <div 
+        className="rounded-2xl mb-2 overflow-hidden relative"
+        style={{
+          boxShadow: '0 -4px 32px rgba(16, 185, 129, 0.2)',
+          border: '1px solid rgba(255, 255, 255, 0.5)'
+        }}
+      >
+        {/* Background image */}
+        <img
+          src={bottomNavBg}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Overlay for better icon visibility */}
+        <div className="absolute inset-0 bg-white/60 dark:bg-black/50 backdrop-blur-sm" />
+        
+        <div className="relative flex items-center justify-around py-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
