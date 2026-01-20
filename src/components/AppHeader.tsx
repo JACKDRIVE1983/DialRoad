@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import headerMapBg from '@/assets/header-map-bg.avif';
+import dialroadLogo from '@/assets/dialroad-logo.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -38,20 +38,14 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Background: fill the bar */}
-          <img
-            src={headerMapBg}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: 'center 50%' }}
-          />
+          {/* Background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-cyan-50 to-sky-100" />
 
-          {/* Foreground: ensure full logo is always visible */}
+          {/* Logo centered and visible */}
           <img
-            src={headerMapBg}
-            alt=""
-            className="absolute inset-0 w-full h-full object-contain"
-            style={{ transform: 'scale(1.9)', transformOrigin: 'center center' }}
+            src={dialroadLogo}
+            alt="DialRoad"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-auto object-contain drop-shadow-md"
           />
 
           <div className="relative flex items-center justify-between px-4 h-full">
