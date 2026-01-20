@@ -1,1 +1,10 @@
 project_id = "ocxwbbtegbphkaqfkhvr"
+
+[functions.auth-redirect]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.get-maps-key]
+verify_jwt = false
