@@ -12,7 +12,7 @@ import logo from '@/assets/dialroad-logo-transparent.png';
 export function ProfileView() {
   const navigate = useNavigate();
   const { centers, setSelectedCenter } = useApp();
-  const { user, profile, isAuthenticated, isLoading, signOut, uploadAvatar, updatePassword } = useAuth();
+  const { user, profile, isAuthenticated, isLoading, signOut, uploadAvatar, updatePassword, deleteAccount } = useAuth();
   const { favorites, isLoading: favoritesLoading } = useFavorites();
   const { userReviewsCount } = useReviews();
   
@@ -20,6 +20,8 @@ export function ProfileView() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -226,14 +228,67 @@ export function ProfileView() {
                 )}
 
                 <button
-                  onClick={() => {
-                    toast.info('Per eliminare il tuo account, contatta giacomo748@gmail.com');
-                  }}
+                  onClick={() => setShowDeleteConfirm(true)}
                   className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                 >
                   <Trash2 className="w-5 h-5" />
-                  <span className="font-medium">Richiedi eliminazione account</span>
+                  <span className="font-medium">Elimina account</span>
                 </button>
+
+                {/* Delete confirmation dialog */}
+                {showDeleteConfirm && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="bg-background rounded-2xl p-6 max-w-sm w-full shadow-xl"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <h3 className="text-lg font-bold text-foreground mb-2">Elimina account</h3>
+                      <p className="text-muted-foreground text-sm mb-6">
+                        Sei sicuro di voler eliminare il tuo account? Questa azione è irreversibile e tutti i tuoi dati (preferiti, recensioni, profilo) saranno eliminati permanentemente.
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="flex-1 py-3 rounded-xl bg-muted text-foreground font-medium hover:bg-muted/80 transition-colors"
+                        >
+                          Annulla
+                        </button>
+                        <button
+                          onClick={async () => {
+                            setIsDeletingAccount(true);
+                            const { error } = await deleteAccount();
+                            setIsDeletingAccount(false);
+                            setShowDeleteConfirm(false);
+                            if (error) {
+                              toast.error('Errore durante l\'eliminazione dell\'account');
+                            } else {
+                              toast.success('Account eliminato con successo');
+                              navigate('/');
+                            }
+                          }}
+                          disabled={isDeletingAccount}
+                          className="flex-1 py-3 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {isDeletingAccount ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Eliminazione...
+                            </>
+                          ) : (
+                            'Elimina'
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
               </div>
             </motion.div>
           )}
