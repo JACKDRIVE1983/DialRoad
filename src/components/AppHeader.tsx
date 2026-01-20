@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, HelpCircle, Mail, MapPin } from 'lucide-react';
+import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
+import headerMapBg from '@/assets/header-map-bg.png';
+import logo from '@/assets/dialmap-logo-icon.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -24,17 +26,6 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
     setActiveModal(modal);
   };
 
-  // Pin positions for the stylized map - medical cross pins
-  const pins = [
-    { left: '18%', top: '30%', delay: 0, size: 16 },
-    { left: '30%', top: '55%', delay: 0.15, size: 12 },
-    { left: '45%', top: '25%', delay: 0.1, size: 18 },
-    { left: '50%', top: '60%', delay: 0.25, size: 14 },
-    { left: '65%', top: '35%', delay: 0.2, size: 16 },
-    { left: '75%', top: '55%', delay: 0.3, size: 12 },
-    { left: '85%', top: '30%', delay: 0.35, size: 14 },
-  ];
-
   return (
     <>
       <motion.div
@@ -42,51 +33,30 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-16"
+          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-20"
           style={{
-            background: 'linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 25%, #34d399 50%, #10b981 75%, #059669 100%)',
-            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255,255,255,0.4)',
+            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Terrain texture overlay */}
-          <div 
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: `
-                radial-gradient(circle at 20% 40%, rgba(255,255,255,0.3) 0%, transparent 25%),
-                radial-gradient(circle at 60% 30%, rgba(255,255,255,0.2) 0%, transparent 30%),
-                radial-gradient(circle at 80% 60%, rgba(255,255,255,0.25) 0%, transparent 20%)
-              `
-            }}
+          {/* Background image */}
+          <img 
+            src={headerMapBg} 
+            alt="" 
+            className="absolute inset-0 w-full h-full object-cover"
           />
+          
+          {/* Slight overlay for better contrast */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10" />
 
-          {/* Stylized map roads/paths - more detailed */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 64" preserveAspectRatio="none">
-            {/* Main highways */}
-            <path d="M0,32 C40,28 80,38 120,32 S180,24 220,30 S280,40 320,32 S380,26 400,30" 
-                  stroke="rgba(255,255,255,0.5)" strokeWidth="3" fill="none" strokeLinecap="round"/>
-            <path d="M0,48 C60,52 100,42 160,48 S240,56 300,48 S360,44 400,50" 
-                  stroke="rgba(255,255,255,0.35)" strokeWidth="2" fill="none" strokeLinecap="round"/>
-            <path d="M0,18 C50,14 100,22 150,16 S220,12 280,20 S350,18 400,14" 
-                  stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-            
-            {/* Vertical roads */}
-            <path d="M60,0 Q65,32 55,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
-            <path d="M140,0 Q135,30 145,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
-            <path d="M220,0 Q225,35 215,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
-            <path d="M300,0 Q295,28 305,64" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" fill="none"/>
-            <path d="M360,0 Q365,32 355,64" stroke="rgba(255,255,255,0.2)" strokeWidth="1" fill="none"/>
-          </svg>
-
-          <div className="relative flex items-center justify-between px-4 py-3 h-full">
+          <div className="relative flex items-center justify-between px-4 h-full">
             {/* Menu button on the left */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/40 pointer-events-auto z-10 bg-white/25 backdrop-blur-sm"
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/40 pointer-events-auto z-10 bg-white/30 backdrop-blur-sm"
               aria-label="Menu"
               style={{
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)'
               }}
             >
               <AnimatePresence mode="wait">
@@ -114,56 +84,32 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
               </AnimatePresence>
             </button>
 
-            {/* Animated medical pins */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {pins.map((pin, index) => (
-                <motion.div
-                  key={index}
-                  className="absolute"
-                  style={{ left: pin.left, top: pin.top }}
-                  initial={{ scale: 0, y: -20, opacity: 0 }}
-                  animate={{ 
-                    scale: 1, 
-                    y: [0, -4, 0],
-                    opacity: 1
-                  }}
-                  transition={{ 
-                    scale: { delay: pin.delay, duration: 0.4, type: "spring", stiffness: 300 },
-                    opacity: { delay: pin.delay, duration: 0.3 },
-                    y: { delay: pin.delay + 0.5, duration: 2, repeat: Infinity, ease: "easeInOut" }
-                  }}
-                >
-                  {/* Pin with shadow */}
-                  <div 
-                    className="relative"
-                    style={{ 
-                      filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.25))',
-                      width: pin.size,
-                      height: pin.size * 1.3
-                    }}
-                  >
-                    {/* Pin body */}
-                    <svg viewBox="0 0 24 32" className="w-full h-full">
-                      {/* Pin shape */}
-                      <path 
-                        d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20c0-6.6-5.4-12-12-12z" 
-                        fill="#ef4444"
-                      />
-                      {/* Highlight */}
-                      <ellipse cx="8" cy="8" rx="4" ry="3" fill="rgba(255,255,255,0.3)" />
-                      {/* Medical cross */}
-                      <rect x="10" y="6" width="4" height="12" rx="0.5" fill="white"/>
-                      <rect x="6" y="10" width="12" height="4" rx="0.5" fill="white"/>
-                    </svg>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            {/* Centered logo */}
+            <motion.div
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            >
+              <div 
+                className="w-14 h-14 rounded-xl overflow-hidden bg-white/20 backdrop-blur-sm p-1"
+                style={{
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)'
+                }}
+              >
+                <img 
+                  src={logo} 
+                  alt="DialMap" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </motion.div>
 
             {/* Spacer for balance */}
             <div className="w-10 h-10" />
           </div>
         </div>
+
 
         {/* Dropdown Menu */}
         <AnimatePresence>
