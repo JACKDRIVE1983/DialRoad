@@ -15,8 +15,11 @@ const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratt
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
   const isResetMode = searchParams.get('reset') === 'true';
-  
+  const recoveryToken = searchParams.get('token');
+  const recoveryType = searchParams.get('type');
+
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot' | 'reset'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,11 +32,28 @@ export default function Auth() {
   const [errors, setErrors] = useState<{email?: string; password?: string; confirmPassword?: string}>({});
 
   useEffect(() => {
-    // Check for reset mode from URL
-    if (isResetMode) {
+    // If we arrived from a password-recovery link, verify the token and enter reset mode.
+    // This makes the flow work even when the link comes from the app deep link.
+    const maybeVerifyRecovery = async () => {
+      if (!isResetMode) return;
       setMode('reset');
-    }
-  }, [isResetMode]);
+
+      // If token/type are present, verify them to establish the recovery session.
+      // For recovery links Supabase expects token_hash + type.
+      if (recoveryToken && recoveryType) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: recoveryToken,
+          type: recoveryType as any,
+        });
+
+        if (error) {
+          toast.error('Link non valido o scaduto', { description: error.message });
+        }
+      }
+    };
+
+    maybeVerifyRecovery();
+  }, [isResetMode, recoveryToken, recoveryType]);
 
   useEffect(() => {
     // Check if already logged in (but not in reset mode)
