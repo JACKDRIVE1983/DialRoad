@@ -14,6 +14,15 @@ serve(async (req) => {
   const accessToken = params.get("access_token") || "";
   const refreshToken = params.get("refresh_token") || "";
 
+  console.log("[auth-redirect] incoming", {
+    type,
+    has_token_hash: !!tokenHash,
+    has_code: !!code,
+    has_access_token: !!accessToken,
+    has_refresh_token: !!refreshToken,
+    ua: (req.headers.get("user-agent") || "").slice(0, 80),
+  });
+
   const userAgent = req.headers.get("user-agent") || "";
   const isAndroid = /Android/i.test(userAgent);
   const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
