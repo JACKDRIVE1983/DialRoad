@@ -42,7 +42,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           <img
             src={headerDialroadBg}
             alt="DialRoad"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-[center_40%]"
           />
 
           <div className="relative flex items-center justify-between px-4 h-full">
