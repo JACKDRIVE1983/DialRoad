@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import logo from '@/assets/dialmap-logo.png';
+import logo from '@/assets/dialroad-logo-transparent.png';
 
 const emailSchema = z.string().email('Email non valida');
 const passwordSchema = z.string().min(6, 'La password deve avere almeno 6 caratteri');
@@ -250,12 +250,12 @@ export default function Auth() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <motion.div
-              className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg mb-4"
+              className="w-24 h-24 mb-4"
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
             >
-              <img src={logo} alt="DialRoad" className="w-full h-full object-cover" />
+              <img src={logo} alt="DialRoad" className="w-full h-full object-contain" />
             </motion.div>
             <h1 className="text-2xl font-display font-bold gradient-text">
               {getTitle()}
