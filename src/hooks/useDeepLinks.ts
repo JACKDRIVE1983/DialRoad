@@ -17,19 +17,31 @@ export function useDeepLinks() {
       const url = new URL(event.url);
       
       // Handle password reset deep link
-      // Expected format: dialroad://auth?reset=true&token=...&type=recovery
+      // Expected format: dialroad://reset-password?token=...&type=recovery
+      // or dialroad://auth?reset=true&token=...&type=recovery (legacy)
+      const token = url.searchParams.get('token');
+      const type = url.searchParams.get('type');
+      const resetParam = url.searchParams.get('reset');
+      
+      // Check if this is a password reset link
+      if (url.pathname === '/reset-password' || url.pathname.includes('/reset-password')) {
+        const qs = new URLSearchParams();
+        if (token) qs.set('token', token);
+        if (type) qs.set('type', type);
+        navigate(`/reset-password?${qs.toString()}`);
+        return;
+      }
+      
+      // Legacy: handle /auth with reset=true
+      if ((url.pathname === '/auth' || url.pathname.includes('/auth')) && resetParam === 'true') {
+        const qs = new URLSearchParams();
+        if (token) qs.set('token', token);
+        if (type) qs.set('type', type);
+        navigate(`/reset-password?${qs.toString()}`);
+        return;
+      }
+      
       if (url.pathname === '/auth' || url.pathname.includes('/auth')) {
-        const resetParam = url.searchParams.get('reset');
-        if (resetParam === 'true') {
-          const token = url.searchParams.get('token');
-          const type = url.searchParams.get('type');
-          const qs = new URLSearchParams();
-          qs.set('reset', 'true');
-          if (token) qs.set('token', token);
-          if (type) qs.set('type', type);
-          navigate(`/auth?${qs.toString()}`);
-          return;
-        }
         navigate('/auth');
         return;
       }
