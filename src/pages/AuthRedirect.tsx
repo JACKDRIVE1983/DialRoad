@@ -44,7 +44,11 @@ export default function AuthRedirect() {
     const fallback = `/reset-password?${normalized.toString()}`;
     const appUrl = `dialroad://reset-password?${normalized.toString()}`;
     const androidPackage = "com.dialroad.map";
-    const intentUrl = `intent://reset-password?${normalized.toString()}#Intent;scheme=dialroad;package=${androidPackage};end`;
+    // Include browser fallback to improve compatibility with Chrome/WebViews
+    const fallbackFullUrl = `${window.location.origin}${fallback}`;
+    const intentUrl = `intent://reset-password?${normalized.toString()}#Intent;scheme=dialroad;package=${androidPackage};S.browser_fallback_url=${encodeURIComponent(
+      fallbackFullUrl
+    )};end`;
 
     return {
       isAndroid: isAndroidUA(ua),
@@ -59,6 +63,7 @@ export default function AuthRedirect() {
   const openNative = useCallback(() => {
     if (!hasAny) return;
     if (isAndroid) {
+      // user gesture (button) should allow intent navigation in most browsers
       window.location.href = androidIntentUrl;
       return;
     }
