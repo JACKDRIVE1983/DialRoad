@@ -503,7 +503,7 @@ export function ProfileView() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
-        <img src={logo} alt="DialRoad" className="w-12 h-12 rounded-xl mb-3" />
+        <img src={logo} alt="DialRoad" className="w-24 h-24 object-contain mb-3" />
         <p className="text-sm font-display font-semibold gradient-text">DialRoad</p>
         <p className="text-xs text-muted-foreground mt-1">Versione 1.0.0</p>
       </motion.div>
