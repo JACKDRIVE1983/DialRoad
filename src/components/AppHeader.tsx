@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import dialroadLogo from '@/assets/dialroad-logo-transparent.png';
+import dialroadLogo from '@/assets/dialroad-logo-no-bg.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
