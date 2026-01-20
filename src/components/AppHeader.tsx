@@ -41,12 +41,6 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-cyan-50 to-sky-100" />
 
-          {/* Logo centered and visible */}
-          <img
-            src={dialroadLogo}
-            alt="DialRoad"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-auto object-contain drop-shadow-md"
-          />
 
           <div className="relative flex items-center justify-between px-4 h-full">
             {/* Menu button on the left */}
