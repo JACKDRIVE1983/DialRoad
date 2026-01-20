@@ -15,6 +15,12 @@ export function useDeepLinks() {
 
     const processDeepLink = (url: string) => {
       console.log('[DeepLink] Processing URL:', url);
+      try {
+        localStorage.setItem('last_deeplink_url', url);
+        localStorage.setItem('last_deeplink_at', new Date().toISOString());
+      } catch {
+        // ignore
+      }
       
       try {
         const parsedUrl = new URL(url);
@@ -43,12 +49,18 @@ export function useDeepLinks() {
         const looksLikeAuthRoute =
           pathname === '/auth' || pathname.includes('/auth') || host === 'auth';
         
-        console.log('[DeepLink] Parsed:', { 
+        const parsedDebug = {
           pathname,
           host,
           token: token ? 'present' : 'missing', 
           type 
-        });
+        };
+        console.log('[DeepLink] Parsed:', parsedDebug);
+        try {
+          localStorage.setItem('last_deeplink_parsed', JSON.stringify(parsedDebug));
+        } catch {
+          // ignore
+        }
 
         // Password reset: navigate even if token is missing (so user sees the reset page + error state).
         if (looksLikeResetRoute || (token && type === 'recovery')) {
@@ -90,15 +102,22 @@ export function useDeepLinks() {
     if (!hasHandledLaunchUrl.current) {
       hasHandledLaunchUrl.current = true;
       
-      CapacitorApp.getLaunchUrl().then((result) => {
-        if (result?.url) {
-          console.log('[DeepLink] Launch URL detected:', result.url);
-          // Small delay to ensure router is ready
-          setTimeout(() => {
-            processDeepLink(result.url);
-          }, 100);
-        }
-      });
+       CapacitorApp.getLaunchUrl().then((result) => {
+         console.log('[DeepLink] getLaunchUrl result:', result?.url || null);
+         try {
+           localStorage.setItem('last_launch_url', result?.url || '');
+           localStorage.setItem('last_launch_at', new Date().toISOString());
+         } catch {
+           // ignore
+         }
+
+         if (result?.url) {
+           // Small delay to ensure router is ready
+           setTimeout(() => {
+             processDeepLink(result.url);
+           }, 100);
+         }
+       });
     }
 
     return () => {
