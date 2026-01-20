@@ -42,7 +42,8 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           <img 
             src={headerMapBg} 
             alt="" 
-            className="absolute inset-0 w-full h-full object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: 'center 35%' }}
           />
 
           <div className="relative flex items-center justify-between px-4 h-full">
