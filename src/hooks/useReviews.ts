@@ -31,7 +31,9 @@ interface ReviewWithAuthor {
 export function useReviews(centerId?: string) {
   const { user, isAuthenticated } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUserReviews, setIsLoadingUserReviews] = useState(false);
   const [userReviewsCount, setUserReviewsCount] = useState(0);
 
   useEffect(() => {
@@ -95,6 +97,43 @@ export function useReviews(centerId?: string) {
     setUserReviewsCount(count || 0);
   };
 
+  const fetchUserReviews = async () => {
+    if (!user) return;
+    
+    setIsLoadingUserReviews(true);
+    
+    const { data, error } = await supabase
+      .from('reviews_with_author' as any)
+      .select('id, user_id, center_id, rating, text, created_at, updated_at, author_name, author_avatar')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user reviews:', error);
+      setIsLoadingUserReviews(false);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const enrichedReviews: Review[] = (data as unknown as ReviewWithAuthor[]).map(review => ({
+        id: review.id,
+        user_id: review.user_id,
+        center_id: review.center_id,
+        rating: review.rating,
+        text: review.text,
+        created_at: review.created_at,
+        updated_at: review.updated_at,
+        user_name: review.author_name || 'Utente',
+        user_avatar: review.author_avatar || undefined
+      }));
+      setUserReviews(enrichedReviews);
+    } else {
+      setUserReviews([]);
+    }
+    
+    setIsLoadingUserReviews(false);
+  };
+
   const addReview = async (centerId: string, rating: number, text: string) => {
     if (!user) return { error: 'Non autenticato' };
 
@@ -140,11 +179,14 @@ export function useReviews(centerId?: string) {
 
   return {
     reviews,
+    userReviews,
     isLoading,
+    isLoadingUserReviews,
     addReview,
     deleteReview,
     getAverageRating,
     userReviewsCount,
+    fetchUserReviews,
     refetch: centerId ? () => fetchReviews(centerId) : undefined
   };
 }

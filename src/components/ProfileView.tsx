@@ -14,10 +14,11 @@ export function ProfileView() {
   const { centers, setSelectedCenter } = useApp();
   const { user, profile, isAuthenticated, isLoading, signOut, uploadAvatar, updatePassword, deleteAccount } = useAuth();
   const { favorites, isLoading: favoritesLoading } = useFavorites();
-  const { userReviewsCount } = useReviews();
+  const { userReviewsCount, userReviews, isLoadingUserReviews, fetchUserReviews, deleteReview } = useReviews();
   
   const [isUploading, setIsUploading] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [showMyReviews, setShowMyReviews] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -88,7 +89,14 @@ export function ProfileView() {
       label: 'Le Mie Recensioni', 
       value: isAuthenticated ? userReviewsCount.toString() : '0', 
       color: 'text-yellow-500',
-      onClick: () => !isAuthenticated && navigate('/auth')
+      onClick: () => {
+        if (!isAuthenticated) {
+          navigate('/auth');
+        } else {
+          fetchUserReviews();
+          setShowMyReviews(true);
+        }
+      }
     },
     { 
       icon: Settings, 
@@ -391,6 +399,112 @@ export function ProfileView() {
                 <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               </motion.button>
             ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // My Reviews Modal
+  if (showMyReviews) {
+    return (
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-display font-bold text-foreground flex items-center gap-2">
+            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+            Le Mie Recensioni
+          </h2>
+          <button
+            onClick={() => setShowMyReviews(false)}
+            className="w-10 h-10 rounded-full glass-card flex items-center justify-center"
+          >
+            <X className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
+
+        {isLoadingUserReviews ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : userReviews.length === 0 ? (
+          <div className="text-center py-12">
+            <Star className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground">Nessuna recensione scritta</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Visita un centro e lascia la tua opinione
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {userReviews.map((review) => {
+              const center = centers.find(c => c.id === review.center_id);
+              return (
+                <motion.div
+                  key={review.id}
+                  className="glass-card rounded-xl p-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {/* Center info */}
+                  <button
+                    onClick={() => {
+                      if (center) {
+                        setSelectedCenter(center);
+                        setShowMyReviews(false);
+                      }
+                    }}
+                    className="w-full text-left mb-3 pb-3 border-b border-border"
+                  >
+                    <h3 className="font-medium text-foreground truncate">
+                      {center?.name || 'Centro non trovato'}
+                    </h3>
+                    {center && (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        <span className="truncate">{center.city}, {center.region}</span>
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Rating */}
+                  <div className="flex items-center gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= review.rating
+                            ? 'text-yellow-500 fill-yellow-500'
+                            : 'text-muted-foreground/30'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {new Date(review.created_at).toLocaleDateString('it-IT')}
+                    </span>
+                  </div>
+
+                  {/* Review text */}
+                  <p className="text-sm text-foreground">{review.text}</p>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={async () => {
+                      const { error } = await deleteReview(review.id, review.center_id);
+                      if (error) {
+                        toast.error('Errore nell\'eliminazione della recensione');
+                      } else {
+                        toast.success('Recensione eliminata');
+                        fetchUserReviews();
+                      }
+                    }}
+                    className="mt-3 text-xs text-destructive hover:underline flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Elimina
+                  </button>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
