@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import headerItalyMap from '@/assets/header-italy-map.png';
+import headerDialroadBg from '@/assets/header-dialroad-bg.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -38,31 +38,12 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Background image - covers entire bar */}
+          {/* Background image - covers entire bar with logo included */}
           <img
-            src={headerItalyMap}
-            alt=""
+            src={headerDialroadBg}
+            alt="DialRoad"
             className="absolute inset-0 w-full h-full object-cover"
           />
-
-          {/* DialRoad title - centered, matching logo style */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <h1 
-              className="text-4xl font-extrabold uppercase drop-shadow-lg"
-              style={{
-                background: 'linear-gradient(180deg, #2d7cb5 0%, #1a5a8a 50%, #0d3a5c 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                fontFamily: "'Arial', 'Helvetica', sans-serif",
-                textShadow: 'none',
-                filter: 'drop-shadow(0 2px 3px rgba(255,255,255,0.7))',
-                letterSpacing: '0.01em'
-              }}
-            >
-              DialRoad
-            </h1>
-          </div>
 
           <div className="relative flex items-center justify-between px-4 h-full">
             {/* Menu button on the left */}
