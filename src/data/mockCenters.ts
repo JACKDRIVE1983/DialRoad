@@ -79,8 +79,8 @@ export const mockCenters: DialysisCenter[] = rawCenters
       lng: center.lng
     },
     services: ['Emodialisi'],
-    rating: 4.0 + Math.random() * 0.9,
-    likes: Math.floor(Math.random() * 200) + 10,
+    rating: 0, // Real ratings come from database
+    likes: 0, // Real favorites come from database
     comments: [],
     openingHours: 'Lun-Sab: 6:00-20:00',
     isOpen: true
