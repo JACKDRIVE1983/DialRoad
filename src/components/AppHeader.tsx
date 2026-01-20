@@ -38,8 +38,51 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Background image - scaled down to show full logo */}
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          {/* Stylized map background with roads and pins */}
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 via-teal-50 to-cyan-100">
+            {/* Road grid pattern */}
+            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+              {/* Horizontal roads */}
+              <line x1="0" y1="20" x2="100%" y2="25" stroke="#d1d5db" strokeWidth="3" />
+              <line x1="0" y1="45" x2="100%" y2="40" stroke="#d1d5db" strokeWidth="4" />
+              <line x1="0" y1="65" x2="100%" y2="70" stroke="#d1d5db" strokeWidth="3" />
+              
+              {/* Vertical roads */}
+              <line x1="15%" y1="0" x2="12%" y2="100%" stroke="#d1d5db" strokeWidth="3" />
+              <line x1="35%" y1="0" x2="38%" y2="100%" stroke="#d1d5db" strokeWidth="2" />
+              <line x1="62%" y1="0" x2="60%" y2="100%" stroke="#d1d5db" strokeWidth="3" />
+              <line x1="85%" y1="0" x2="88%" y2="100%" stroke="#d1d5db" strokeWidth="2" />
+              
+              {/* Curved roads */}
+              <path d="M0,30 Q25%,15 50%,35 T100%,25" stroke="#e5e7eb" strokeWidth="2" fill="none" />
+              <path d="M0,55 Q30%,70 60%,50 T100%,60" stroke="#e5e7eb" strokeWidth="2" fill="none" />
+            </svg>
+            
+            {/* Red map pins */}
+            <svg className="absolute left-[8%] top-[15%] w-5 h-5 drop-shadow-md" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ef4444"/>
+              <circle cx="12" cy="9" r="2.5" fill="white"/>
+            </svg>
+            <svg className="absolute left-[22%] top-[55%] w-4 h-4 drop-shadow-md" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#dc2626"/>
+              <circle cx="12" cy="9" r="2.5" fill="white"/>
+            </svg>
+            <svg className="absolute right-[25%] top-[20%] w-4 h-4 drop-shadow-md" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#ef4444"/>
+              <circle cx="12" cy="9" r="2.5" fill="white"/>
+            </svg>
+            <svg className="absolute right-[8%] top-[50%] w-5 h-5 drop-shadow-md" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#dc2626"/>
+              <circle cx="12" cy="9" r="2.5" fill="white"/>
+            </svg>
+            <svg className="absolute left-[45%] top-[65%] w-3 h-3 drop-shadow-sm" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#f87171"/>
+              <circle cx="12" cy="9" r="2.5" fill="white"/>
+            </svg>
+          </div>
+          
+          {/* Center logo overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <img 
               src={headerMapBg} 
               alt="" 
@@ -51,8 +94,8 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
             />
           </div>
           
-          {/* Gradient overlay for edges */}
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-400/30 via-transparent to-teal-400/30" />
+          {/* Soft gradient overlay for blending */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/20" />
 
           <div className="relative flex items-center justify-between px-4 h-full">
             {/* Menu button on the left */}
