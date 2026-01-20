@@ -192,19 +192,31 @@ export function ProfileView() {
                     </div>
                     <button
                       onClick={async () => {
-                        if (newPassword.length < 6) {
+                        const next = newPassword.trim();
+                        const confirm = confirmPassword.trim();
+
+                        if (next.length < 6) {
                           toast.error('La password deve essere di almeno 6 caratteri');
                           return;
                         }
-                        if (newPassword !== confirmPassword) {
+                        if (next !== confirm) {
                           toast.error('Le password non corrispondono');
                           return;
                         }
+
                         setIsUpdatingPassword(true);
-                        const { error } = await updatePassword(newPassword);
+                        const { error } = await updatePassword(next);
                         setIsUpdatingPassword(false);
+
                         if (error) {
-                          toast.error('Errore nel cambio password');
+                          const msg = error.message || '';
+                          if (msg.includes('different from the old password') || msg.includes('same_password')) {
+                            toast.error('La nuova password deve essere diversa da quella attuale');
+                          } else if (msg.includes('Not authenticated')) {
+                            toast.error('Sessione scaduta: fai logout e login e riprova');
+                          } else {
+                            toast.error('Errore nel cambio password', { description: msg });
+                          }
                         } else {
                           toast.success('Password aggiornata con successo!');
                           setNewPassword('');
