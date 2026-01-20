@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import dialroadLogo from '@/assets/dialroad-logo.png';
+import dialroadLogo from '@/assets/dialroad-logo-transparent.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -41,11 +41,11 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-r from-sky-100 via-cyan-50 to-sky-100" />
 
-          {/* Logo centered and visible - blend white bg with header */}
+          {/* Logo centered and visible */}
           <img
             src={dialroadLogo}
             alt="DialRoad"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-auto object-contain drop-shadow-md mix-blend-multiply"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-auto object-contain drop-shadow-md"
           />
 
           <div className="relative flex items-center justify-between px-4 h-full">
