@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { memo } from 'react';
 import { MapPin, Star, Heart, Clock, Search } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
@@ -26,29 +26,12 @@ export function CentersList({ onSelectCenter }: CentersListProps) {
           className="w-full pl-10 pr-4 py-3 rounded-xl glass-card border-0 bg-background/60 backdrop-blur-sm text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       </div>
-      <motion.div
-        className="space-y-4"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          visible: {
-            transition: {
-              staggerChildren: 0.1
-            }
-          }
-        }}
-      >
+      <div className="space-y-3">
         {filteredCenters.map((center) => (
-          <motion.button
+          <button
             key={center.id}
-            className="w-full text-left"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0 }
-            }}
+            className="w-full text-left transition-transform active:scale-[0.98]"
             onClick={() => onSelectCenter(center)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
             <div className="glass-card rounded-2xl overflow-hidden">
               <div className="flex">
@@ -112,7 +95,7 @@ export function CentersList({ onSelectCenter }: CentersListProps) {
                 </div>
               </div>
             </div>
-          </motion.button>
+          </button>
         ))}
 
         {filteredCenters.length === 0 && (
@@ -126,7 +109,7 @@ export function CentersList({ onSelectCenter }: CentersListProps) {
             </p>
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }
