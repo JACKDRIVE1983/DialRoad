@@ -32,7 +32,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-20"
+          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-28"
           style={{
             boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
             border: '1px solid rgba(255, 255, 255, 0.5)'
