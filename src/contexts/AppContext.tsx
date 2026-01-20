@@ -125,17 +125,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     if (!query) return baseFiltered;
     
-    // Check if query matches any city name
-    const hasCityMatch = baseFiltered.some(center => 
-      center.city.toLowerCase().includes(query)
+    // Check if query matches any city name exactly or city starts with query
+    const hasExactCityMatch = baseFiltered.some(center => 
+      center.city.toLowerCase() === query ||
+      center.city.toLowerCase().startsWith(query)
     );
     
-    // If query matches a city, only show results from that city (exclude address-only matches)
-    if (hasCityMatch) {
+    // If query matches a city exactly or starts with it, ONLY show results from that city
+    // Do NOT include name matches to avoid "VENEZIALE" appearing when searching "Venezia"
+    if (hasExactCityMatch) {
       return baseFiltered
         .filter(center => 
-          center.city.toLowerCase().includes(query) ||
-          center.name.toLowerCase().includes(query)
+          center.city.toLowerCase() === query ||
+          center.city.toLowerCase().startsWith(query) ||
+          center.city.toLowerCase().includes(query)
         )
         .sort((a, b) => {
           // Priority 1: Exact city match
@@ -150,25 +153,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (aCityStarts && !bCityStarts) return -1;
           if (!aCityStarts && bCityStarts) return 1;
           
-          // Priority 3: City contains query
-          const aCityContains = a.city.toLowerCase().includes(query);
-          const bCityContains = b.city.toLowerCase().includes(query);
-          if (aCityContains && !bCityContains) return -1;
-          if (!aCityContains && bCityContains) return 1;
-          
           return 0;
         });
     }
     
-    // No city match found - search in name and address too
+    // Check if query partially matches a city (but not exact/starts with)
+    const hasPartialCityMatch = baseFiltered.some(center => 
+      center.city.toLowerCase().includes(query)
+    );
+    
+    if (hasPartialCityMatch) {
+      // Show city matches first, then name matches
+      return baseFiltered
+        .filter(center => 
+          center.city.toLowerCase().includes(query) ||
+          center.name.toLowerCase().includes(query)
+        )
+        .sort((a, b) => {
+          const aCityContains = a.city.toLowerCase().includes(query);
+          const bCityContains = b.city.toLowerCase().includes(query);
+          if (aCityContains && !bCityContains) return -1;
+          if (!aCityContains && bCityContains) return 1;
+          return 0;
+        });
+    }
+    
+    // No city match found - search in name and address
     return baseFiltered
       .filter(center => 
         center.name.toLowerCase().includes(query) ||
-        center.city.toLowerCase().includes(query) ||
         center.address.toLowerCase().includes(query)
       )
       .sort((a, b) => {
-        // Priority: Name matches first
         const aNameContains = a.name.toLowerCase().includes(query);
         const bNameContains = b.name.toLowerCase().includes(query);
         if (aNameContains && !bNameContains) return -1;
