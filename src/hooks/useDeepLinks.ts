@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
 export function useDeepLinks() {
   const navigate = useNavigate();
-  const location = useLocation();
   const hasHandledLaunchUrl = useRef(false);
 
   useEffect(() => {
@@ -90,5 +89,5 @@ export function useDeepLinks() {
     return () => {
       CapacitorApp.removeAllListeners();
     };
-  }, [navigate, location]);
+  }, [navigate]);
 }
