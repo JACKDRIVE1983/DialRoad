@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -8,10 +8,10 @@ import { SearchBar } from '@/components/SearchBar';
 import { AppHeader } from '@/components/AppHeader';
 import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
-import { ProfileView } from '@/components/ProfileView';
+import { SettingsView } from '@/components/SettingsView';
 import { BottomNav } from '@/components/BottomNav';
 
-type TabType = 'map' | 'list' | 'profile';
+type TabType = 'map' | 'list' | 'settings';
 
 function AppContent() {
   const { showSplash, setShowSplash, showOnboarding, setShowOnboarding, setSelectedCenter } = useApp();
@@ -52,14 +52,14 @@ function AppContent() {
           </div>
         )}
 
-        {activeTab === 'profile' && (
+        {activeTab === 'settings' && (
           <div className="flex flex-col h-screen">
             <div className="pt-4 px-4">
               <h1 className="text-2xl font-display font-bold text-foreground mb-1">
-                Il Mio Profilo
+                Impostazioni
               </h1>
             </div>
-            <ProfileView />
+            <SettingsView />
           </div>
         )}
       </AnimatePresence>

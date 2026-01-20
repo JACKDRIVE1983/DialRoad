@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import { Map, List, User, Moon, Sun } from 'lucide-react';
+import { Map, List, Settings, Moon, Sun } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import bottomNavBg from '@/assets/bottom-nav-bg.png';
 
-type TabType = 'map' | 'list' | 'profile';
+type TabType = 'map' | 'list' | 'settings';
 
 interface BottomNavProps {
   activeTab: TabType;
@@ -16,7 +16,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   const tabs = [
     { id: 'map' as TabType, icon: Map, label: 'Mappa' },
     { id: 'list' as TabType, icon: List, label: 'Lista' },
-    { id: 'profile' as TabType, icon: User, label: 'Profilo' },
+    { id: 'settings' as TabType, icon: Settings, label: 'Impostazioni' },
   ];
 
   return (
