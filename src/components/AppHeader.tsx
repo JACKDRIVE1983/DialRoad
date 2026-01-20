@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
 import headerMapBg from '@/assets/header-map-bg.png';
-import logo from '@/assets/dialmap-logo-icon.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -33,21 +32,21 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-20"
+          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-16"
           style={{
             boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
             border: '1px solid rgba(255, 255, 255, 0.5)'
           }}
         >
-          {/* Background image */}
+          {/* Background image - centered to show the logo */}
           <img 
             src={headerMapBg} 
             alt="" 
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            style={{
+              objectPosition: 'center 40%'
+            }}
           />
-          
-          {/* Slight overlay for better contrast */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10" />
 
           <div className="relative flex items-center justify-between px-4 h-full">
             {/* Menu button on the left */}
@@ -83,27 +82,6 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                 )}
               </AnimatePresence>
             </button>
-
-            {/* Centered logo */}
-            <motion.div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            >
-              <div 
-                className="w-14 h-14 rounded-xl overflow-hidden bg-white/20 backdrop-blur-sm p-1"
-                style={{
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5)'
-                }}
-              >
-                <img 
-                  src={logo} 
-                  alt="DialMap" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </motion.div>
 
             {/* Spacer for balance */}
             <div className="w-10 h-10" />
