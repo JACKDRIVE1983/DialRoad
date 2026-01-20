@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
@@ -9,12 +9,32 @@ import { toast } from 'sonner';
 import logo from '@/assets/dialroad-logo-login.png';
 
 const WEB_APP_ORIGIN = 'https://id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app';
-const NATIVE_OAUTH_REDIRECT = 'dialroad://auth';
+const NATIVE_DEEPLINK = 'dialroad://auth';
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [isHandingOffToNative, setIsHandingOffToNative] = useState(false);
+
+  const params = useMemo(() => new URLSearchParams(window.location.search), []);
 
   useEffect(() => {
+    // If OAuth callback landed in the system browser for a native login flow,
+    // hand-off the authorization code back to the app via custom scheme.
+    // (This avoids requiring the backend to allow dialroad:// as a redirect URL.)
+    const nativeFlag = params.get('native') === '1';
+    const code = params.get('code');
+    const state = params.get('state');
+    if (!Capacitor.isNativePlatform() && nativeFlag && code) {
+      setIsHandingOffToNative(true);
+      const deepLink = new URL(NATIVE_DEEPLINK);
+      deepLink.searchParams.set('code', code);
+      if (state) deepLink.searchParams.set('state', state);
+
+      // Trigger app open
+      window.location.href = deepLink.toString();
+      return;
+    }
+
     // Check if already logged in
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -35,8 +55,11 @@ export default function Auth() {
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
+    // Web: redirect back to /auth
+    // Native: redirect back to the web /auth with a flag, then that page hands-off
+    // the `code` to the app via dialroad://auth.
     const redirectTo = Capacitor.isNativePlatform()
-      ? NATIVE_OAUTH_REDIRECT
+      ? `${WEB_APP_ORIGIN}/auth?native=1`
       : `${window.location.origin}/auth`;
     
     const { error } = await supabase.auth.signInWithOAuth({
@@ -73,6 +96,18 @@ export default function Auth() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
+          {isHandingOffToNative && (
+            <div className="mb-6 rounded-xl border border-border bg-card/70 p-4">
+              <div className="flex items-center gap-3 text-sm text-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Sto tornando nell’app…
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Se non si apre automaticamente, torna all’app DialRoad e riprova.
+              </p>
+            </div>
+          )}
+
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <motion.div
