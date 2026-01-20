@@ -17,17 +17,17 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50"
+      className="fixed inset-0 z-50 bg-black"
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Fullscreen video */}
+      {/* Fullscreen video - adapted for mobile */}
       <video
         autoPlay
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-contain"
       >
         <source src={splashVideo} type="video/mp4" />
       </video>
