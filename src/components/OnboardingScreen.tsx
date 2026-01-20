@@ -1,9 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
-import { MapPin, Heart, MessageCircle, ChevronRight } from 'lucide-react';
+import { MapPin, Heart, MessageCircle, Navigation, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logo from '@/assets/dialmap-logo-icon.png';
-import backgroundImage from '@/assets/onboarding-bg.jpeg';
+import logo from '@/assets/dialroad-logo-transparent.png';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -11,22 +10,28 @@ interface OnboardingScreenProps {
 
 const slides = [
   {
-    icon: MapPin,
-    title: "Trova Centri Dialisi",
-    description: "Scopri tutti i centri dialisi in Italia con la mappa interattiva. Geolocalizzati e trova il più vicino a te.",
+    icon: Navigation,
+    title: "Benvenuto su DialRoad",
+    description: "La tua guida completa per trovare centri dialisi in tutta Italia. Un'app pensata per semplificare la vita dei pazienti in dialisi e dei loro familiari.",
     color: "from-primary to-accent"
+  },
+  {
+    icon: MapPin,
+    title: "Mappa Interattiva",
+    description: "Visualizza tutti i centri dialisi sulla mappa. Usa la geolocalizzazione per trovare la struttura più vicina a te, ovunque tu sia.",
+    color: "from-accent to-primary"
   },
   {
     icon: Heart,
     title: "Salva i Preferiti",
-    description: "Aggiungi i centri che ti interessano ai preferiti e metti Mi Piace per supportare le strutture migliori.",
-    color: "from-accent to-primary"
+    description: "Aggiungi i centri che ti interessano ai preferiti per ritrovarli velocemente. Supporta le strutture migliori con un Mi Piace.",
+    color: "from-primary via-accent to-primary"
   },
   {
     icon: MessageCircle,
-    title: "Condividi Esperienze",
-    description: "Leggi le recensioni di altri pazienti e lascia commenti per aiutare la comunità.",
-    color: "from-primary via-accent to-primary"
+    title: "Community",
+    description: "Leggi le esperienze di altri pazienti e condividi la tua. Insieme possiamo aiutarci a trovare le cure migliori.",
+    color: "from-accent to-primary"
   }
 ];
 
@@ -48,23 +53,20 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-background via-background to-muted/30"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Background image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      />
-      
-      {/* Overlay for readability */}
-      <div className="absolute inset-0 bg-white/85 backdrop-blur-sm" />
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-accent/10 blur-3xl" />
+      </div>
 
       {/* Logo at top */}
       <motion.div
-        className="relative z-10 flex justify-center pt-12 pb-4"
+        className="relative z-10 flex flex-col items-center pt-16 pb-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -72,7 +74,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         <img 
           src={logo} 
           alt="DialRoad" 
-          className="w-24 h-24 object-contain drop-shadow-lg"
+          className="w-48 h-auto object-contain drop-shadow-lg"
         />
       </motion.div>
 
@@ -81,7 +83,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         <Button 
           variant="ghost" 
           onClick={handleComplete}
-          className="text-muted-foreground hover:text-foreground hover:bg-white/50"
+          className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
         >
           Salta
         </Button>
@@ -100,7 +102,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           >
             {/* Icon */}
             <motion.div
-              className={`w-32 h-32 rounded-full bg-gradient-to-br ${slides[currentSlide].color} flex items-center justify-center mb-8 shadow-xl`}
+              className={`w-28 h-28 rounded-full bg-gradient-to-br ${slides[currentSlide].color} flex items-center justify-center mb-8 shadow-xl`}
               initial={{ scale: 0.5 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
@@ -110,13 +112,13 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             >
               {(() => {
                 const Icon = slides[currentSlide].icon;
-                return <Icon className="w-16 h-16 text-primary-foreground" strokeWidth={1.5} />;
+                return <Icon className="w-14 h-14 text-primary-foreground" strokeWidth={1.5} />;
               })()}
             </motion.div>
 
             {/* Title */}
             <motion.h2
-              className="text-3xl font-display font-bold text-foreground mb-4"
+              className="text-2xl font-display font-bold text-foreground mb-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -126,7 +128,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
             {/* Description */}
             <motion.p
-              className="text-lg text-muted-foreground max-w-sm"
+              className="text-base text-muted-foreground max-w-sm leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
