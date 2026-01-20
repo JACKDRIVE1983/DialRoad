@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
 export function useDeepLinks() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasHandledLaunchUrl = useRef(false);
 
   useEffect(() => {
     // Only run on native platforms
@@ -12,59 +14,81 @@ export function useDeepLinks() {
       return;
     }
 
-    const handleAppUrlOpen = (event: URLOpenListenerEvent) => {
-      // Parse the URL
-      const url = new URL(event.url);
+    const processDeepLink = (url: string) => {
+      console.log('[DeepLink] Processing URL:', url);
       
-      // Handle password reset deep link
-      // Expected format: dialroad://reset-password?token=...&type=recovery
-      // or dialroad://auth?reset=true&token=...&type=recovery (legacy)
-      const token = url.searchParams.get('token');
-      const type = url.searchParams.get('type');
-      const resetParam = url.searchParams.get('reset');
-      
-      // Check if this is a password reset link
-      if (url.pathname === '/reset-password' || url.pathname.includes('/reset-password')) {
-        const qs = new URLSearchParams();
-        if (token) qs.set('token', token);
-        if (type) qs.set('type', type);
-        navigate(`/reset-password?${qs.toString()}`);
-        return;
-      }
-      
-      // Legacy: handle /auth with reset=true
-      if ((url.pathname === '/auth' || url.pathname.includes('/auth')) && resetParam === 'true') {
-        const qs = new URLSearchParams();
-        if (token) qs.set('token', token);
-        if (type) qs.set('type', type);
-        navigate(`/reset-password?${qs.toString()}`);
-        return;
-      }
-      
-      if (url.pathname === '/auth' || url.pathname.includes('/auth')) {
-        navigate('/auth');
-        return;
-      }
+      try {
+        const parsedUrl = new URL(url);
+        const token = parsedUrl.searchParams.get('token');
+        const type = parsedUrl.searchParams.get('type');
+        
+        console.log('[DeepLink] Parsed:', { 
+          pathname: parsedUrl.pathname, 
+          token: token ? 'present' : 'missing', 
+          type 
+        });
 
-      // Handle other deep links - navigate to the path
-      const slug = url.pathname;
-      if (slug) {
-        navigate(slug + url.search);
+        // If we have token and type, it's a password reset - navigate immediately
+        if (token && type === 'recovery') {
+          const targetPath = `/reset-password?token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}`;
+          console.log('[DeepLink] Navigating to reset-password');
+          navigate(targetPath, { replace: true });
+          return true;
+        }
+
+        // Handle explicit /reset-password path
+        if (parsedUrl.pathname === '/reset-password' || parsedUrl.pathname.includes('/reset-password')) {
+          const qs = new URLSearchParams();
+          if (token) qs.set('token', token);
+          if (type) qs.set('type', type);
+          navigate(`/reset-password?${qs.toString()}`, { replace: true });
+          return true;
+        }
+
+        // Handle /auth path
+        if (parsedUrl.pathname === '/auth' || parsedUrl.pathname.includes('/auth')) {
+          navigate('/auth', { replace: true });
+          return true;
+        }
+
+        // Handle other paths
+        const slug = parsedUrl.pathname;
+        if (slug && slug !== '/') {
+          navigate(slug + parsedUrl.search, { replace: true });
+          return true;
+        }
+      } catch (e) {
+        console.error('[DeepLink] Error parsing URL:', e);
       }
+      
+      return false;
     };
 
-    // Listen for app URL open events (deep links)
+    const handleAppUrlOpen = (event: URLOpenListenerEvent) => {
+      console.log('[DeepLink] appUrlOpen event:', event.url);
+      processDeepLink(event.url);
+    };
+
+    // Listen for app URL open events (deep links while app is running)
     CapacitorApp.addListener('appUrlOpen', handleAppUrlOpen);
 
-    // Check if app was opened with a URL (cold start)
-    CapacitorApp.getLaunchUrl().then((result) => {
-      if (result?.url) {
-        handleAppUrlOpen({ url: result.url });
-      }
-    });
+    // Check if app was opened with a URL (cold start) - only once
+    if (!hasHandledLaunchUrl.current) {
+      hasHandledLaunchUrl.current = true;
+      
+      CapacitorApp.getLaunchUrl().then((result) => {
+        if (result?.url) {
+          console.log('[DeepLink] Launch URL detected:', result.url);
+          // Small delay to ensure router is ready
+          setTimeout(() => {
+            processDeepLink(result.url);
+          }, 100);
+        }
+      });
+    }
 
     return () => {
       CapacitorApp.removeAllListeners();
     };
-  }, [navigate]);
+  }, [navigate, location]);
 }
