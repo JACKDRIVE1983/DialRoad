@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Heart, Star, Settings, ChevronRight, LogOut, Camera, Loader2, LogIn, MapPin, X, Info, UserCog, Trash2 } from 'lucide-react';
+import { User, Heart, Star, Settings, ChevronRight, LogOut, Camera, Loader2, LogIn, MapPin, X, Info, UserCog, Trash2, Lock, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -12,13 +12,19 @@ import logo from '@/assets/dialmap-logo.png';
 export function ProfileView() {
   const navigate = useNavigate();
   const { centers, setSelectedCenter } = useApp();
-  const { user, profile, isAuthenticated, isLoading, signOut, uploadAvatar } = useAuth();
+  const { user, profile, isAuthenticated, isLoading, signOut, uploadAvatar, updatePassword } = useAuth();
   const { favorites, isLoading: favoritesLoading } = useFavorites();
   const { userReviewsCount } = useReviews();
   
   const [isUploading, setIsUploading] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const favoriteCenters = centers.filter(c => favorites.includes(c.id));
@@ -133,15 +139,102 @@ export function ProfileView() {
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  toast.info('Per eliminare il tuo account, contatta giacomo748@gmail.com');
-                }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-              >
-                <Trash2 className="w-5 h-5" />
-                <span className="font-medium">Richiedi eliminazione account</span>
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setShowPasswordForm(!showPasswordForm)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+                >
+                  <Lock className="w-5 h-5 text-primary" />
+                  <span className="font-medium text-foreground">Cambia Password</span>
+                  <ChevronRight className={`w-5 h-5 text-muted-foreground ml-auto transition-transform ${showPasswordForm ? 'rotate-90' : ''}`} />
+                </button>
+
+                {showPasswordForm && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-3 rounded-xl bg-muted/50 space-y-3"
+                  >
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="Nuova password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full px-4 py-3 pr-12 rounded-xl bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Conferma password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-4 py-3 pr-12 rounded-xl bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (newPassword.length < 6) {
+                          toast.error('La password deve essere di almeno 6 caratteri');
+                          return;
+                        }
+                        if (newPassword !== confirmPassword) {
+                          toast.error('Le password non corrispondono');
+                          return;
+                        }
+                        setIsUpdatingPassword(true);
+                        const { error } = await updatePassword(newPassword);
+                        setIsUpdatingPassword(false);
+                        if (error) {
+                          toast.error('Errore nel cambio password');
+                        } else {
+                          toast.success('Password aggiornata con successo!');
+                          setNewPassword('');
+                          setConfirmPassword('');
+                          setShowPasswordForm(false);
+                        }
+                      }}
+                      disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+                      className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {isUpdatingPassword ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Aggiornamento...
+                        </>
+                      ) : (
+                        'Aggiorna Password'
+                      )}
+                    </button>
+                  </motion.div>
+                )}
+
+                <button
+                  onClick={() => {
+                    toast.info('Per eliminare il tuo account, contatta giacomo748@gmail.com');
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span className="font-medium">Richiedi eliminazione account</span>
+                </button>
+              </div>
             </motion.div>
           )}
 

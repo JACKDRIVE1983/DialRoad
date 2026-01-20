@@ -112,6 +112,16 @@ export function useAuth() {
     return { error: null, url: urlWithCacheBuster };
   };
 
+  const updatePassword = async (newPassword: string) => {
+    if (!user) return { error: new Error('Not authenticated') };
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -127,6 +137,7 @@ export function useAuth() {
     isAuthenticated: !!session,
     updateProfile,
     uploadAvatar,
+    updatePassword,
     signOut,
     refetchProfile: () => user && fetchProfile(user.id)
   };
