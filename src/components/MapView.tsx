@@ -36,13 +36,14 @@ const lightModeStyles = [
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8e6c9" }] },
 ];
 
-// Simple check for Google Maps availability
+// Simple check for Google Maps availability (supports async loading with callback)
 function useGoogleMapsReady() {
   const [ready, setReady] = useState(false);
   
   useEffect(() => {
     const check = () => {
-      if (window.google?.maps?.Map) {
+      // Check both the Map constructor and __gmapsReady flag from async callback
+      if (window.google?.maps?.Map || (window as any).__gmapsReady) {
         setReady(true);
         return true;
       }
@@ -53,9 +54,9 @@ function useGoogleMapsReady() {
     
     const interval = setInterval(() => {
       if (check()) clearInterval(interval);
-    }, 50);
+    }, 100);
     
-    const timeout = setTimeout(() => clearInterval(interval), 8000);
+    const timeout = setTimeout(() => clearInterval(interval), 10000);
     
     return () => {
       clearInterval(interval);
