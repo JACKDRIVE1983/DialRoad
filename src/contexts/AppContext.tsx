@@ -1,6 +1,14 @@
 // App Context - Global state management for DialRoad
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { DialysisCenter, mockCenters } from '@/data/mockCenters';
+import { 
+  loadAppState, 
+  saveAppState, 
+  isResumeSession, 
+  markSessionInitialized,
+  useStatePersistence,
+  PersistedAppState 
+} from '@/hooks/useAppState';
 
 interface User {
   id: string;
@@ -34,11 +42,29 @@ interface AppContextType {
   setShowOnboarding: (show: boolean) => void;
   showSplash: boolean;
   setShowSplash: (show: boolean) => void;
+  activeTab: 'map' | 'list' | 'settings';
+  setActiveTab: (tab: 'map' | 'list' | 'settings') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Initialize state from persisted data or defaults
+function getInitialState() {
+  const isResume = isResumeSession();
+  const persistedState = loadAppState();
+  
+  return {
+    isResume,
+    persistedState,
+    // Skip splash if resuming from recent state
+    skipSplash: isResume && persistedState !== null
+  };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
+  // Get initial state once
+  const [initialState] = useState(getInitialState);
+  
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('dialroad-theme');
@@ -57,24 +83,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
 
   const [centers, setCenters] = useState<DialysisCenter[]>(mockCenters);
-  const [selectedCenter, setSelectedCenter] = useState<DialysisCenter | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('Tutte le Regioni');
+  
+  // Restore selected center from persisted state
+  const [selectedCenter, setSelectedCenter] = useState<DialysisCenter | null>(() => {
+    if (initialState.persistedState?.selectedCenterId) {
+      return mockCenters.find(c => c.id === initialState.persistedState!.selectedCenterId) || null;
+    }
+    return null;
+  });
+  
+  // Restore user location from persisted state
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(
+    () => initialState.persistedState?.userLocation || null
+  );
+  
+  // Restore search query from persisted state
+  const [searchQuery, setSearchQuery] = useState(
+    () => initialState.persistedState?.searchQuery || ''
+  );
+  
+  // Restore selected region from persisted state
+  const [selectedRegion, setSelectedRegion] = useState(
+    () => initialState.persistedState?.selectedRegion || 'Tutte le Regioni'
+  );
+  
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window !== 'undefined') {
       return !localStorage.getItem('dialroad-onboarding-seen');
     }
     return true;
   });
+  
+  // Skip splash if resuming from background
   const [showSplash, setShowSplash] = useState(() => {
-    // Only show splash once per session (survives navigations but not app restarts)
+    if (initialState.skipSplash) {
+      return false;
+    }
     if (typeof window !== 'undefined') {
       return !sessionStorage.getItem('dialroad-splash-seen');
     }
     return true;
   });
+  
+  // Restore active tab from persisted state
+  const [activeTab, setActiveTab] = useState<'map' | 'list' | 'settings'>(
+    () => initialState.persistedState?.activeTab || 'map'
+  );
+
+  // Mark session as initialized
+  useEffect(() => {
+    markSessionInitialized();
+  }, []);
 
   // Persist splash completion to sessionStorage
   useEffect(() => {
@@ -92,23 +153,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('dialroad-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
+  const toggleDarkMode = useCallback(() => setIsDarkMode(prev => !prev), []);
 
-  const toggleFavorite = (centerId: string) => {
-    // In a real app, this would update the backend
+  const toggleFavorite = useCallback((centerId: string) => {
     console.log('Toggle favorite:', centerId);
-  };
+  }, []);
 
-  const toggleLike = (centerId: string) => {
+  const toggleLike = useCallback((centerId: string) => {
     setCenters(prev => prev.map(center => {
       if (center.id === centerId) {
         return { ...center, likes: center.likes + 1 };
       }
       return center;
     }));
-  };
+  }, []);
 
-  const addComment = (centerId: string, text: string) => {
+  const addComment = useCallback((centerId: string, text: string) => {
     setCenters(prev => prev.map(center => {
       if (center.id === centerId) {
         const newComment = {
@@ -123,9 +183,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return center;
     }));
-  };
+  }, [user]);
 
-  const filteredCenters = (() => {
+  // Use state persistence hook
+  const getStateForPersistence = useCallback((): Omit<PersistedAppState, 'timestamp'> => ({
+    activeTab,
+    selectedCenterId: selectedCenter?.id || null,
+    userLocation,
+    searchQuery,
+    selectedRegion
+  }), [activeTab, selectedCenter, userLocation, searchQuery, selectedRegion]);
+  
+  useStatePersistence(getStateForPersistence);
+
+  const filteredCenters = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     
     // First, filter by region and services
@@ -142,22 +213,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const hasStartsWithCityMatch = baseFiltered.some(center => center.city.toLowerCase().startsWith(query));
     const hasContainsCityMatch = baseFiltered.some(center => center.city.toLowerCase().includes(query));
 
-    // If there's an exact city match (e.g. "Roma"), show ONLY that city to avoid false positives like "Romagna".
     if (hasExactCityMatch) {
       return baseFiltered
         .filter(center => center.city.toLowerCase() === query)
         .sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    // If there's a starts-with city match (e.g. "Venezia" matches "Venezia Lido"), show ONLY those cities.
-    // Avoid name matches here to prevent cases like "VENEZIALE" in other cities.
     if (hasStartsWithCityMatch) {
       return baseFiltered
         .filter(center => center.city.toLowerCase().startsWith(query))
         .sort((a, b) => a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
     }
 
-    // If the query matches some city partially, prioritize those city matches, then allow name matches.
     if (hasContainsCityMatch) {
       return baseFiltered
         .filter(center =>
@@ -173,7 +240,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
     }
     
-    // No city match found - search in name and address
     return baseFiltered
       .filter(center => 
         center.name.toLowerCase().includes(query) ||
@@ -186,33 +252,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!aNameContains && bNameContains) return 1;
         return 0;
       });
-  })();
+  }, [centers, searchQuery, selectedRegion, selectedServices]);
+
+  const contextValue = useMemo(() => ({
+    isDarkMode,
+    toggleDarkMode,
+    user,
+    centers,
+    selectedCenter,
+    setSelectedCenter,
+    toggleFavorite,
+    toggleLike,
+    addComment,
+    userLocation,
+    setUserLocation,
+    searchQuery,
+    setSearchQuery,
+    selectedRegion,
+    setSelectedRegion,
+    selectedServices,
+    setSelectedServices,
+    filteredCenters,
+    showOnboarding,
+    setShowOnboarding,
+    showSplash,
+    setShowSplash,
+    activeTab,
+    setActiveTab
+  }), [
+    isDarkMode, toggleDarkMode, user, centers, selectedCenter, 
+    toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
+    selectedRegion, selectedServices, filteredCenters, showOnboarding,
+    showSplash, activeTab
+  ]);
 
   return (
-    <AppContext.Provider value={{
-      isDarkMode,
-      toggleDarkMode,
-      user,
-      centers,
-      selectedCenter,
-      setSelectedCenter,
-      toggleFavorite,
-      toggleLike,
-      addComment,
-      userLocation,
-      setUserLocation,
-      searchQuery,
-      setSearchQuery,
-      selectedRegion,
-      setSelectedRegion,
-      selectedServices,
-      setSelectedServices,
-      filteredCenters,
-      showOnboarding,
-      setShowOnboarding,
-      showSplash,
-      setShowSplash
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

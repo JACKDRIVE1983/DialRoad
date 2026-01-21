@@ -10,10 +10,16 @@ const config: CapacitorConfig = {
     }
   },
   android: {
-    allowMixedContent: true
+    allowMixedContent: true,
+    // Preserve WebView state during external activities
+    webContentsDebuggingEnabled: false
   },
   ios: {
     contentInset: 'automatic'
+  },
+  server: {
+    // Enable hardware back button handling
+    androidScheme: 'https'
   }
 };
 

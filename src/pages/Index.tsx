@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -11,11 +11,60 @@ import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
 import { BottomNav } from '@/components/BottomNav';
 
-type TabType = 'map' | 'list' | 'settings';
+// Memoized tab content components to prevent unnecessary re-renders
+const MapTabContent = memo(function MapTabContent() {
+  return (
+    <div className="relative h-screen">
+      <AppHeader />
+      <SearchBar />
+      <MapView />
+    </div>
+  );
+});
+
+const ListTabContent = memo(function ListTabContent({ 
+  onSelectCenter 
+}: { 
+  onSelectCenter: (center: any) => void 
+}) {
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="pt-4 px-4">
+        <h1 className="text-2xl font-display font-bold text-foreground mb-1">
+          Centri Dialisi
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Trova il centro più adatto alle tue esigenze
+        </p>
+      </div>
+      <CentersList onSelectCenter={onSelectCenter} />
+    </div>
+  );
+});
+
+const SettingsTabContent = memo(function SettingsTabContent() {
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="pt-4 px-4">
+        <h1 className="text-2xl font-display font-bold text-foreground mb-1">
+          Impostazioni
+        </h1>
+      </div>
+      <SettingsView />
+    </div>
+  );
+});
 
 function AppContent() {
-  const { showSplash, setShowSplash, showOnboarding, setShowOnboarding, setSelectedCenter } = useApp();
-  const [activeTab, setActiveTab] = useState<TabType>('map');
+  const { 
+    showSplash, 
+    setShowSplash, 
+    showOnboarding, 
+    setShowOnboarding, 
+    setSelectedCenter,
+    activeTab,
+    setActiveTab
+  } = useApp();
 
   // Show splash screen first
   if (showSplash) {
@@ -30,38 +79,11 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-background safe-area-top">
       <AnimatePresence mode="wait">
-        {activeTab === 'map' && (
-          <div className="relative h-screen">
-            <AppHeader />
-            <SearchBar />
-            <MapView />
-          </div>
-        )}
-
+        {activeTab === 'map' && <MapTabContent key="map" />}
         {activeTab === 'list' && (
-          <div className="flex flex-col h-screen">
-            <div className="pt-4 px-4">
-              <h1 className="text-2xl font-display font-bold text-foreground mb-1">
-                Centri Dialisi
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Trova il centro più adatto alle tue esigenze
-              </p>
-            </div>
-            <CentersList onSelectCenter={setSelectedCenter} />
-          </div>
+          <ListTabContent key="list" onSelectCenter={setSelectedCenter} />
         )}
-
-        {activeTab === 'settings' && (
-          <div className="flex flex-col h-screen">
-            <div className="pt-4 px-4">
-              <h1 className="text-2xl font-display font-bold text-foreground mb-1">
-                Impostazioni
-              </h1>
-            </div>
-            <SettingsView />
-          </div>
-        )}
+        {activeTab === 'settings' && <SettingsTabContent key="settings" />}
       </AnimatePresence>
 
       <CenterBottomSheet />
