@@ -5,6 +5,7 @@ import { GoogleMap, useLoadScript, MarkerF, InfoWindowF, OverlayView } from '@re
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
+import { getRegionColor, createRegionMarkerIcon } from '@/lib/regionColors';
 
 const mapContainerStyle = {
   width: '100%',
@@ -35,15 +36,15 @@ const lightModeStyles = [
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8e6c9" }] },
 ];
 
+// Default marker icon (kept for reference, but we now use region-specific colors)
 const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
     <defs>
-      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#0077b6;stop-opacity:1" />
-        <stop offset="100%" style="stop-color:#00b4d8;stop-opacity:1" />
-      </linearGradient>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
+      </filter>
     </defs>
-    <circle cx="20" cy="20" r="18" fill="url(#grad)" stroke="white" stroke-width="3"/>
+    <circle cx="20" cy="20" r="18" fill="#0077b6" stroke="white" stroke-width="3" filter="url(#shadow)"/>
     <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
   </svg>
 `);
@@ -225,18 +226,23 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
           zoom={6}
           options={mapOptions}
         >
-          {filteredCenters.map((center) => (
-            <MarkerF
-              key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
-              position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
-              onClick={() => handleMarkerClick(center)}
-              icon={{
-                url: markerIcon,
-                scaledSize: new google.maps.Size(40, 40),
-                anchor: new google.maps.Point(20, 20),
-              }}
-            />
-          ))}
+          {filteredCenters.map((center) => {
+            const regionColor = getRegionColor(center.region);
+            const iconUrl = createRegionMarkerIcon(regionColor);
+            
+            return (
+              <MarkerF
+                key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
+                position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
+                onClick={() => handleMarkerClick(center)}
+                icon={{
+                  url: iconUrl,
+                  scaledSize: new google.maps.Size(40, 40),
+                  anchor: new google.maps.Point(20, 20),
+                }}
+              />
+            );
+          })}
 
           {userLocation && (
             <OverlayView
@@ -425,6 +431,7 @@ function FallbackMap() {
           {filteredCenters.slice(0, 50).map((center, index) => {
             const normalizedLat = ((center.coordinates.lat - 36) / 11) * 100;
             const normalizedLng = ((center.coordinates.lng - 6) / 13) * 100;
+            const regionColor = getRegionColor(center.region);
             
             return (
               <motion.button
@@ -442,8 +449,13 @@ function FallbackMap() {
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="relative w-6 h-6 rounded-full gradient-bg flex items-center justify-center shadow-lg">
-                  <MapPin className="w-3 h-3 text-primary-foreground" />
+                <div 
+                  className="relative w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+                  style={{ backgroundColor: regionColor }}
+                >
+                  <svg viewBox="0 0 24 24" className="w-3 h-3">
+                    <path d="M12 6 L12 18 M6 12 L18 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                  </svg>
                 </div>
 
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
