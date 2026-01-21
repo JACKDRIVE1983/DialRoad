@@ -110,10 +110,8 @@ function AppContent() {
   // NUCLEAR FIX: No AnimatePresence on map tab - prevents opacity issues
   return (
     <div className="min-h-screen bg-background safe-area-top">
-      {/* Map tab - NO animation to prevent visibility bugs */}
-      <div style={{ display: activeTab === 'map' ? 'block' : 'none', height: '100vh' }}>
-        <MapTab />
-      </div>
+      {/* Map tab - fully unmount when not active to avoid Google Maps hidden-container bugs */}
+      {activeTab === 'map' && <MapTab />}
       
       {/* Other tabs with animation */}
       <AnimatePresence mode="wait">
