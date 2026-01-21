@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo, memo, forwardRef } from 'react';
+import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
 import { GoogleMap, useLoadScript, OverlayView } from '@react-google-maps/api';
@@ -85,8 +85,7 @@ const InfoWindowContent = memo(function InfoWindowContent({
   );
 });
 
-const GoogleMapComponent = memo(forwardRef<HTMLDivElement, { apiKey: string; onError: () => void }>(
-  function GoogleMapComponent({ apiKey, onError }, ref) {
+const GoogleMapComponent = memo(function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
@@ -426,10 +425,10 @@ const GoogleMapComponent = memo(forwardRef<HTMLDivElement, { apiKey: string; onE
       </motion.div>
     </div>
   );
-}));
+});
 
 // Main MapView component with API key fetching
-export const MapView = memo(forwardRef<HTMLDivElement>(function MapView(_props, ref) {
+export function MapView() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [useFallback, setUseFallback] = useState(false);
@@ -480,7 +479,7 @@ export const MapView = memo(forwardRef<HTMLDivElement>(function MapView(_props, 
 
   if (isLoadingKey) {
     return (
-      <div ref={ref} className="absolute inset-0 w-full h-full bg-secondary flex items-center justify-center">
+      <div className="absolute inset-0 w-full h-full bg-secondary flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -495,18 +494,18 @@ export const MapView = memo(forwardRef<HTMLDivElement>(function MapView(_props, 
 
   if (!apiKey || useFallback) {
     return (
-      <div ref={ref} className="absolute inset-0 w-full h-full">
+      <div className="absolute inset-0 w-full h-full">
         <FallbackMap />
       </div>
     );
   }
 
   return (
-    <div ref={ref} className="absolute inset-0 w-full h-full">
+    <div className="absolute inset-0 w-full h-full">
       <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />
     </div>
   );
-}));
+}
 
 // Fallback map for when Google Maps is unavailable
 const FallbackMap = memo(function FallbackMap() {

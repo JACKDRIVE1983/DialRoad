@@ -1,5 +1,5 @@
 // Lazy-loaded Map component wrapper
-import { lazy, Suspense, memo, forwardRef } from 'react';
+import { lazy, Suspense, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
@@ -23,13 +23,13 @@ function MapLoadingFallback() {
   );
 }
 
-// Memoized wrapper with forwardRef to prevent ref warnings
-export const LazyMapView = memo(forwardRef<HTMLDivElement>(function LazyMapView(_props, ref) {
+// Memoized wrapper to prevent unnecessary re-renders
+export const LazyMapView = memo(function LazyMapView() {
   return (
-    <div ref={ref} className="absolute inset-0 w-full h-full">
+    <div className="absolute inset-0 w-full h-full">
       <Suspense fallback={<MapLoadingFallback />}>
         <MapViewLazy />
       </Suspense>
     </div>
   );
-}));
+});
