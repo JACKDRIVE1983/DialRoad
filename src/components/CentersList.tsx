@@ -1,6 +1,8 @@
-import { MapPin, Clock, Search } from 'lucide-react';
+import { MapPin, Clock, Search, Navigation } from 'lucide-react';
+import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
+import { calculateDistance, formatDistance } from '@/lib/distance';
 import centerImage from '@/assets/center-placeholder.jpg';
 
 interface CentersListProps {
@@ -8,7 +10,24 @@ interface CentersListProps {
 }
 
 export function CentersList({ onSelectCenter }: CentersListProps) {
-  const { filteredCenters, searchQuery, setSearchQuery } = useApp();
+  const { filteredCenters, searchQuery, setSearchQuery, userLocation } = useApp();
+
+  // Calculate distances and sort by distance if user location is available
+  const centersWithDistance = useMemo(() => {
+    if (!userLocation) return filteredCenters.map(c => ({ center: c, distance: null }));
+    
+    return filteredCenters
+      .map(center => ({
+        center,
+        distance: calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          center.coordinates.lat,
+          center.coordinates.lng
+        )
+      }))
+      .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+  }, [filteredCenters, userLocation]);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
@@ -24,7 +43,7 @@ export function CentersList({ onSelectCenter }: CentersListProps) {
         />
       </div>
       <div className="space-y-3">
-        {filteredCenters.map((center) => (
+        {centersWithDistance.map(({ center, distance }) => (
           <button
             key={center.id}
             className="w-full text-left transition-transform active:scale-[0.98]"
@@ -61,8 +80,14 @@ export function CentersList({ onSelectCenter }: CentersListProps) {
                     {center.city}
                   </div>
 
-                  <div className="flex items-center justify-end">
-                    <div className="flex items-center text-muted-foreground text-[10px]">
+                  <div className="flex items-center justify-between">
+                    {distance !== null && (
+                      <div className="flex items-center text-primary text-xs font-medium">
+                        <Navigation className="w-3 h-3 mr-1" />
+                        {formatDistance(distance)}
+                      </div>
+                    )}
+                    <div className="flex items-center text-muted-foreground text-[10px] ml-auto">
                       <Clock className="w-3 h-3 mr-1" />
                       {center.openingHours.split(':')[0]}
                     </div>
