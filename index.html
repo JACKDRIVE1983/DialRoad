@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0d9488" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>DialRoad - Centri Dialisi Italia</title>
     <meta
@@ -32,7 +32,8 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.json" />
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAEATtH1AArIEUUnZbz6T4Xr27_riOdjCI&libraries=places"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAEATtH1AArIEUUnZbz6T4Xr27_riOdjCI&libraries=places&loading=async&callback=__gmapsInit"></script>
+    <script>window.__gmapsInit = function() { window.__gmapsReady = true; };</script>
   </head>
 
   <body class="overflow-x-hidden">
