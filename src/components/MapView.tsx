@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef, Component, ReactNode } from 'react';
+import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
 import { GoogleMap, useLoadScript, MarkerF, InfoWindowF, OverlayView } from '@react-google-maps/api';
@@ -176,21 +176,25 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
     setSelectedMarker(null);
   };
 
-  const mapOptions = {
-    styles: isDarkMode ? darkModeStyles : lightModeStyles,
-    disableDefaultUI: true,
-    zoomControl: true,
-    ...(typeof window !== 'undefined' && (window as any).google?.maps
-      ? {
-          zoomControlOptions: {
-            position: (window as any).google.maps.ControlPosition.LEFT_CENTER,
-          },
-        }
-      : {}),
-    mapTypeControl: false,
-    streetViewControl: false,
-    fullscreenControl: false,
-  };
+  const mapOptions = useMemo(() => {
+    const options: google.maps.MapOptions = {
+      styles: isDarkMode ? darkModeStyles : lightModeStyles,
+      disableDefaultUI: true,
+      zoomControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    };
+    
+    // Only add zoomControlOptions if google.maps is fully loaded
+    if (isLoaded && window.google?.maps?.ControlPosition) {
+      options.zoomControlOptions = {
+        position: window.google.maps.ControlPosition.LEFT_CENTER,
+      };
+    }
+    
+    return options;
+  }, [isDarkMode, isLoaded]);
 
   if (loadError) {
     onError();
