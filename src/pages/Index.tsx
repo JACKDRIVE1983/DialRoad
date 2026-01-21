@@ -107,20 +107,16 @@ function AppContent() {
     return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
   }
 
+  // NUCLEAR FIX: No AnimatePresence on map tab - prevents opacity issues
   return (
     <div className="min-h-screen bg-background safe-area-top">
+      {/* Map tab - NO animation to prevent visibility bugs */}
+      <div style={{ display: activeTab === 'map' ? 'block' : 'none', height: '100vh' }}>
+        <MapTab />
+      </div>
+      
+      {/* Other tabs with animation */}
       <AnimatePresence mode="wait">
-        {activeTab === 'map' && (
-          <motion.div
-            key="map"
-            className="h-screen"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <MapTab />
-          </motion.div>
-        )}
         {activeTab === 'list' && (
           <motion.div
             key="list"
