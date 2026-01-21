@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
-import { MapPin, Heart, MessageCircle, Navigation, ChevronRight } from 'lucide-react';
+import { MapPin, Navigation, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logoIcon from '@/assets/dialroad-logo-login.png';
 import mapBackground from '@/assets/onboarding-map-bg.png';
@@ -20,18 +20,6 @@ const slides = [
     icon: MapPin,
     title: "Mappa Interattiva",
     description: "Visualizza tutti i centri dialisi sulla mappa. Usa la geolocalizzazione per trovare la struttura più vicina a te, ovunque tu sia.",
-    color: "from-accent to-primary"
-  },
-  {
-    icon: Heart,
-    title: "Salva i Preferiti",
-    description: "Aggiungi i centri che ti interessano ai preferiti per ritrovarli velocemente. Supporta le strutture migliori con un Mi Piace.",
-    color: "from-primary via-accent to-primary"
-  },
-  {
-    icon: MessageCircle,
-    title: "Community",
-    description: "Leggi le esperienze di altri pazienti e condividi la tua. Insieme possiamo aiutarci a trovare le cure migliori.",
     color: "from-accent to-primary"
   }
 ];
