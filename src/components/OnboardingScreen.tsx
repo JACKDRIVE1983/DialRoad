@@ -19,7 +19,7 @@ const slides = [
   {
     icon: MapPin,
     title: "Mappa Interattiva",
-    description: "Visualizza tutti i centri dialisi sulla mappa. Usa la geolocalizzazione per trovare la struttura più vicina a te, ovunque tu sia.",
+    description: "Visualizza tutti i centri dialisi sulla mappa. Usa la geolocalizzazione per trovare la struttura più vicina a te. Puoi anche lasciare recensioni e valutazioni per ogni centro visitato, senza bisogno di registrarti!",
     color: "from-accent to-primary"
   }
 ];
