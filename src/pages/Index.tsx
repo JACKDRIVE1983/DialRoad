@@ -29,12 +29,17 @@ const TabLoadingFallback = memo(function TabLoadingFallback() {
 // Memoized tab content components
 const MapTab = memo(function MapTab() {
   return (
-    <div className="relative h-screen">
+    <div className="relative h-screen w-full overflow-hidden">
       <AppHeader />
       <Suspense fallback={<TabLoadingFallback />}>
         <SearchBar />
-        <LazyMapView />
       </Suspense>
+      {/* Map container with explicit dimensions */}
+      <div className="absolute inset-0 z-0">
+        <Suspense fallback={<TabLoadingFallback />}>
+          <LazyMapView />
+        </Suspense>
+      </div>
     </div>
   );
 });
