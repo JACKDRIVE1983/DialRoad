@@ -1,3 +1,4 @@
+import React from 'react';
 import { Star } from 'lucide-react';
 
 interface CenterRatingSummaryProps {
@@ -5,7 +6,7 @@ interface CenterRatingSummaryProps {
   totalReviews: number;
 }
 
-export function CenterRatingSummary({ averageRating, totalReviews }: CenterRatingSummaryProps) {
+function CenterRatingSummaryComponent({ averageRating, totalReviews }: CenterRatingSummaryProps) {
   if (totalReviews === 0) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -29,3 +30,6 @@ export function CenterRatingSummary({ averageRating, totalReviews }: CenterRatin
     </div>
   );
 }
+
+// Memoize to prevent re-renders when parent state changes
+export const CenterRatingSummary = React.memo(CenterRatingSummaryComponent);
