@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react';
 import { Star } from 'lucide-react';
 
 interface StarRatingProps {
@@ -7,23 +8,23 @@ interface StarRatingProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function StarRating({ 
+const sizeClasses = {
+  sm: 'w-3 h-3',
+  md: 'w-5 h-5',
+  lg: 'w-6 h-6'
+};
+
+function StarRatingComponent({ 
   rating, 
   onRatingChange, 
   readonly = false,
   size = 'md' 
 }: StarRatingProps) {
-  const sizeClasses = {
-    sm: 'w-3 h-3',
-    md: 'w-5 h-5',
-    lg: 'w-6 h-6'
-  };
-
-  const handleClick = (star: number) => {
+  const handleClick = useCallback((star: number) => {
     if (!readonly && onRatingChange) {
       onRatingChange(star);
     }
-  };
+  }, [readonly, onRatingChange]);
 
   return (
     <div className="flex items-center gap-0.5">
@@ -48,3 +49,6 @@ export function StarRating({
     </div>
   );
 }
+
+// Memoize to prevent re-renders for static star displays
+export const StarRating = React.memo(StarRatingComponent);

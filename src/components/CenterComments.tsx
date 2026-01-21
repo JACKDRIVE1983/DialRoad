@@ -71,6 +71,8 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
 
   // Fetch comments for this center
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchComments = async () => {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -78,6 +80,8 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
         .select('*')
         .eq('center_id', centerId)
         .order('created_at', { ascending: false });
+
+      if (!isMounted) return;
 
       if (error) {
         console.error('Error fetching comments:', error);
@@ -92,16 +96,12 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
     // Check if device already reviewed this center
     setHasReviewed(hasReviewedCenter(centerId));
 
-    // Load liked comments from localStorage
-    const loadedLikes = new Set<string>();
-    comments.forEach(c => {
-      if (hasLikedComment(c.id)) {
-        loadedLikes.add(c.id);
-      }
-    });
-    setLikedComments(loadedLikes);
-
     fetchComments();
+    
+    // Cleanup: prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [centerId, calculateRating]);
 
   // Update liked comments when comments list changes
