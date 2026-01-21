@@ -21,6 +21,8 @@ export type Database = {
           comment_text: string
           created_at: string
           id: string
+          likes: number
+          rating: number
         }
         Insert: {
           author_name: string
@@ -28,6 +30,8 @@ export type Database = {
           comment_text: string
           created_at?: string
           id?: string
+          likes?: number
+          rating?: number
         }
         Update: {
           author_name?: string
@@ -35,6 +39,8 @@ export type Database = {
           comment_text?: string
           created_at?: string
           id?: string
+          likes?: number
+          rating?: number
         }
         Relationships: []
       }

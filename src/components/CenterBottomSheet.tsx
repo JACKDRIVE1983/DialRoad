@@ -3,15 +3,26 @@ import {
   X, Phone, Navigation, Clock, 
   MapPin, ChevronUp, Share2
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
 import centerImage from '@/assets/center-placeholder.jpg';
 import { CenterComments } from './CenterComments';
+import { CenterRatingSummary } from './CenterRatingSummary';
+
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
+  
+  // Rating state from comments
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+
+  const handleRatingUpdate = useCallback((avg: number, total: number) => {
+    setAverageRating(avg);
+    setTotalReviews(total);
+  }, []);
   
   // Calculate distance to selected center
   const distance = useMemo(() => {
@@ -162,6 +173,12 @@ export function CenterBottomSheet() {
                         {formatDistance(distance)} da te
                       </div>
                     )}
+                    <div className="mt-2">
+                      <CenterRatingSummary 
+                        averageRating={averageRating} 
+                        totalReviews={totalReviews} 
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -219,7 +236,10 @@ export function CenterBottomSheet() {
 
                 {/* Comments Section */}
                 <div className="pb-safe-area-bottom">
-                  <CenterComments centerId={selectedCenter.id} />
+                  <CenterComments 
+                    centerId={selectedCenter.id} 
+                    onRatingUpdate={handleRatingUpdate}
+                  />
                 </div>
               </div>
             </div>
