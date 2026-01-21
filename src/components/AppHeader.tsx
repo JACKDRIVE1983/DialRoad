@@ -175,14 +175,14 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                 <section>
                   <h3 className="font-bold text-foreground mb-2">2) Scopo dell'app</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    DialRoad permette di individuare su mappa i centri dialisi in Italia e consultare informazioni utili (indirizzo, contatti e dettagli della struttura) per aiutare le persone in dialisi a organizzare spostamenti e vacanze.
+                    DialRoad permette di individuare su mappa i centri dialisi in Italia, consultare informazioni utili (indirizzo, contatti e dettagli della struttura) e lasciare recensioni anonime per aiutare le persone in dialisi a organizzare spostamenti e vacanze.
                   </p>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">3) Uso senza login</h3>
+                  <h3 className="font-bold text-foreground mb-2">3) Uso senza registrazione</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    L'app è utilizzabile anche senza registrazione: mappa e consultazione dei centri sono disponibili a tutti.
+                    L'app è completamente utilizzabile senza registrazione o login. Tutte le funzionalità, incluse la mappa, la consultazione dei centri e la possibilità di lasciare recensioni, sono disponibili a tutti senza creare un account.
                   </p>
                 </section>
 
@@ -190,24 +190,20 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                   <h3 className="font-bold text-foreground mb-2">4) Dati raccolti</h3>
                   <div className="space-y-3 text-muted-foreground">
                     <div>
-                      <p className="font-medium text-foreground">A) Dati account (solo se l'utente vuole recensire)</p>
-                      <p className="leading-relaxed">Per pubblicare recensioni è necessario accedere/registrarsi. In questo caso possiamo trattare: Email (o identificativo dell'account), ID utente (tecnico), eventuale nome/alias se previsto. Le credenziali sono gestite in modo sicuro dal sistema di autenticazione utilizzato (password non salvate in chiaro).</p>
+                      <p className="font-medium text-foreground">A) Posizione GPS (facoltativa)</p>
+                      <p className="leading-relaxed">Se l'utente concede il permesso, la posizione viene usata esclusivamente per mostrare i centri più vicini. La posizione non viene salvata sui nostri server. In alternativa la ricerca resta manuale.</p>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">B) Contenuti pubblicati</p>
-                      <p className="leading-relaxed">Recensione, valutazione, commenti e data/ora di pubblicazione. Attenzione: le recensioni possono essere visibili ad altri utenti nell'app.</p>
+                      <p className="font-medium text-foreground">B) Recensioni e commenti</p>
+                      <p className="leading-relaxed">Per lasciare una recensione è sufficiente inserire un nome (a scelta dell'utente), un commento e una valutazione. Questi dati sono pubblici e visibili agli altri utenti. Non raccogliamo email, password o altri dati personali.</p>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">C) Dati tecnici (eventuali)</p>
-                      <p className="leading-relaxed">Dati tecnici minimi (es. versione app, log di errore) solo per sicurezza e funzionamento.</p>
+                      <p className="font-medium text-foreground">C) Dati tecnici minimi</p>
+                      <p className="leading-relaxed">Utilizziamo localStorage del dispositivo per ricordare preferenze locali (es. centri già recensiti). Questi dati restano solo sul dispositivo e non vengono trasmessi.</p>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">D) Posizione (facoltativa)</p>
-                      <p className="leading-relaxed">Se l'utente concede il permesso, la posizione può essere usata solo per mostrare i centri più vicini. In alternativa la ricerca resta manuale.</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">E) Dati sanitari</p>
-                      <p className="leading-relaxed">DialRoad non raccoglie dati sanitari o clinici.</p>
+                      <p className="font-medium text-foreground">D) Dati sanitari</p>
+                      <p className="leading-relaxed">DialRoad non raccoglie dati sanitari o clinici. Ti invitiamo a non condividere informazioni mediche sensibili nelle recensioni.</p>
                     </div>
                   </div>
                 </section>
@@ -216,52 +212,37 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                   <h3 className="font-bold text-foreground mb-2">5) Finalità del trattamento</h3>
                   <ul className="text-muted-foreground list-disc list-inside space-y-1">
                     <li>Visualizzazione mappa e ricerca centri dialisi</li>
-                    <li>Pubblicazione e gestione recensioni (solo per utenti registrati)</li>
-                    <li>Moderazione e prevenzione abusi/spam nelle recensioni</li>
-                    <li>Sicurezza, manutenzione e miglioramento dell'app</li>
+                    <li>Geolocalizzazione per trovare centri vicini (solo se autorizzata)</li>
+                    <li>Pubblicazione di recensioni anonime</li>
+                    <li>Sicurezza e prevenzione abusi/spam</li>
                   </ul>
                 </section>
 
                 <section>
                   <h3 className="font-bold text-foreground mb-2">6) Base giuridica</h3>
                   <ul className="text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Esecuzione del servizio (account e recensioni richieste dall'utente)</li>
-                    <li>Consenso per la posizione (se attivata)</li>
-                    <li>Legittimo interesse per sicurezza e moderazione (anti-spam, abusi)</li>
+                    <li>Consenso esplicito per la geolocalizzazione</li>
+                    <li>Esecuzione del servizio per la pubblicazione di recensioni</li>
+                    <li>Legittimo interesse per sicurezza e moderazione</li>
                   </ul>
                 </section>
 
                 <section>
                   <h3 className="font-bold text-foreground mb-2">7) Condivisione dei dati</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    I dati possono essere trattati da fornitori tecnici necessari al funzionamento (es. mappe, autenticazione, hosting). DialRoad non vende dati personali a terzi.
+                    I dati delle recensioni sono pubblici nell'app. I servizi tecnici (es. mappe, hosting) possono trattare dati necessari al funzionamento. DialRoad non vende dati a terzi.
                   </p>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">8) Conservazione</h3>
-                  <ul className="text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Dati account e recensioni: finché l'account resta attivo o finché necessario per il servizio e la moderazione.</li>
-                    <li>Log tecnici (se presenti): per un tempo limitato e proporzionato.</li>
-                  </ul>
-                </section>
-
-                <section>
-                  <h3 className="font-bold text-foreground mb-2">9) Eliminazione account e recensioni</h3>
+                  <h3 className="font-bold text-foreground mb-2">8) Diritti dell'utente</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    L'utente può richiedere la cancellazione dell'account e dei dati associati (incluse le recensioni, salvo obblighi di legge o esigenze di sicurezza) scrivendo a: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>. Se presente, è disponibile la funzione "Elimina account" nelle impostazioni dell'app.
+                    Per richiedere la rimozione di una recensione o esercitare altri diritti ai sensi del GDPR, contatta: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>
                   </p>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">10) Diritti dell'utente</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Accesso, rettifica, cancellazione, limitazione, opposizione e portabilità (ove applicabile) ai sensi del GDPR. Contatto: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>
-                  </p>
-                </section>
-
-                <section>
-                  <h3 className="font-bold text-foreground mb-2">11) Modifiche</h3>
+                  <h3 className="font-bold text-foreground mb-2">9) Modifiche</h3>
                   <p className="text-muted-foreground leading-relaxed">
                     La presente informativa può essere aggiornata. La data di aggiornamento è indicata in alto.
                   </p>
@@ -309,7 +290,13 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                   DialRoad ti aiuta a trovare rapidamente i centri dialisi in tutta Italia tramite una mappa interattiva. Puoi cercare per zona o località e consultare informazioni utili come indirizzo, contatti e dettagli principali della struttura.
                 </p>
                 <p className="text-foreground leading-relaxed">
-                  È pensata per le persone in dialisi che vogliono organizzare una vacanza o uno spostamento con più serenità: ti permette di individuare in anticipo i centri disponibili vicino alla tua destinazione e avere a portata di mano i riferimenti necessari per richiedere informazioni e pianificare il trattamento.
+                  È pensata per le persone in dialisi che vogliono organizzare una vacanza o uno spostamento con più serenità: ti permette di individuare in anticipo i centri disponibili vicino alla tua destinazione.
+                </p>
+                <p className="text-foreground leading-relaxed">
+                  <strong>Recensioni senza registrazione:</strong> Puoi lasciare recensioni e valutazioni per ogni centro dialisi visitato, semplicemente inserendo un nome a tua scelta. Non è richiesta nessuna registrazione, email o password.
+                </p>
+                <p className="text-foreground leading-relaxed">
+                  <strong>Privacy:</strong> L'app utilizza solo la tua posizione GPS (se autorizzata) per mostrarti i centri più vicini. Non raccogliamo dati personali, email o informazioni di contatto.
                 </p>
                 
                 <div className="pt-4 border-t border-border">
