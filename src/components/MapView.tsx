@@ -1,7 +1,8 @@
-import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo } from 'react';
+import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
-import { GoogleMap, useLoadScript, MarkerF, InfoWindowF, OverlayView } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, OverlayView } from '@react-google-maps/api';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,36 +37,6 @@ const lightModeStyles = [
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8e6c9" }] },
 ];
 
-// Default marker icon (kept for reference, but we now use region-specific colors)
-const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-    <defs>
-      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
-      </filter>
-    </defs>
-    <circle cx="20" cy="20" r="18" fill="#0077b6" stroke="white" stroke-width="3" filter="url(#shadow)"/>
-    <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  </svg>
-`);
-
-const userMarkerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 60" width="40" height="60">
-    <defs>
-      <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
-        <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
-      </linearGradient>
-      <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
-      </filter>
-    </defs>
-    <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
-          fill="url(#pinGrad)" stroke="white" stroke-width="2" filter="url(#shadow)"/>
-    <circle cx="20" cy="20" r="8" fill="white"/>
-  </svg>
-`);
-
 // Error Boundary to catch Google Maps rendering errors
 class MapErrorBoundary extends Component<
   { children: ReactNode; onError: () => void },
@@ -92,17 +63,43 @@ class MapErrorBoundary extends Component<
   }
 }
 
+// Memoized InfoWindow content
+const InfoWindowContent = memo(function InfoWindowContent({ 
+  center, 
+  onViewDetails 
+}: { 
+  center: DialysisCenter; 
+  onViewDetails: () => void;
+}) {
+  return (
+    <div className="p-2 max-w-xs">
+      <h3 className="font-bold text-sm text-gray-900 mb-1">{center.name}</h3>
+      <p className="text-xs text-gray-600 mb-2">{center.city}, {center.province}</p>
+      <button
+        onClick={onViewDetails}
+        className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+      >
+        Vedi dettagli
+      </button>
+    </div>
+  );
+});
+
 function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
-  const [showUserPopup, setShowUserPopup] = useState(false);
+  const mapRef = useRef<google.maps.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: apiKey,
   });
 
+  // Memoized locate handler
   const handleLocate = useCallback(() => {
     setIsLocating(true);
     if (navigator.geolocation) {
@@ -113,14 +110,14 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
             lng: position.coords.longitude
           };
           setUserLocation(newLocation);
-          setShowUserPopup(true);
           setIsLocating(false);
         },
         (error) => {
           console.error('Geolocation error:', error);
           setUserLocation(defaultCenter);
           setIsLocating(false);
-        }
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       );
     } else {
       setUserLocation(defaultCenter);
@@ -128,14 +125,13 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
     }
   }, [setUserLocation]);
 
-  // Detect Google Maps auth failures
+  // Detect Google Maps auth failures - run once
   useEffect(() => {
     (window as any).gm_authFailure = () => {
       console.log('Google Maps auth failure detected');
       onError();
     };
 
-    // Check for error overlays in the DOM periodically
     const checkForErrors = () => {
       if (mapContainerRef.current) {
         const errorElement = mapContainerRef.current.querySelector('.gm-err-container, .dismissButton');
@@ -160,23 +156,153 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
     };
   }, [onError]);
 
+  // Initial location fetch
   useEffect(() => {
-    handleLocate();
-  }, [handleLocate]);
+    if (!userLocation) {
+      handleLocate();
+    }
+  }, [handleLocate, userLocation]);
 
-  const handleMarkerClick = (center: DialysisCenter) => {
+  // Map load callback
+  const onMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+  }, []);
+
+  // Handle marker click
+  const handleMarkerClick = useCallback((center: DialysisCenter, marker: google.maps.Marker) => {
     setSelectedMarker(center);
-  };
+    
+    if (infoWindowRef.current) {
+      infoWindowRef.current.close();
+    }
+    
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="padding: 8px; max-width: 200px;">
+          <h3 style="font-weight: bold; font-size: 14px; color: #1a1a2e; margin-bottom: 4px;">${center.name}</h3>
+          <p style="font-size: 12px; color: #666; margin-bottom: 8px;">${center.city}, ${center.province}</p>
+          <button 
+            onclick="window.dispatchEvent(new CustomEvent('viewCenterDetails', { detail: '${center.id}' }))"
+            style="width: 100%; padding: 6px 12px; background: #0077b6; color: white; font-size: 12px; font-weight: 500; border-radius: 6px; border: none; cursor: pointer;"
+          >
+            Vedi dettagli
+          </button>
+        </div>
+      `,
+    });
+    
+    infoWindow.open(mapRef.current, marker);
+    infoWindowRef.current = infoWindow;
+  }, []);
 
-  const handleInfoWindowClose = () => {
-    setSelectedMarker(null);
-  };
+  // Listen for view details events from InfoWindow
+  useEffect(() => {
+    const handleViewDetails = (e: CustomEvent) => {
+      const centerId = e.detail;
+      const center = filteredCenters.find(c => c.id === centerId);
+      if (center) {
+        setSelectedCenter(center);
+        if (infoWindowRef.current) {
+          infoWindowRef.current.close();
+        }
+      }
+    };
 
-  const handleViewDetails = (center: DialysisCenter) => {
-    setSelectedCenter(center);
-    setSelectedMarker(null);
-  };
+    window.addEventListener('viewCenterDetails', handleViewDetails as EventListener);
+    return () => {
+      window.removeEventListener('viewCenterDetails', handleViewDetails as EventListener);
+    };
+  }, [filteredCenters, setSelectedCenter]);
 
+  // Create/update markers with clustering
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded) return;
+
+    // Clean up previous markers
+    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current = [];
+    
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+    }
+
+    // Create new markers
+    const markers = filteredCenters.map((center) => {
+      const regionColor = getRegionColor(center.region);
+      const iconUrl = createRegionMarkerIcon(regionColor);
+      
+      const marker = new google.maps.Marker({
+        position: { lat: center.coordinates.lat, lng: center.coordinates.lng },
+        icon: {
+          url: iconUrl,
+          scaledSize: new google.maps.Size(40, 40),
+          anchor: new google.maps.Point(20, 20),
+        },
+        optimized: true,
+      });
+
+      marker.addListener('click', () => handleMarkerClick(center, marker));
+      
+      return marker;
+    });
+
+    markersRef.current = markers;
+
+    // Create or update clusterer
+    if (!clustererRef.current) {
+      clustererRef.current = new MarkerClusterer({
+        map: mapRef.current,
+        markers,
+        renderer: {
+          render: ({ count, position }) => {
+            return new google.maps.Marker({
+              position,
+              icon: {
+                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="50" height="50">
+                    <circle cx="25" cy="25" r="22" fill="#0077b6" stroke="white" stroke-width="3"/>
+                    <text x="25" y="30" text-anchor="middle" fill="white" font-size="14" font-weight="bold">${count}</text>
+                  </svg>
+                `)}`,
+                scaledSize: new google.maps.Size(50, 50),
+                anchor: new google.maps.Point(25, 25),
+              },
+              label: '',
+              zIndex: 1000 + count,
+            });
+          },
+        },
+      });
+    } else {
+      clustererRef.current.clearMarkers();
+      clustererRef.current.addMarkers(markers);
+    }
+
+    // Cleanup
+    return () => {
+      markersRef.current.forEach(marker => {
+        google.maps.event.clearInstanceListeners(marker);
+      });
+    };
+  }, [filteredCenters, isLoaded, handleMarkerClick]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (infoWindowRef.current) {
+        infoWindowRef.current.close();
+      }
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+      }
+      markersRef.current.forEach(marker => {
+        google.maps.event.clearInstanceListeners(marker);
+        marker.setMap(null);
+      });
+    };
+  }, []);
+
+  // Memoized map options
   const mapOptions = useMemo(() => {
     const options: google.maps.MapOptions = {
       styles: isDarkMode ? darkModeStyles : lightModeStyles,
@@ -187,7 +313,6 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       fullscreenControl: false,
     };
     
-    // Only add zoomControlOptions if google.maps is fully loaded
     if (isLoaded && window.google?.maps?.ControlPosition) {
       options.zoomControlOptions = {
         position: window.google.maps.ControlPosition.LEFT_CENTER,
@@ -225,25 +350,9 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
           center={defaultCenter}
           zoom={6}
           options={mapOptions}
+          onLoad={onMapLoad}
         >
-          {filteredCenters.map((center) => {
-            const regionColor = getRegionColor(center.region);
-            const iconUrl = createRegionMarkerIcon(regionColor);
-            
-            return (
-              <MarkerF
-                key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
-                position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
-                onClick={() => handleMarkerClick(center)}
-                icon={{
-                  url: iconUrl,
-                  scaledSize: new google.maps.Size(40, 40),
-                  anchor: new google.maps.Point(20, 20),
-                }}
-              />
-            );
-          })}
-
+          {/* User location overlay */}
           {userLocation && (
             <OverlayView
               position={userLocation}
@@ -283,27 +392,10 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
               </div>
             </OverlayView>
           )}
-
-          {selectedMarker && (
-            <InfoWindowF
-              position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
-              onCloseClick={handleInfoWindowClose}
-            >
-              <div className="p-2 max-w-xs">
-                <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
-                <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
-                <button
-                  onClick={() => handleViewDetails(selectedMarker)}
-                  className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
-                >
-                  Vedi dettagli
-                </button>
-              </div>
-            </InfoWindowF>
-          )}
         </GoogleMap>
       </MapErrorBoundary>
 
+      {/* Locate button */}
       <motion.button
         className="absolute bottom-36 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
         onClick={handleLocate}
@@ -316,6 +408,7 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
         />
       </motion.button>
 
+      {/* Centers count */}
       <motion.div
         className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full"
         initial={{ opacity: 0, y: 20 }}
@@ -329,27 +422,36 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
   );
 }
 
+// Main MapView component with API key fetching
 export function MapView() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const fetchApiKey = async () => {
       try {
         const { data, error } = await supabase.functions.invoke('get-maps-key');
+        if (!mounted) return;
         if (error) throw error;
         if (data?.apiKey) {
           setApiKey(data.apiKey);
         }
       } catch (error) {
         console.error('Failed to fetch Google Maps API key:', error);
-        setUseFallback(true);
+        if (mounted) setUseFallback(true);
       } finally {
-        setIsLoadingKey(false);
+        if (mounted) setIsLoadingKey(false);
       }
     };
+    
     fetchApiKey();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleGoogleMapsError = useCallback(() => {
@@ -379,10 +481,10 @@ export function MapView() {
   return <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />;
 }
 
-function FallbackMap() {
+// Fallback map for when Google Maps is unavailable
+const FallbackMap = memo(function FallbackMap() {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
   const [isLocating, setIsLocating] = useState(false);
-  const [showUserPopup, setShowUserPopup] = useState(false);
 
   const handleLocate = useCallback(() => {
     setIsLocating(true);
@@ -393,13 +495,13 @@ function FallbackMap() {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           });
-          setShowUserPopup(true);
           setIsLocating(false);
         },
         () => {
           setUserLocation({ lat: 41.9028, lng: 12.4964 });
           setIsLocating(false);
-        }
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       );
     } else {
       setUserLocation({ lat: 41.9028, lng: 12.4964 });
@@ -408,8 +510,52 @@ function FallbackMap() {
   }, [setUserLocation]);
 
   useEffect(() => {
-    handleLocate();
-  }, [handleLocate]);
+    if (!userLocation) {
+      handleLocate();
+    }
+  }, [handleLocate, userLocation]);
+
+  // Memoize center markers to prevent re-renders
+  const centerMarkers = useMemo(() => {
+    return filteredCenters.slice(0, 50).map((center, index) => {
+      const normalizedLat = ((center.coordinates.lat - 36) / 11) * 100;
+      const normalizedLng = ((center.coordinates.lng - 6) / 13) * 100;
+      const regionColor = getRegionColor(center.region);
+      
+      return (
+        <motion.button
+          key={center.id}
+          className="absolute z-10 group"
+          style={{
+            bottom: `${normalizedLat}%`,
+            left: `${normalizedLng}%`,
+            transform: 'translate(-50%, 50%)'
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: Math.min(index * 0.01, 0.5), type: 'spring' }}
+          onClick={() => setSelectedCenter(center)}
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <div 
+            className="relative w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+            style={{ backgroundColor: regionColor }}
+          >
+            <svg viewBox="0 0 24 24" className="w-3 h-3">
+              <path d="M12 6 L12 18 M6 12 L18 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="glass-card px-3 py-2 text-xs font-medium whitespace-nowrap">
+              {center.name}
+            </div>
+          </div>
+        </motion.button>
+      );
+    });
+  }, [filteredCenters, setSelectedCenter]);
 
   return (
     <div className="relative w-full h-full bg-secondary overflow-hidden">
@@ -428,44 +574,7 @@ function FallbackMap() {
 
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative w-full max-w-lg h-full max-h-[80vh]">
-          {filteredCenters.slice(0, 50).map((center, index) => {
-            const normalizedLat = ((center.coordinates.lat - 36) / 11) * 100;
-            const normalizedLng = ((center.coordinates.lng - 6) / 13) * 100;
-            const regionColor = getRegionColor(center.region);
-            
-            return (
-              <motion.button
-                key={center.id}
-                className="absolute z-10 group"
-                style={{
-                  bottom: `${normalizedLat}%`,
-                  left: `${normalizedLng}%`,
-                  transform: 'translate(-50%, 50%)'
-                }}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: index * 0.02, type: 'spring' }}
-                onClick={() => setSelectedCenter(center)}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <div 
-                  className="relative w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
-                  style={{ backgroundColor: regionColor }}
-                >
-                  <svg viewBox="0 0 24 24" className="w-3 h-3">
-                    <path d="M12 6 L12 18 M6 12 L18 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                  </svg>
-                </div>
-
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div className="glass-card px-3 py-2 text-xs font-medium whitespace-nowrap">
-                    {center.name}
-                  </div>
-                </div>
-              </motion.button>
-            );
-          })}
+          {centerMarkers}
 
           {userLocation && (
             <motion.div
@@ -533,7 +642,6 @@ function FallbackMap() {
           {filteredCenters.length} centri • Mappa semplificata
         </span>
       </motion.div>
-
     </div>
   );
-}
+});
