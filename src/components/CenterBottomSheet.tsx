@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
 import centerImage from '@/assets/center-placeholder.jpg';
-
+import { CenterComments } from './CenterComments';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
   
@@ -203,7 +203,7 @@ export function CenterBottomSheet() {
                 </div>
 
                 {/* Services */}
-                <div className="pb-safe-area-bottom">
+                <div>
                   <h3 className="text-sm font-semibold text-foreground mb-3">Servizi Offerti</h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedCenter.services.map((service) => (
@@ -215,6 +215,11 @@ export function CenterBottomSheet() {
                       </span>
                     ))}
                   </div>
+                </div>
+
+                {/* Comments Section */}
+                <div className="pb-safe-area-bottom">
+                  <CenterComments centerId={selectedCenter.id} />
                 </div>
               </div>
             </div>
