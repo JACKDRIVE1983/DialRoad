@@ -126,30 +126,6 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /*
-    CRITICAL FIX for Google Maps visibility:
-    1. Tailwind preflight sets img { max-width: 100% } which breaks tile positioning
-    2. Some CSS/animations set opacity: 0 on map elements
-    3. Force all Google Maps elements to be fully visible
-  */
-  .gm-style,
-  .gm-style * {
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-  
-  .gm-style img,
-  .gm-style canvas {
-    max-width: none !important;
-    max-height: none !important;
-    opacity: 1 !important;
-  }
-  
-  /* Ensure map container is never hidden */
-  div[style*="position: absolute"] > .gm-style {
-    display: block !important;
-  }
-
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }

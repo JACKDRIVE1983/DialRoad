@@ -1,21 +1,21 @@
-// MapView component - NUCLEAR RESET v3
-import { useEffect, useCallback, useState, useRef, useMemo, memo } from 'react';
-import { Navigation, Loader2, AlertTriangle } from 'lucide-react';
-import { GoogleMap, OverlayView } from '@react-google-maps/api';
-import { MarkerClusterer } from '@googlemaps/markerclusterer';
+import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
+import { GoogleMap, useLoadScript, MarkerF, InfoWindowF, OverlayView } from '@react-google-maps/api';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
+import { supabase } from '@/integrations/supabase/client';
 import { getRegionColor, createRegionMarkerIcon } from '@/lib/regionColors';
 
-declare global {
-  interface Window {
-    google: any;
-  }
-}
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%'
+};
 
-declare const google: any;
-
-const defaultCenter = { lat: 41.9028, lng: 12.4964 };
+const defaultCenter = {
+  lat: 41.9028,
+  lng: 12.4964
+};
 
 const darkModeStyles = [
   { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
@@ -36,94 +36,91 @@ const lightModeStyles = [
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8e6c9" }] },
 ];
 
-// Simple check for Google Maps availability (supports async loading with callback)
-function useGoogleMapsReady() {
-  const [ready, setReady] = useState(false);
-  
-  useEffect(() => {
-    const check = () => {
-      // Check both the Map constructor and __gmapsReady flag from async callback
-      if (window.google?.maps?.Map || (window as any).__gmapsReady) {
-        setReady(true);
-        return true;
-      }
-      return false;
-    };
-    
-    if (check()) return;
-    
-    const interval = setInterval(() => {
-      if (check()) clearInterval(interval);
-    }, 100);
-    
-    const timeout = setTimeout(() => clearInterval(interval), 10000);
-    
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, []);
-  
-  return ready;
-}
+// Default marker icon (kept for reference, but we now use region-specific colors)
+const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+    <defs>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
+      </filter>
+    </defs>
+    <circle cx="20" cy="20" r="18" fill="#0077b6" stroke="white" stroke-width="3" filter="url(#shadow)"/>
+    <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+`);
 
-// Main exported MapView
-export function MapView() {
-  const ready = useGoogleMapsReady();
-  const [showFallback, setShowFallback] = useState(false);
-  
-  useEffect(() => {
-    console.log('[MapView] ready:', ready);
-  }, [ready]);
+const userMarkerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 60" width="40" height="60">
+    <defs>
+      <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+      </linearGradient>
+      <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+      </filter>
+    </defs>
+    <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+          fill="url(#pinGrad)" stroke="white" stroke-width="2" filter="url(#shadow)"/>
+    <circle cx="20" cy="20" r="8" fill="white"/>
+  </svg>
+`);
 
-  // Timeout to fallback
-  useEffect(() => {
-    if (ready) return;
-    const t = setTimeout(() => {
-      if (!ready) setShowFallback(true);
-    }, 10000);
-    return () => clearTimeout(t);
-  }, [ready]);
-
-  if (showFallback) {
-    return <FallbackMap />;
+// Error Boundary to catch Google Maps rendering errors
+class MapErrorBoundary extends Component<
+  { children: ReactNode; onError: () => void },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; onError: () => void }) {
+    super(props);
+    this.state = { hasError: false };
   }
 
-  if (!ready) {
-    return (
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f4f8' }}>
-        <Loader2 style={{ width: 40, height: 40, animation: 'spin 1s linear infinite' }} />
-      </div>
-    );
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
-  return <ActualGoogleMap onError={() => setShowFallback(true)} />;
+  componentDidCatch() {
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
 }
 
-// Actual Google Map component
-const ActualGoogleMap = memo(function ActualGoogleMap({ onError }: { onError: () => void }) {
+function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
-  const mapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const clustererRef = useRef<MarkerClusterer | null>(null);
-  const infoWindowRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
+  const [showUserPopup, setShowUserPopup] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // Geolocation
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: apiKey,
+  });
+
   const handleLocate = useCallback(() => {
     setIsLocating(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        (position) => {
+          const newLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(newLocation);
+          setShowUserPopup(true);
           setIsLocating(false);
         },
-        () => {
+        (error) => {
+          console.error('Geolocation error:', error);
           setUserLocation(defaultCenter);
           setIsLocating(false);
-        },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+        }
       );
     } else {
       setUserLocation(defaultCenter);
@@ -131,370 +128,412 @@ const ActualGoogleMap = memo(function ActualGoogleMap({ onError }: { onError: ()
     }
   }, [setUserLocation]);
 
-  useEffect(() => {
-    if (!userLocation) handleLocate();
-  }, [handleLocate, userLocation]);
-
-  // Auth failure detection
+  // Detect Google Maps auth failures
   useEffect(() => {
     (window as any).gm_authFailure = () => {
-      console.error('[MapView] Google Maps auth failure');
+      console.log('Google Maps auth failure detected');
       onError();
     };
+
+    // Check for error overlays in the DOM periodically
+    const checkForErrors = () => {
+      if (mapContainerRef.current) {
+        const errorElement = mapContainerRef.current.querySelector('.gm-err-container, .dismissButton');
+        if (errorElement) {
+          console.log('Google Maps error element detected in DOM');
+          onError();
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkForErrors, 500);
+    const timeoutId = setTimeout(() => clearInterval(intervalId), 5000);
+
     return () => {
-      try { delete (window as any).gm_authFailure; } catch {}
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      try {
+        delete (window as any).gm_authFailure;
+      } catch {
+        // ignore
+      }
     };
   }, [onError]);
 
-  // Map load handler - CRITICAL: trigger resize after load
-  const onMapLoad = useCallback((map: any) => {
-    console.log('[MapView] Map loaded, triggering resize');
-    mapRef.current = map;
-    
-    // Force resize after a small delay to ensure container is fully rendered
-    setTimeout(() => {
-      if (map && window.google?.maps?.event) {
-        window.google.maps.event.trigger(map, 'resize');
-        map.setCenter(defaultCenter);
-        map.setZoom(6);
-        console.log('[MapView] Resize triggered');
-      }
-    }, 100);
-  }, []);
-
-  // Handle marker click
-  const handleMarkerClick = useCallback((center: DialysisCenter, marker: any) => {
-    if (infoWindowRef.current) infoWindowRef.current.close();
-    
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="padding: 8px; max-width: 200px;">
-          <h3 style="font-weight: bold; font-size: 14px; color: #1a1a2e; margin-bottom: 4px;">${center.name}</h3>
-          <p style="font-size: 12px; color: #666; margin-bottom: 8px;">${center.city}, ${center.province}</p>
-          <button 
-            onclick="window.dispatchEvent(new CustomEvent('viewCenterDetails', { detail: '${center.id}' }))"
-            style="width: 100%; padding: 6px 12px; background: #0077b6; color: white; font-size: 12px; font-weight: 500; border-radius: 6px; border: none; cursor: pointer;"
-          >
-            Vedi dettagli
-          </button>
-        </div>
-      `,
-    });
-    
-    infoWindow.open(mapRef.current, marker);
-    infoWindowRef.current = infoWindow;
-  }, []);
-
-  // Listen for view details events
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      const center = filteredCenters.find(c => c.id === e.detail);
-      if (center) {
-        setSelectedCenter(center);
-        if (infoWindowRef.current) infoWindowRef.current.close();
-      }
+    handleLocate();
+  }, [handleLocate]);
+
+  const handleMarkerClick = (center: DialysisCenter) => {
+    setSelectedMarker(center);
+  };
+
+  const handleInfoWindowClose = () => {
+    setSelectedMarker(null);
+  };
+
+  const handleViewDetails = (center: DialysisCenter) => {
+    setSelectedCenter(center);
+    setSelectedMarker(null);
+  };
+
+  const mapOptions = useMemo(() => {
+    const options: google.maps.MapOptions = {
+      styles: isDarkMode ? darkModeStyles : lightModeStyles,
+      disableDefaultUI: true,
+      zoomControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
     };
-    window.addEventListener('viewCenterDetails', handler as EventListener);
-    return () => window.removeEventListener('viewCenterDetails', handler as EventListener);
-  }, [filteredCenters, setSelectedCenter]);
-
-  // Create markers with clustering
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    // Cleanup
-    markersRef.current.forEach(m => m.setMap(null));
-    markersRef.current = [];
-    if (clustererRef.current) clustererRef.current.clearMarkers();
-
-    const markers = filteredCenters.map((center) => {
-      const regionColor = getRegionColor(center.region);
-      const iconUrl = createRegionMarkerIcon(regionColor);
-      
-      const marker = new google.maps.Marker({
-        position: { lat: center.coordinates.lat, lng: center.coordinates.lng },
-        icon: {
-          url: iconUrl,
-          scaledSize: new google.maps.Size(40, 40),
-          anchor: new google.maps.Point(20, 20),
-        },
-        optimized: true,
-      });
-
-      marker.addListener('click', () => handleMarkerClick(center, marker));
-      return marker;
-    });
-
-    markersRef.current = markers;
-
-    if (!clustererRef.current) {
-      clustererRef.current = new MarkerClusterer({
-        map: mapRef.current,
-        markers,
-        renderer: {
-          render: ({ count, position }) => new google.maps.Marker({
-            position,
-            icon: {
-              url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="50" height="50">
-                  <circle cx="25" cy="25" r="22" fill="#0077b6" stroke="white" stroke-width="3"/>
-                  <text x="25" y="30" text-anchor="middle" fill="white" font-size="14" font-weight="bold">${count}</text>
-                </svg>
-              `)}`,
-              scaledSize: new google.maps.Size(50, 50),
-              anchor: new google.maps.Point(25, 25),
-            },
-            zIndex: 1000 + count,
-          }),
-        },
-      });
-    } else {
-      clustererRef.current.clearMarkers();
-      clustererRef.current.addMarkers(markers);
+    
+    // Only add zoomControlOptions if google.maps is fully loaded
+    if (isLoaded && window.google?.maps?.ControlPosition) {
+      options.zoomControlOptions = {
+        position: window.google.maps.ControlPosition.LEFT_CENTER,
+      };
     }
+    
+    return options;
+  }, [isDarkMode, isLoaded]);
 
-    return () => {
-      markersRef.current.forEach(m => {
-        google.maps.event.clearInstanceListeners(m);
-      });
-    };
-  }, [filteredCenters, handleMarkerClick]);
+  if (loadError) {
+    onError();
+    return null;
+  }
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (infoWindowRef.current) infoWindowRef.current.close();
-      if (clustererRef.current) clustererRef.current.clearMarkers();
-      markersRef.current.forEach(m => {
-        google.maps.event.clearInstanceListeners(m);
-        m.setMap(null);
-      });
-    };
-  }, []);
-
-  // Map options
-  const mapOptions = useMemo(() => ({
-    styles: isDarkMode ? darkModeStyles : lightModeStyles,
-    disableDefaultUI: true,
-    zoomControl: true,
-    mapTypeControl: false,
-    streetViewControl: false,
-    fullscreenControl: false,
-    zoomControlOptions: window.google?.maps?.ControlPosition ? {
-      position: window.google.maps.ControlPosition.LEFT_CENTER,
-    } : undefined,
-  }), [isDarkMode]);
+  if (!isLoaded) {
+    return (
+      <div className="relative w-full h-full bg-secondary flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          <span className="text-muted-foreground">Caricamento mappa...</span>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div 
-      ref={containerRef}
-      style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        width: '100%', 
-        height: '100%',
-        minHeight: '300px'
-      }}
-    >
-      <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%' }}
-        center={defaultCenter}
-        zoom={6}
-        options={mapOptions}
-        onLoad={onMapLoad}
+    <div ref={mapContainerRef} className="relative w-full h-full">
+      <MapErrorBoundary onError={onError}>
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={defaultCenter}
+          zoom={6}
+          options={mapOptions}
+        >
+          {filteredCenters.map((center) => {
+            const regionColor = getRegionColor(center.region);
+            const iconUrl = createRegionMarkerIcon(regionColor);
+            
+            return (
+              <MarkerF
+                key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
+                position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
+                onClick={() => handleMarkerClick(center)}
+                icon={{
+                  url: iconUrl,
+                  scaledSize: new google.maps.Size(40, 40),
+                  anchor: new google.maps.Point(20, 20),
+                }}
+              />
+            );
+          })}
+
+          {userLocation && (
+            <OverlayView
+              position={userLocation}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div 
+                className="flex items-center gap-2"
+                style={{ 
+                  transform: 'translate(-20px, -100%)',
+                  animation: 'bounce-slow 2s ease-in-out infinite'
+                }}
+              >
+                <svg viewBox="0 0 40 60" width="40" height="60" className="flex-shrink-0">
+                  <defs>
+                    <linearGradient id="pinGradLive" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
+                      <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
+                    </linearGradient>
+                    <filter id="shadowLive" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3"/>
+                    </filter>
+                  </defs>
+                  <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+                        fill="url(#pinGradLive)" stroke="white" strokeWidth="2" filter="url(#shadowLive)"/>
+                  <circle cx="20" cy="20" r="8" fill="white"/>
+                </svg>
+                <span 
+                  className="whitespace-nowrap text-xs font-display font-semibold tracking-wide px-2 py-1 rounded-full shadow-lg"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                    color: '#1a1a2e',
+                    textShadow: '0 1px 2px rgba(255,255,255,0.3)'
+                  }}
+                >
+                  La tua posizione
+                </span>
+              </div>
+            </OverlayView>
+          )}
+
+          {selectedMarker && (
+            <InfoWindowF
+              position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
+              onCloseClick={handleInfoWindowClose}
+            >
+              <div className="p-2 max-w-xs">
+                <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
+                <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
+                <button
+                  onClick={() => handleViewDetails(selectedMarker)}
+                  className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+                >
+                  Vedi dettagli
+                </button>
+              </div>
+            </InfoWindowF>
+          )}
+        </GoogleMap>
+      </MapErrorBoundary>
+
+      <motion.button
+        className="absolute bottom-36 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
+        onClick={handleLocate}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        disabled={isLocating}
       >
-        {userLocation && (
-          <OverlayView
-            position={userLocation}
-            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-          >
-            <div style={{ transform: 'translate(-20px, -100%)' }}>
-              <svg viewBox="0 0 40 60" width="40" height="60">
+        <Navigation 
+          className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
+        />
+      </motion.button>
+
+      <motion.div
+        className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <span className="text-sm font-medium text-foreground">
+          {filteredCenters.length} centri trovati
+        </span>
+      </motion.div>
+    </div>
+  );
+}
+
+export function MapView() {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [isLoadingKey, setIsLoadingKey] = useState(true);
+  const [useFallback, setUseFallback] = useState(false);
+
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-maps-key');
+        if (error) throw error;
+        if (data?.apiKey) {
+          setApiKey(data.apiKey);
+        }
+      } catch (error) {
+        console.error('Failed to fetch Google Maps API key:', error);
+        setUseFallback(true);
+      } finally {
+        setIsLoadingKey(false);
+      }
+    };
+    fetchApiKey();
+  }, []);
+
+  const handleGoogleMapsError = useCallback(() => {
+    console.log('Switching to fallback map');
+    setUseFallback(true);
+  }, []);
+
+  if (isLoadingKey) {
+    return (
+      <div className="relative w-full h-full bg-secondary flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          <span className="text-muted-foreground">Caricamento mappa...</span>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!apiKey || useFallback) {
+    return <FallbackMap />;
+  }
+
+  return <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />;
+}
+
+function FallbackMap() {
+  const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
+  const [isLocating, setIsLocating] = useState(false);
+  const [showUserPopup, setShowUserPopup] = useState(false);
+
+  const handleLocate = useCallback(() => {
+    setIsLocating(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setShowUserPopup(true);
+          setIsLocating(false);
+        },
+        () => {
+          setUserLocation({ lat: 41.9028, lng: 12.4964 });
+          setIsLocating(false);
+        }
+      );
+    } else {
+      setUserLocation({ lat: 41.9028, lng: 12.4964 });
+      setIsLocating(false);
+    }
+  }, [setUserLocation]);
+
+  useEffect(() => {
+    handleLocate();
+  }, [handleLocate]);
+
+  return (
+    <div className="relative w-full h-full bg-secondary overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-secondary via-muted to-secondary" />
+      
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `
+            linear-gradient(hsl(var(--muted-foreground) / 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--muted-foreground) / 0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px'
+        }}
+      />
+
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative w-full max-w-lg h-full max-h-[80vh]">
+          {filteredCenters.slice(0, 50).map((center, index) => {
+            const normalizedLat = ((center.coordinates.lat - 36) / 11) * 100;
+            const normalizedLng = ((center.coordinates.lng - 6) / 13) * 100;
+            const regionColor = getRegionColor(center.region);
+            
+            return (
+              <motion.button
+                key={center.id}
+                className="absolute z-10 group"
+                style={{
+                  bottom: `${normalizedLat}%`,
+                  left: `${normalizedLng}%`,
+                  transform: 'translate(-50%, 50%)'
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: index * 0.02, type: 'spring' }}
+                onClick={() => setSelectedCenter(center)}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <div 
+                  className="relative w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+                  style={{ backgroundColor: regionColor }}
+                >
+                  <svg viewBox="0 0 24 24" className="w-3 h-3">
+                    <path d="M12 6 L12 18 M6 12 L18 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="glass-card px-3 py-2 text-xs font-medium whitespace-nowrap">
+                    {center.name}
+                  </div>
+                </div>
+              </motion.button>
+            );
+          })}
+
+          {userLocation && (
+            <motion.div
+              className="absolute z-30 flex items-center gap-2"
+              style={{
+                bottom: `${((userLocation.lat - 36) / 11) * 100}%`,
+                left: `${((userLocation.lng - 6) / 13) * 100}%`,
+                transform: 'translate(-18px, 100%)'
+              }}
+              initial={{ scale: 0 }}
+              animate={{ 
+                scale: 1,
+                y: [0, -8, 0]
+              }}
+              transition={{ 
+                scale: { type: 'spring', delay: 0.3 },
+                y: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+              }}
+            >
+              <svg viewBox="0 0 40 60" width="36" height="54" className="drop-shadow-lg flex-shrink-0">
                 <defs>
-                  <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="pinGradFallback" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
                     <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
                   </linearGradient>
                 </defs>
                 <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
-                      fill="url(#pinGrad)" stroke="white" strokeWidth="2"/>
+                      fill="url(#pinGradFallback)" stroke="white" strokeWidth="2"/>
                 <circle cx="20" cy="20" r="8" fill="white"/>
               </svg>
-              <span style={{ 
-                whiteSpace: 'nowrap',
-                fontSize: '12px',
-                fontWeight: 600,
-                padding: '4px 8px',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                color: '#1a1a2e',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-              }}>
+              <span 
+                className="whitespace-nowrap text-xs font-display font-semibold tracking-wide px-2 py-1 rounded-full shadow-lg"
+                style={{ 
+                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                  color: '#1a1a2e',
+                  textShadow: '0 1px 2px rgba(255,255,255,0.3)'
+                }}
+              >
                 La tua posizione
               </span>
-            </div>
-          </OverlayView>
-        )}
-      </GoogleMap>
-
-      {/* Locate button */}
-      <button
-        onClick={handleLocate}
-        disabled={isLocating}
-        style={{
-          position: 'absolute',
-          bottom: 144,
-          right: 16,
-          zIndex: 30,
-          width: 48,
-          height: 48,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.9)',
-          border: 'none',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <Navigation style={{ width: 20, height: 20, color: '#0d9488' }} />
-      </button>
-
-      {/* Centers count */}
-      <div style={{
-        position: 'absolute',
-        bottom: 144,
-        left: 16,
-        zIndex: 30,
-        background: 'rgba(255,255,255,0.9)',
-        padding: '8px 16px',
-        borderRadius: 20,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        fontSize: 14,
-        fontWeight: 500
-      }}>
-        {filteredCenters.length} centri trovati
-      </div>
-    </div>
-  );
-});
-
-// Fallback map
-const FallbackMap = memo(function FallbackMap() {
-  const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
-  const [isLocating, setIsLocating] = useState(false);
-
-  const handleLocate = useCallback(() => {
-    setIsLocating(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setIsLocating(false);
-        },
-        () => {
-          setUserLocation(defaultCenter);
-          setIsLocating(false);
-        },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
-      );
-    } else {
-      setUserLocation(defaultCenter);
-      setIsLocating(false);
-    }
-  }, [setUserLocation]);
-
-  useEffect(() => {
-    if (!userLocation) handleLocate();
-  }, [handleLocate, userLocation]);
-
-  return (
-    <div style={{ position: 'absolute', inset: 0, background: '#e8ecef', overflow: 'hidden' }}>
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        backgroundImage: `
-          linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)
-        `,
-        backgroundSize: '40px 40px'
-      }} />
-
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: 400, height: '70%' }}>
-          {filteredCenters.slice(0, 50).map((center) => {
-            const y = ((center.coordinates.lat - 36) / 11) * 100;
-            const x = ((center.coordinates.lng - 6) / 13) * 100;
-            const color = getRegionColor(center.region);
-            return (
-              <button
-                key={center.id}
-                onClick={() => setSelectedCenter(center)}
-                style={{
-                  position: 'absolute',
-                  bottom: `${y}%`,
-                  left: `${x}%`,
-                  transform: 'translate(-50%, 50%)',
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  background: color,
-                  border: '2px solid white',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                  cursor: 'pointer',
-                  zIndex: 10
-                }}
-              />
-            );
-          })}
+            </motion.div>
+          )}
         </div>
       </div>
 
-      <button
+      <motion.button
+        className="absolute bottom-36 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center"
         onClick={handleLocate}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         disabled={isLocating}
-        style={{
-          position: 'absolute',
-          bottom: 144,
-          right: 16,
-          zIndex: 30,
-          width: 48,
-          height: 48,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.9)',
-          border: 'none',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
       >
-        <Navigation style={{ width: 20, height: 20, color: '#0d9488' }} />
-      </button>
+        <Navigation 
+          className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
+        />
+      </motion.button>
 
-      <div style={{
-        position: 'absolute',
-        bottom: 144,
-        left: 16,
-        zIndex: 30,
-        background: 'rgba(255,255,255,0.9)',
-        padding: '8px 16px',
-        borderRadius: 20,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        fontSize: 14,
-        fontWeight: 500,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8
-      }}>
-        <AlertTriangle style={{ width: 16, height: 16, color: '#eab308' }} />
-        {filteredCenters.length} centri • Mappa semplificata
-      </div>
+      <motion.div
+        className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full flex items-center gap-2"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <AlertTriangle className="w-4 h-4 text-yellow-500" />
+        <span className="text-sm font-medium text-foreground">
+          {filteredCenters.length} centri • Mappa semplificata
+        </span>
+      </motion.div>
+
     </div>
   );
-});
+}

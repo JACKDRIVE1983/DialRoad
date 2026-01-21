@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MessageSquare, Send, AlertCircle, ThumbsUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,7 @@ const sanitizeInput = (input: string): string => {
     .trim();
 };
 
-// Format date as DD/MM/YYYY - memoized
+// Format date as DD/MM/YYYY
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString('it-IT', {
@@ -47,51 +47,6 @@ const formatDate = (dateString: string): string => {
     year: 'numeric'
   });
 };
-
-// Memoized comment item to prevent unnecessary re-renders
-const CommentItem = memo(function CommentItem({ 
-  comment, 
-  isLiked, 
-  onLike 
-}: { 
-  comment: Comment; 
-  isLiked: boolean; 
-  onLike: (id: string) => void;
-}) {
-  return (
-    <div className="p-4 rounded-xl bg-muted/30 border border-border/30">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-foreground">
-            {comment.author_name}
-          </span>
-          <StarRating rating={comment.rating} readonly size="sm" />
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {formatDate(comment.created_at)}
-        </span>
-      </div>
-      <p className="text-sm text-foreground/80 whitespace-pre-wrap mb-3">
-        {comment.comment_text}
-      </p>
-      
-      <button
-        onClick={() => onLike(comment.id)}
-        disabled={isLiked}
-        className={`flex items-center gap-1.5 text-xs transition-colors ${
-          isLiked
-            ? 'text-primary cursor-default'
-            : 'text-muted-foreground hover:text-primary cursor-pointer'
-        }`}
-      >
-        <ThumbsUp 
-          className={`w-4 h-4 ${isLiked ? 'fill-primary' : ''}`} 
-        />
-        <span>{comment.likes}</span>
-      </button>
-    </div>
-  );
-});
 
 export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps) {
   const [comments, setComments] = useState<Comment[]>([]);
@@ -116,8 +71,6 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
 
   // Fetch comments for this center
   useEffect(() => {
-    let mounted = true;
-    
     const fetchComments = async () => {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -126,35 +79,41 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
         .eq('center_id', centerId)
         .order('created_at', { ascending: false });
 
-      if (!mounted) return;
-
       if (error) {
         console.error('Error fetching comments:', error);
       } else {
         const fetchedComments = (data || []) as Comment[];
         setComments(fetchedComments);
         calculateRating(fetchedComments);
-        
-        // Load liked comments from localStorage
-        const loadedLikes = new Set<string>();
-        fetchedComments.forEach(c => {
-          if (hasLikedComment(c.id)) {
-            loadedLikes.add(c.id);
-          }
-        });
-        setLikedComments(loadedLikes);
       }
       setIsLoading(false);
     };
 
     // Check if device already reviewed this center
     setHasReviewed(hasReviewedCenter(centerId));
+
+    // Load liked comments from localStorage
+    const loadedLikes = new Set<string>();
+    comments.forEach(c => {
+      if (hasLikedComment(c.id)) {
+        loadedLikes.add(c.id);
+      }
+    });
+    setLikedComments(loadedLikes);
+
     fetchComments();
-    
-    return () => {
-      mounted = false;
-    };
   }, [centerId, calculateRating]);
+
+  // Update liked comments when comments list changes
+  useEffect(() => {
+    const loadedLikes = new Set<string>();
+    comments.forEach(c => {
+      if (hasLikedComment(c.id)) {
+        loadedLikes.add(c.id);
+      }
+    });
+    setLikedComments(loadedLikes);
+  }, [comments]);
 
   // Validation
   const isNameValid = name.trim().length >= 3;
@@ -343,12 +302,41 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
           </p>
         ) : (
           comments.map((comment) => (
-            <CommentItem
+            <div 
               key={comment.id}
-              comment={comment}
-              isLiked={likedComments.has(comment.id)}
-              onLike={handleLike}
-            />
+              className="p-4 rounded-xl bg-muted/30 border border-border/30"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm text-foreground">
+                    {comment.author_name}
+                  </span>
+                  <StarRating rating={comment.rating} readonly size="sm" />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(comment.created_at)}
+                </span>
+              </div>
+              <p className="text-sm text-foreground/80 whitespace-pre-wrap mb-3">
+                {comment.comment_text}
+              </p>
+              
+              {/* Like button */}
+              <button
+                onClick={() => handleLike(comment.id)}
+                disabled={likedComments.has(comment.id)}
+                className={`flex items-center gap-1.5 text-xs transition-colors ${
+                  likedComments.has(comment.id)
+                    ? 'text-primary cursor-default'
+                    : 'text-muted-foreground hover:text-primary cursor-pointer'
+                }`}
+              >
+                <ThumbsUp 
+                  className={`w-4 h-4 ${likedComments.has(comment.id) ? 'fill-primary' : ''}`} 
+                />
+                <span>{comment.likes}</span>
+              </button>
+            </div>
           ))
         )}
       </div>
