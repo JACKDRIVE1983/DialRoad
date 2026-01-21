@@ -1,11 +1,10 @@
 import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
-import { GoogleMap, useLoadScript, OverlayView } from '@react-google-maps/api';
+import { Navigation, Loader2, AlertTriangle } from 'lucide-react';
+import { GoogleMap, OverlayView } from '@react-google-maps/api';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
-import { supabase } from '@/integrations/supabase/client';
 import { getRegionColor, createRegionMarkerIcon } from '@/lib/regionColors';
 
 const mapContainerStyle = {
@@ -85,7 +84,40 @@ const InfoWindowContent = memo(function InfoWindowContent({
   );
 });
 
-const GoogleMapComponent = memo(function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
+// Hook to check if Google Maps is loaded from the global script
+function useGoogleMapsLoaded() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  useEffect(() => {
+    // Check if google.maps is already available
+    if (typeof window !== 'undefined' && window.google?.maps) {
+      setIsLoaded(true);
+      return;
+    }
+    
+    // Poll for google.maps to become available
+    const checkInterval = setInterval(() => {
+      if (window.google?.maps) {
+        setIsLoaded(true);
+        clearInterval(checkInterval);
+      }
+    }, 100);
+    
+    // Timeout after 10 seconds
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+    }, 10000);
+    
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, []);
+  
+  return isLoaded;
+}
+
+const GoogleMapComponent = memo(function GoogleMapComponent({ onError }: { onError: () => void }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
@@ -95,14 +127,13 @@ const GoogleMapComponent = memo(function GoogleMapComponent({ apiKey, onError }:
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
 
-  // Debug: Log component mount and API key status
+  // Use the global Google Maps script loaded in index.html
+  const isLoaded = useGoogleMapsLoaded();
+  
+  // Debug: Log component mount
   useEffect(() => {
-    console.log('[GoogleMapComponent] Mounted with apiKey:', apiKey ? 'present' : 'missing');
-  }, [apiKey]);
-
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: apiKey,
-  });
+    console.log('[GoogleMapComponent] Mounted, isLoaded:', isLoaded);
+  }, [isLoaded]);
 
   // Memoized locate handler
   const handleLocate = useCallback(() => {
@@ -327,11 +358,6 @@ const GoogleMapComponent = memo(function GoogleMapComponent({ apiKey, onError }:
     return options;
   }, [isDarkMode, isLoaded]);
 
-  if (loadError) {
-    onError();
-    return null;
-  }
-
   if (!isLoaded) {
     return (
       <div className="relative w-full h-full bg-secondary flex items-center justify-center">
@@ -427,57 +453,23 @@ const GoogleMapComponent = memo(function GoogleMapComponent({ apiKey, onError }:
   );
 });
 
-// Main MapView component with API key fetching
+// Main MapView component - uses global Google Maps script from index.html
 export function MapView() {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [useFallback, setUseFallback] = useState(false);
+  const isLoaded = useGoogleMapsLoaded();
 
   // Debug: Log component mount
   useEffect(() => {
-    console.log('[MapView] Component mounted');
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const fetchApiKey = async () => {
-      try {
-        console.log('[MapView] Fetching API key...');
-        const { data, error } = await supabase.functions.invoke('get-maps-key');
-        if (!mounted) return;
-        if (error) {
-          console.error('[MapView] API key fetch error:', error);
-          throw error;
-        }
-        if (data?.apiKey) {
-          console.log('[MapView] API key received successfully');
-          setApiKey(data.apiKey);
-        } else {
-          console.warn('[MapView] No API key in response');
-          setUseFallback(true);
-        }
-      } catch (error) {
-        console.error('[MapView] Failed to fetch Google Maps API key:', error);
-        if (mounted) setUseFallback(true);
-      } finally {
-        if (mounted) setIsLoadingKey(false);
-      }
-    };
-    
-    fetchApiKey();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    console.log('[MapView] Component mounted, Google Maps loaded:', isLoaded);
+  }, [isLoaded]);
 
   const handleGoogleMapsError = useCallback(() => {
     console.log('[MapView] Switching to fallback map due to Google Maps error');
     setUseFallback(true);
   }, []);
 
-  if (isLoadingKey) {
+  // Show loading while waiting for Google Maps
+  if (!isLoaded && !useFallback) {
     return (
       <div className="absolute inset-0 w-full h-full bg-secondary flex items-center justify-center">
         <motion.div
@@ -492,7 +484,7 @@ export function MapView() {
     );
   }
 
-  if (!apiKey || useFallback) {
+  if (useFallback) {
     return (
       <div className="absolute inset-0 w-full h-full">
         <FallbackMap />
@@ -502,7 +494,7 @@ export function MapView() {
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />
+      <GoogleMapComponent onError={handleGoogleMapsError} />
     </div>
   );
 }
