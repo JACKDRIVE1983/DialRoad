@@ -3,14 +3,26 @@ import {
   X, Phone, Navigation, Clock, 
   MapPin, ChevronUp, Share2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { calculateDistance, formatDistance } from '@/lib/distance';
 import centerImage from '@/assets/center-placeholder.jpg';
 
 export function CenterBottomSheet() {
-  const { selectedCenter, setSelectedCenter } = useApp();
+  const { selectedCenter, setSelectedCenter, userLocation } = useApp();
+  
+  // Calculate distance to selected center
+  const distance = useMemo(() => {
+    if (!userLocation || !selectedCenter) return null;
+    return calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      selectedCenter.coordinates.lat,
+      selectedCenter.coordinates.lng
+    );
+  }, [userLocation, selectedCenter]);
   
   const [isExpanded, setIsExpanded] = useState(false);
   const dragControls = useDragControls();
@@ -140,6 +152,12 @@ export function CenterBottomSheet() {
                       <MapPin className="w-4 h-4 mr-1" />
                       <span className="text-sm">{selectedCenter.city}, {selectedCenter.region}</span>
                     </div>
+                    {distance !== null && (
+                      <div className="flex items-center text-primary text-sm font-medium mt-1">
+                        <Navigation className="w-4 h-4 mr-1" />
+                        {formatDistance(distance)} da te
+                      </div>
+                    )}
                   </div>
                 </div>
 
