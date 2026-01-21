@@ -3,7 +3,7 @@ import {
   X, Phone, Navigation, Clock, 
   MapPin, ChevronUp, Share2
 } from 'lucide-react';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';

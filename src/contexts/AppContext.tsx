@@ -1,6 +1,7 @@
-// App Context - Global state management for DialRoad
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+// App Context - Global state management for DialRoad with persistence
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode, useRef } from 'react';
 import { DialysisCenter, mockCenters } from '@/data/mockCenters';
+import { useAppLifecycle, persistState, restoreState } from '@/hooks/useAppLifecycle';
 
 interface User {
   id: string;
@@ -38,6 +39,15 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// State persistence keys
+const PERSISTENCE_KEYS = {
+  selectedCenterId: 'selected-center-id',
+  searchQuery: 'search-query',
+  selectedRegion: 'selected-region',
+  activeTab: 'active-tab',
+  userLocation: 'user-location'
+} as const;
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -57,23 +67,84 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
 
   const [centers, setCenters] = useState<DialysisCenter[]>(mockCenters);
-  const [selectedCenter, setSelectedCenter] = useState<DialysisCenter | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('Tutte le Regioni');
+  
+  // Restore selected center from persistence
+  const [selectedCenter, setSelectedCenterRaw] = useState<DialysisCenter | null>(() => {
+    const savedId = restoreState<string | null>(PERSISTENCE_KEYS.selectedCenterId, null);
+    if (savedId) {
+      return mockCenters.find(c => c.id === savedId) || null;
+    }
+    return null;
+  });
+  
+  // Restore user location from persistence
+  const [userLocation, setUserLocationRaw] = useState<{ lat: number; lng: number } | null>(() => {
+    return restoreState<{ lat: number; lng: number } | null>(PERSISTENCE_KEYS.userLocation, null);
+  });
+  
+  // Restore search/filter state
+  const [searchQuery, setSearchQueryRaw] = useState(() => {
+    return restoreState<string>(PERSISTENCE_KEYS.searchQuery, '');
+  });
+  
+  const [selectedRegion, setSelectedRegionRaw] = useState(() => {
+    return restoreState<string>(PERSISTENCE_KEYS.selectedRegion, 'Tutte le Regioni');
+  });
+  
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window !== 'undefined') {
       return !localStorage.getItem('dialroad-onboarding-seen');
     }
     return true;
   });
+  
   const [showSplash, setShowSplash] = useState(() => {
-    // Only show splash once per session (survives navigations but not app restarts)
     if (typeof window !== 'undefined') {
       return !sessionStorage.getItem('dialroad-splash-seen');
     }
     return true;
+  });
+
+  // Wrapped setters with persistence
+  const setSelectedCenter = useCallback((center: DialysisCenter | null) => {
+    setSelectedCenterRaw(center);
+    persistState(PERSISTENCE_KEYS.selectedCenterId, center?.id || null);
+  }, []);
+  
+  const setUserLocation = useCallback((location: { lat: number; lng: number } | null) => {
+    setUserLocationRaw(location);
+    if (location) {
+      persistState(PERSISTENCE_KEYS.userLocation, location);
+    }
+  }, []);
+  
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryRaw(query);
+    persistState(PERSISTENCE_KEYS.searchQuery, query);
+  }, []);
+  
+  const setSelectedRegion = useCallback((region: string) => {
+    setSelectedRegionRaw(region);
+    persistState(PERSISTENCE_KEYS.selectedRegion, region);
+  }, []);
+
+  // App lifecycle handling - persist on background, restore on foreground
+  useAppLifecycle({
+    onPause: () => {
+      // Persist current state when app goes to background
+      persistState(PERSISTENCE_KEYS.selectedCenterId, selectedCenter?.id || null);
+      persistState(PERSISTENCE_KEYS.searchQuery, searchQuery);
+      persistState(PERSISTENCE_KEYS.selectedRegion, selectedRegion);
+      if (userLocation) {
+        persistState(PERSISTENCE_KEYS.userLocation, userLocation);
+      }
+    },
+    onResume: () => {
+      // State is already restored from initialization
+      console.log('App resumed');
+    }
   });
 
   // Persist splash completion to sessionStorage
@@ -92,23 +163,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('dialroad-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  const toggleDarkMode = () => setIsDarkMode(prev => !prev);
+  const toggleDarkMode = useCallback(() => setIsDarkMode(prev => !prev), []);
 
-  const toggleFavorite = (centerId: string) => {
-    // In a real app, this would update the backend
+  const toggleFavorite = useCallback((centerId: string) => {
     console.log('Toggle favorite:', centerId);
-  };
+  }, []);
 
-  const toggleLike = (centerId: string) => {
+  const toggleLike = useCallback((centerId: string) => {
     setCenters(prev => prev.map(center => {
       if (center.id === centerId) {
         return { ...center, likes: center.likes + 1 };
       }
       return center;
     }));
-  };
+  }, []);
 
-  const addComment = (centerId: string, text: string) => {
+  const addComment = useCallback((centerId: string, text: string) => {
     setCenters(prev => prev.map(center => {
       if (center.id === centerId) {
         const newComment = {
@@ -123,9 +193,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return center;
     }));
-  };
+  }, [user]);
 
-  const filteredCenters = (() => {
+  // Memoized filtered centers to prevent recalculation
+  const filteredCenters = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
     
     // First, filter by region and services
@@ -142,22 +213,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const hasStartsWithCityMatch = baseFiltered.some(center => center.city.toLowerCase().startsWith(query));
     const hasContainsCityMatch = baseFiltered.some(center => center.city.toLowerCase().includes(query));
 
-    // If there's an exact city match (e.g. "Roma"), show ONLY that city to avoid false positives like "Romagna".
     if (hasExactCityMatch) {
       return baseFiltered
         .filter(center => center.city.toLowerCase() === query)
         .sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    // If there's a starts-with city match (e.g. "Venezia" matches "Venezia Lido"), show ONLY those cities.
-    // Avoid name matches here to prevent cases like "VENEZIALE" in other cities.
     if (hasStartsWithCityMatch) {
       return baseFiltered
         .filter(center => center.city.toLowerCase().startsWith(query))
         .sort((a, b) => a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
     }
 
-    // If the query matches some city partially, prioritize those city matches, then allow name matches.
     if (hasContainsCityMatch) {
       return baseFiltered
         .filter(center =>
@@ -173,7 +240,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
     }
     
-    // No city match found - search in name and address
     return baseFiltered
       .filter(center => 
         center.name.toLowerCase().includes(query) ||
@@ -186,7 +252,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!aNameContains && bNameContains) return 1;
         return 0;
       });
-  })();
+  }, [centers, searchQuery, selectedRegion, selectedServices]);
 
   return (
     <AppContext.Provider value={{
