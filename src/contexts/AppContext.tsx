@@ -93,11 +93,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   
-  // TEMP: Skip onboarding/splash for debugging map - set to false to bypass
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (typeof window !== 'undefined') {
-      // Check URL param for debug bypass
-      if (window.location.search.includes('skipIntro=1')) return false;
       return !localStorage.getItem('dialroad-onboarding-seen');
     }
     return true;
@@ -105,8 +102,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const [showSplash, setShowSplash] = useState(() => {
     if (typeof window !== 'undefined') {
-      // Check URL param for debug bypass
-      if (window.location.search.includes('skipIntro=1')) return false;
       return !sessionStorage.getItem('dialroad-splash-seen');
     }
     return true;
