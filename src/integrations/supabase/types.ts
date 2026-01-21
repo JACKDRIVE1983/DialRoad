@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      anonymous_comments: {
+        Row: {
+          author_name: string
+          center_id: string
+          comment_text: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_name: string
+          center_id: string
+          comment_text: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_name?: string
+          center_id?: string
+          comment_text?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           center_id: string
