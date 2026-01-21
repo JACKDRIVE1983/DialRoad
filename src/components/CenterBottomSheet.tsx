@@ -34,7 +34,11 @@ export function CenterBottomSheet() {
 
   const handleCall = () => {
     if (selectedCenter) {
-      window.open(`tel:${selectedCenter.phone}`, '_self');
+      // Extract only the main phone number (before any "/" or other separators)
+      const mainPhone = selectedCenter.phone.split('/')[0].trim();
+      // Remove any non-numeric characters except + at the start
+      const cleanPhone = mainPhone.replace(/[^\d+]/g, '');
+      window.open(`tel:${cleanPhone}`, '_self');
     }
   };
 
