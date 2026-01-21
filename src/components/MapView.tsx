@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo, memo } from 'react';
+import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo, memo, forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
 import { GoogleMap, useLoadScript, OverlayView } from '@react-google-maps/api';
@@ -85,7 +85,8 @@ const InfoWindowContent = memo(function InfoWindowContent({
   );
 });
 
-function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
+const GoogleMapComponent = memo(forwardRef<HTMLDivElement, { apiKey: string; onError: () => void }>(
+  function GoogleMapComponent({ apiKey, onError }, ref) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
@@ -94,6 +95,11 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
   const markersRef = useRef<google.maps.Marker[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+
+  // Debug: Log component mount and API key status
+  useEffect(() => {
+    console.log('[GoogleMapComponent] Mounted with apiKey:', apiKey ? 'present' : 'missing');
+  }, [apiKey]);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: apiKey,
@@ -420,27 +426,40 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       </motion.div>
     </div>
   );
-}
+}));
 
 // Main MapView component with API key fetching
-export function MapView() {
+export const MapView = memo(forwardRef<HTMLDivElement>(function MapView(_props, ref) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isLoadingKey, setIsLoadingKey] = useState(true);
   const [useFallback, setUseFallback] = useState(false);
+
+  // Debug: Log component mount
+  useEffect(() => {
+    console.log('[MapView] Component mounted');
+  }, []);
 
   useEffect(() => {
     let mounted = true;
     
     const fetchApiKey = async () => {
       try {
+        console.log('[MapView] Fetching API key...');
         const { data, error } = await supabase.functions.invoke('get-maps-key');
         if (!mounted) return;
-        if (error) throw error;
+        if (error) {
+          console.error('[MapView] API key fetch error:', error);
+          throw error;
+        }
         if (data?.apiKey) {
+          console.log('[MapView] API key received successfully');
           setApiKey(data.apiKey);
+        } else {
+          console.warn('[MapView] No API key in response');
+          setUseFallback(true);
         }
       } catch (error) {
-        console.error('Failed to fetch Google Maps API key:', error);
+        console.error('[MapView] Failed to fetch Google Maps API key:', error);
         if (mounted) setUseFallback(true);
       } finally {
         if (mounted) setIsLoadingKey(false);
@@ -455,13 +474,13 @@ export function MapView() {
   }, []);
 
   const handleGoogleMapsError = useCallback(() => {
-    console.log('Switching to fallback map');
+    console.log('[MapView] Switching to fallback map due to Google Maps error');
     setUseFallback(true);
   }, []);
 
   if (isLoadingKey) {
     return (
-      <div className="relative w-full h-full bg-secondary flex items-center justify-center">
+      <div ref={ref} className="absolute inset-0 w-full h-full bg-secondary flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -475,11 +494,19 @@ export function MapView() {
   }
 
   if (!apiKey || useFallback) {
-    return <FallbackMap />;
+    return (
+      <div ref={ref} className="absolute inset-0 w-full h-full">
+        <FallbackMap />
+      </div>
+    );
   }
 
-  return <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />;
-}
+  return (
+    <div ref={ref} className="absolute inset-0 w-full h-full">
+      <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />
+    </div>
+  );
+}));
 
 // Fallback map for when Google Maps is unavailable
 const FallbackMap = memo(function FallbackMap() {
