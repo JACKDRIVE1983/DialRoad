@@ -1,3 +1,4 @@
+// Main Index page - rebuild trigger v2
 import { useState, useCallback, lazy, Suspense, memo, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
