@@ -7,6 +7,15 @@ import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { getRegionColor, createRegionMarkerIcon } from '@/lib/regionColors';
 
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
+// Keep typings permissive to avoid build failures when Google Maps types aren't available
+declare const google: any;
+
 const mapContainerStyle = {
   width: '100%',
   height: '100%'
@@ -121,11 +130,11 @@ const GoogleMapComponent = memo(function GoogleMapComponent({ onError }: { onErr
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
+  const mapRef = useRef<any>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
+  const markersRef = useRef<any[]>([]);
   const clustererRef = useRef<MarkerClusterer | null>(null);
-  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
+  const infoWindowRef = useRef<any>(null);
 
   // Use the global Google Maps script loaded in index.html
   const isLoaded = useGoogleMapsLoaded();
@@ -200,7 +209,7 @@ const GoogleMapComponent = memo(function GoogleMapComponent({ onError }: { onErr
   }, [handleLocate, userLocation]);
 
   // Map load callback
-  const onMapLoad = useCallback((map: google.maps.Map) => {
+  const onMapLoad = useCallback((map: any) => {
     mapRef.current = map;
   }, []);
 
@@ -340,7 +349,7 @@ const GoogleMapComponent = memo(function GoogleMapComponent({ onError }: { onErr
 
   // Memoized map options
   const mapOptions = useMemo(() => {
-    const options: google.maps.MapOptions = {
+    const options: any = {
       styles: isDarkMode ? darkModeStyles : lightModeStyles,
       disableDefaultUI: true,
       zoomControl: true,
