@@ -1,6 +1,6 @@
 // Main Index page - rebuild trigger v2
-import { useState, useCallback, lazy, Suspense, memo, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { useState, useCallback, lazy, Suspense, memo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
@@ -110,9 +110,39 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-background safe-area-top">
       <AnimatePresence mode="wait">
-        {activeTab === 'map' && <MapTab key="map" />}
-        {activeTab === 'list' && <ListTab key="list" onSelectCenter={handleSelectCenter} />}
-        {activeTab === 'settings' && <SettingsTab key="settings" />}
+        {activeTab === 'map' && (
+          <motion.div
+            key="map"
+            className="h-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <MapTab />
+          </motion.div>
+        )}
+        {activeTab === 'list' && (
+          <motion.div
+            key="list"
+            className="h-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <ListTab onSelectCenter={handleSelectCenter} />
+          </motion.div>
+        )}
+        {activeTab === 'settings' && (
+          <motion.div
+            key="settings"
+            className="h-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <SettingsTab />
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <CenterBottomSheet />
