@@ -32,8 +32,14 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- Define callback BEFORE loading the async script (otherwise callback may be undefined) -->
+    <script>
+      window.__gmapsReady = false;
+      window.__gmapsInit = function () {
+        window.__gmapsReady = true;
+      };
+    </script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAEATtH1AArIEUUnZbz6T4Xr27_riOdjCI&libraries=places&loading=async&callback=__gmapsInit"></script>
-    <script>window.__gmapsInit = function() { window.__gmapsReady = true; };</script>
   </head>
 
   <body class="overflow-x-hidden">
