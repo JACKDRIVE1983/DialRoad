@@ -1,11 +1,19 @@
-import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo } from 'react';
+import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
-import { GoogleMap, useLoadScript, MarkerF, InfoWindowF, OverlayView } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, InfoWindowF, OverlayView } from '@react-google-maps/api';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
-import { getRegionColor, createRegionMarkerIcon } from '@/lib/regionColors';
+import { getRegionColor } from '@/lib/regionColors';
+import { OptimizedMarker, ClusterMarker } from './OptimizedMarker';
+import { 
+  useCameraIdle, 
+  useViewportCulling, 
+  useSimpleClustering,
+  useViewportState 
+} from '@/hooks/useMapPerformance';
+import { preWarmIconCache, clearIconCache } from '@/lib/markerIconCache';
 
 const mapContainerStyle = {
   width: '100%',
@@ -17,54 +25,23 @@ const defaultCenter = {
   lng: 12.4964
 };
 
-const darkModeStyles = [
+// Simplified map styles for better performance
+const darkModeStyles: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#1a1a2e" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a2e" }] },
   { elementType: "labels.text.fill", stylers: [{ color: "#8a8aa3" }] },
   { featureType: "road", elementType: "geometry", stylers: [{ color: "#2d2d44" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1a1a2e" }] },
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e4d6b" }] },
-  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#2d2d44" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#1e3a2f" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] }, // Hide POIs for performance
 ];
 
-const lightModeStyles = [
+const lightModeStyles: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
   { elementType: "labels.text.fill", stylers: [{ color: "#666666" }] },
   { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9e8f5" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#c8e6c9" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] }, // Hide POIs for performance
 ];
-
-// Default marker icon (kept for reference, but we now use region-specific colors)
-const markerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-    <defs>
-      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
-      </filter>
-    </defs>
-    <circle cx="20" cy="20" r="18" fill="#0077b6" stroke="white" stroke-width="3" filter="url(#shadow)"/>
-    <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  </svg>
-`);
-
-const userMarkerIcon = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 60" width="40" height="60">
-    <defs>
-      <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
-        <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
-      </linearGradient>
-      <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
-      </filter>
-    </defs>
-    <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
-          fill="url(#pinGrad)" stroke="white" stroke-width="2" filter="url(#shadow)"/>
-    <circle cx="20" cy="20" r="8" fill="white"/>
-  </svg>
-`);
 
 // Error Boundary to catch Google Maps rendering errors
 class MapErrorBoundary extends Component<
@@ -92,16 +69,121 @@ class MapErrorBoundary extends Component<
   }
 }
 
+// Memoized user location overlay to prevent re-renders
+const UserLocationOverlay = memo(function UserLocationOverlay({ 
+  userLocation, 
+  showPopup 
+}: { 
+  userLocation: { lat: number; lng: number }; 
+  showPopup: boolean;
+}) {
+  return (
+    <OverlayView
+      position={userLocation}
+      mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+    >
+      <div 
+        className="flex items-center gap-2"
+        style={{ 
+          transform: 'translate(-20px, -100%)',
+          animation: 'bounce-slow 2s ease-in-out infinite'
+        }}
+      >
+        <svg viewBox="0 0 40 60" width="40" height="60" className="flex-shrink-0">
+          <defs>
+            <linearGradient id="pinGradLive" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
+              <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
+            </linearGradient>
+            <filter id="shadowLive" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3"/>
+            </filter>
+          </defs>
+          <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+                fill="url(#pinGradLive)" stroke="white" strokeWidth="2" filter="url(#shadowLive)"/>
+          <circle cx="20" cy="20" r="8" fill="white"/>
+        </svg>
+        {showPopup && (
+          <span 
+            className="whitespace-nowrap text-xs font-display font-semibold tracking-wide px-2 py-1 rounded-full shadow-lg"
+            style={{ 
+              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+              color: '#1a1a2e',
+              textShadow: '0 1px 2px rgba(255,255,255,0.3)'
+            }}
+          >
+            La tua posizione
+          </span>
+        )}
+      </div>
+    </OverlayView>
+  );
+});
+
+// Memoized InfoWindow content
+const InfoWindowContent = memo(function InfoWindowContent({ 
+  center, 
+  onViewDetails 
+}: { 
+  center: DialysisCenter; 
+  onViewDetails: () => void;
+}) {
+  return (
+    <div className="p-2 max-w-xs">
+      <h3 className="font-bold text-sm text-gray-900 mb-1">{center.name}</h3>
+      <p className="text-xs text-gray-600 mb-2">{center.city}, {center.province}</p>
+      <button
+        onClick={onViewDetails}
+        className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
+      >
+        Vedi dettagli
+      </button>
+    </div>
+  );
+});
+
 function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
   const [showUserPopup, setShowUserPopup] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+
+  // Performance hooks
+  const { viewport, updateViewport } = useViewportState();
+  const { isIdle, handleCameraStart, handleCameraEnd } = useCameraIdle(200);
+  
+  // Viewport culling - only render markers in visible area
+  const visibleCenters = useViewportCulling(
+    filteredCenters, 
+    viewport.bounds, 
+    viewport.zoom,
+    isIdle
+  );
+  
+  // Clustering at lower zoom levels
+  const { clusters, showIndividualMarkers } = useSimpleClustering(
+    visibleCenters,
+    viewport.zoom,
+    isIdle
+  );
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: apiKey,
   });
+
+  // Pre-warm icon cache when map loads
+  useEffect(() => {
+    if (isLoaded) {
+      preWarmIconCache();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      clearIconCache();
+    };
+  }, [isLoaded]);
 
   const handleLocate = useCallback(() => {
     setIsLocating(true);
@@ -120,13 +202,56 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
           console.error('Geolocation error:', error);
           setUserLocation(defaultCenter);
           setIsLocating(false);
-        }
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       );
     } else {
       setUserLocation(defaultCenter);
       setIsLocating(false);
     }
   }, [setUserLocation]);
+
+  // Map event handlers - only update state when camera is idle
+  const handleBoundsChanged = useCallback(() => {
+    if (!mapRef.current) return;
+    
+    const bounds = mapRef.current.getBounds();
+    const zoom = mapRef.current.getZoom();
+    
+    if (bounds && zoom !== undefined) {
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+      
+      updateViewport({
+        bounds: {
+          north: ne.lat(),
+          south: sw.lat(),
+          east: ne.lng(),
+          west: sw.lng()
+        },
+        zoom
+      });
+    }
+  }, [updateViewport]);
+
+  const handleDragStart = useCallback(() => {
+    handleCameraStart();
+  }, [handleCameraStart]);
+
+  const handleDragEnd = useCallback(() => {
+    handleCameraEnd();
+    handleBoundsChanged();
+  }, [handleCameraEnd, handleBoundsChanged]);
+
+  const handleZoomChanged = useCallback(() => {
+    handleCameraEnd();
+    handleBoundsChanged();
+  }, [handleCameraEnd, handleBoundsChanged]);
+
+  const handleMapLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+    handleBoundsChanged();
+  }, [handleBoundsChanged]);
 
   // Detect Google Maps auth failures
   useEffect(() => {
@@ -164,18 +289,21 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
     handleLocate();
   }, [handleLocate]);
 
-  const handleMarkerClick = (center: DialysisCenter) => {
+  // Stable callback for marker clicks
+  const handleMarkerClick = useCallback((center: DialysisCenter) => {
     setSelectedMarker(center);
-  };
+  }, []);
 
-  const handleInfoWindowClose = () => {
+  const handleInfoWindowClose = useCallback(() => {
     setSelectedMarker(null);
-  };
+  }, []);
 
-  const handleViewDetails = (center: DialysisCenter) => {
-    setSelectedCenter(center);
-    setSelectedMarker(null);
-  };
+  const handleViewDetails = useCallback(() => {
+    if (selectedMarker) {
+      setSelectedCenter(selectedMarker);
+      setSelectedMarker(null);
+    }
+  }, [selectedMarker, setSelectedCenter]);
 
   const mapOptions = useMemo(() => {
     const options: google.maps.MapOptions = {
@@ -185,6 +313,9 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
+      // Performance optimizations
+      gestureHandling: 'greedy',
+      clickableIcons: false, // Disable POI clicks for performance
     };
     
     // Only add zoomControlOptions if google.maps is fully loaded
@@ -225,63 +356,36 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
           center={defaultCenter}
           zoom={6}
           options={mapOptions}
+          onLoad={handleMapLoad}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onZoomChanged={handleZoomChanged}
         >
-          {filteredCenters.map((center) => {
-            const regionColor = getRegionColor(center.region);
-            const iconUrl = createRegionMarkerIcon(regionColor);
-            
-            return (
-              <MarkerF
-                key={`${center.id}-${center.coordinates.lat}-${center.coordinates.lng}`}
-                position={{ lat: center.coordinates.lat, lng: center.coordinates.lng }}
-                onClick={() => handleMarkerClick(center)}
-                icon={{
-                  url: iconUrl,
-                  scaledSize: new google.maps.Size(40, 40),
-                  anchor: new google.maps.Point(20, 20),
-                }}
-              />
-            );
-          })}
+          {/* Render clusters at low zoom */}
+          {!showIndividualMarkers && clusters.map((cluster) => (
+            <ClusterMarker
+              key={cluster.id}
+              lat={cluster.lat}
+              lng={cluster.lng}
+              count={cluster.count}
+              region={cluster.region}
+            />
+          ))}
+          
+          {/* Render individual markers at high zoom */}
+          {showIndividualMarkers && visibleCenters.map((center) => (
+            <OptimizedMarker
+              key={center.id}
+              center={center}
+              onClick={handleMarkerClick}
+            />
+          ))}
 
           {userLocation && (
-            <OverlayView
-              position={userLocation}
-              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            >
-              <div 
-                className="flex items-center gap-2"
-                style={{ 
-                  transform: 'translate(-20px, -100%)',
-                  animation: 'bounce-slow 2s ease-in-out infinite'
-                }}
-              >
-                <svg viewBox="0 0 40 60" width="40" height="60" className="flex-shrink-0">
-                  <defs>
-                    <linearGradient id="pinGradLive" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{ stopColor: '#fbbf24' }} />
-                      <stop offset="100%" style={{ stopColor: '#f59e0b' }} />
-                    </linearGradient>
-                    <filter id="shadowLive" x="-50%" y="-50%" width="200%" height="200%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3"/>
-                    </filter>
-                  </defs>
-                  <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
-                        fill="url(#pinGradLive)" stroke="white" strokeWidth="2" filter="url(#shadowLive)"/>
-                  <circle cx="20" cy="20" r="8" fill="white"/>
-                </svg>
-                <span 
-                  className="whitespace-nowrap text-xs font-display font-semibold tracking-wide px-2 py-1 rounded-full shadow-lg"
-                  style={{ 
-                    background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                    color: '#1a1a2e',
-                    textShadow: '0 1px 2px rgba(255,255,255,0.3)'
-                  }}
-                >
-                  La tua posizione
-                </span>
-              </div>
-            </OverlayView>
+            <UserLocationOverlay 
+              userLocation={userLocation} 
+              showPopup={showUserPopup} 
+            />
           )}
 
           {selectedMarker && (
@@ -289,16 +393,10 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
               position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
               onCloseClick={handleInfoWindowClose}
             >
-              <div className="p-2 max-w-xs">
-                <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
-                <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
-                <button
-                  onClick={() => handleViewDetails(selectedMarker)}
-                  className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
-                >
-                  Vedi dettagli
-                </button>
-              </div>
+              <InfoWindowContent 
+                center={selectedMarker} 
+                onViewDetails={handleViewDetails} 
+              />
             </InfoWindowF>
           )}
         </GoogleMap>
@@ -316,13 +414,15 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
         />
       </motion.button>
 
+      {/* Marker count indicator - shows visible markers */}
       <motion.div
         className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <span className="text-sm font-medium text-foreground">
-          {filteredCenters.length} centri trovati
+          {showIndividualMarkers ? visibleCenters.length : clusters.reduce((sum, c) => sum + c.count, 0)} centri
+          {!isIdle && <span className="ml-1 text-muted-foreground">•••</span>}
         </span>
       </motion.div>
     </div>
@@ -379,10 +479,10 @@ export function MapView() {
   return <GoogleMapComponent apiKey={apiKey} onError={handleGoogleMapsError} />;
 }
 
-function FallbackMap() {
+// Memoized FallbackMap to prevent re-renders
+const FallbackMap = memo(function FallbackMap() {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
   const [isLocating, setIsLocating] = useState(false);
-  const [showUserPopup, setShowUserPopup] = useState(false);
 
   const handleLocate = useCallback(() => {
     setIsLocating(true);
@@ -393,13 +493,13 @@ function FallbackMap() {
             lat: position.coords.latitude,
             lng: position.coords.longitude
           });
-          setShowUserPopup(true);
           setIsLocating(false);
         },
         () => {
           setUserLocation({ lat: 41.9028, lng: 12.4964 });
           setIsLocating(false);
-        }
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       );
     } else {
       setUserLocation({ lat: 41.9028, lng: 12.4964 });
@@ -410,6 +510,9 @@ function FallbackMap() {
   useEffect(() => {
     handleLocate();
   }, [handleLocate]);
+
+  // Limit markers for fallback map performance
+  const visibleCenters = useMemo(() => filteredCenters.slice(0, 50), [filteredCenters]);
 
   return (
     <div className="relative w-full h-full bg-secondary overflow-hidden">
@@ -428,26 +531,21 @@ function FallbackMap() {
 
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative w-full max-w-lg h-full max-h-[80vh]">
-          {filteredCenters.slice(0, 50).map((center, index) => {
+          {visibleCenters.map((center) => {
             const normalizedLat = ((center.coordinates.lat - 36) / 11) * 100;
             const normalizedLng = ((center.coordinates.lng - 6) / 13) * 100;
             const regionColor = getRegionColor(center.region);
             
             return (
-              <motion.button
+              <button
                 key={center.id}
-                className="absolute z-10 group"
+                className="absolute z-10 group transition-transform hover:scale-110 active:scale-95"
                 style={{
                   bottom: `${normalizedLat}%`,
                   left: `${normalizedLng}%`,
                   transform: 'translate(-50%, 50%)'
                 }}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: index * 0.02, type: 'spring' }}
                 onClick={() => setSelectedCenter(center)}
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.95 }}
               >
                 <div 
                   className="relative w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
@@ -463,26 +561,18 @@ function FallbackMap() {
                     {center.name}
                   </div>
                 </div>
-              </motion.button>
+              </button>
             );
           })}
 
           {userLocation && (
-            <motion.div
+            <div
               className="absolute z-30 flex items-center gap-2"
               style={{
                 bottom: `${((userLocation.lat - 36) / 11) * 100}%`,
                 left: `${((userLocation.lng - 6) / 13) * 100}%`,
-                transform: 'translate(-18px, 100%)'
-              }}
-              initial={{ scale: 0 }}
-              animate={{ 
-                scale: 1,
-                y: [0, -8, 0]
-              }}
-              transition={{ 
-                scale: { type: 'spring', delay: 0.3 },
-                y: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                transform: 'translate(-18px, 100%)',
+                animation: 'bounce-slow 2s ease-in-out infinite'
               }}
             >
               <svg viewBox="0 0 40 60" width="36" height="54" className="drop-shadow-lg flex-shrink-0">
@@ -506,7 +596,7 @@ function FallbackMap() {
               >
                 La tua posizione
               </span>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>
@@ -530,10 +620,10 @@ function FallbackMap() {
       >
         <AlertTriangle className="w-4 h-4 text-yellow-500" />
         <span className="text-sm font-medium text-foreground">
-          {filteredCenters.length} centri • Mappa semplificata
+          {visibleCenters.length} centri • Mappa semplificata
         </span>
       </motion.div>
 
     </div>
   );
-}
+});
