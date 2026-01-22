@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { MapPin, Search } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
@@ -25,8 +25,15 @@ const EmptyState = React.memo(function EmptyState() {
   );
 });
 
+// Virtual list implementation for performance
+const ITEM_HEIGHT = 120; // Approximate height of each card
+const BUFFER_SIZE = 5; // Extra items to render above/below viewport
+
 function CentersListComponent({ onSelectCenter }: CentersListProps) {
   const { filteredCenters, setSearchQuery, userLocation } = useApp();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
   
   // Local search input state for immediate UI feedback
   const [localSearchQuery, setLocalSearchQuery] = useState('');
@@ -42,7 +49,6 @@ function CentersListComponent({ onSelectCenter }: CentersListProps) {
   // Cleanup effect
   useEffect(() => {
     return () => {
-      // Reset search on unmount
       setSearchQuery('');
     };
   }, [setSearchQuery]);
@@ -69,8 +75,66 @@ function CentersListComponent({ onSelectCenter }: CentersListProps) {
       .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
   }, [filteredCenters, userLocation]);
 
+  // Setup scroll and resize listeners for virtualization
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setScrollTop(container.scrollTop);
+    };
+
+    const handleResize = () => {
+      setContainerHeight(container.clientHeight);
+    };
+
+    // Initial measurement
+    handleResize();
+    
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleResize, { passive: true });
+    
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Calculate which items to render (virtualization)
+  const { startIndex, endIndex, visibleItems, totalHeight } = useMemo(() => {
+    const itemCount = centersWithDistance.length;
+    const totalHeight = itemCount * ITEM_HEIGHT;
+    
+    // If list is short, render all items
+    if (itemCount <= 20) {
+      return {
+        startIndex: 0,
+        endIndex: itemCount,
+        visibleItems: centersWithDistance,
+        totalHeight
+      };
+    }
+    
+    const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER_SIZE);
+    const visibleCount = Math.ceil(containerHeight / ITEM_HEIGHT) + BUFFER_SIZE * 2;
+    const endIndex = Math.min(itemCount, startIndex + visibleCount);
+    
+    return {
+      startIndex,
+      endIndex,
+      visibleItems: centersWithDistance.slice(startIndex, endIndex),
+      totalHeight
+    };
+  }, [centersWithDistance, scrollTop, containerHeight]);
+
+  // Should we virtualize?
+  const shouldVirtualize = centersWithDistance.length > 20;
+
   return (
-    <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+    <div 
+      ref={containerRef}
+      className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide"
+    >
       {/* Search Bar with debounced input */}
       <div className="mb-4 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -82,18 +146,43 @@ function CentersListComponent({ onSelectCenter }: CentersListProps) {
           className="w-full pl-10 pr-4 py-3 rounded-xl glass-card border-0 bg-background/60 backdrop-blur-sm text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
       </div>
-      <div className="space-y-3">
-        {centersWithDistance.map(({ center, distance }) => (
-          <CenterCard
-            key={center.id}
-            center={center}
-            distance={distance}
-            onSelect={handleSelectCenter}
-          />
-        ))}
 
-        {filteredCenters.length === 0 && <EmptyState />}
-      </div>
+      {/* Virtualized list container */}
+      {shouldVirtualize ? (
+        <div style={{ height: totalHeight, position: 'relative' }}>
+          <div 
+            className="space-y-3"
+            style={{ 
+              position: 'absolute',
+              top: startIndex * ITEM_HEIGHT,
+              left: 0,
+              right: 0
+            }}
+          >
+            {visibleItems.map(({ center, distance }) => (
+              <CenterCard
+                key={center.id}
+                center={center}
+                distance={distance}
+                onSelect={handleSelectCenter}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {centersWithDistance.map(({ center, distance }) => (
+            <CenterCard
+              key={center.id}
+              center={center}
+              distance={distance}
+              onSelect={handleSelectCenter}
+            />
+          ))}
+        </div>
+      )}
+
+      {filteredCenters.length === 0 && <EmptyState />}
     </div>
   );
 }
