@@ -32,28 +32,23 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
         style={{ opacity, y: translateY, scale }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-2xl overflow-hidden relative h-20"
-          style={{
-            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.3)',
-            border: '1px solid rgba(255, 255, 255, 0.5)'
-          }}
+          className="mx-4 mt-4 mb-2 rounded-3xl overflow-hidden relative h-14 glass-panel"
         >
-          {/* Background image - covers entire bar with logo included */}
+          {/* Background image with overlay for glassmorphism */}
           <img
             src={headerDialroadBg}
             alt="DialRoad"
-            className="absolute inset-0 w-full h-full object-cover object-[center_47%]"
+            className="absolute inset-0 w-full h-full object-cover object-[center_47%] opacity-90"
           />
+          {/* Glassmorphism overlay */}
+          <div className="absolute inset-0 bg-white/30 dark:bg-black/20 backdrop-blur-md" />
 
-          <div className="relative flex items-center justify-between px-4 h-full">
+          <div className="relative flex items-center justify-between px-3 h-full">
             {/* Menu button on the left */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/40 pointer-events-auto z-10 bg-white/30 backdrop-blur-sm"
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/40 pointer-events-auto z-10 bg-white/40 dark:bg-white/20 backdrop-blur-sm border border-white/50 dark:border-white/20"
               aria-label="Menu"
-              style={{
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)'
-              }}
             >
               <AnimatePresence mode="wait">
                 {isMenuOpen ? (
@@ -64,7 +59,7 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                     exit={{ rotate: 90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <X className="w-5 h-5 text-emerald-800" />
+                    <X className="w-4 h-4 text-foreground" />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -74,14 +69,14 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
                     exit={{ rotate: -90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Menu className="w-5 h-5 text-emerald-800" />
+                    <Menu className="w-4 h-4 text-foreground" />
                   </motion.div>
                 )}
               </AnimatePresence>
             </button>
 
             {/* Spacer for balance */}
-            <div className="w-10 h-10" />
+            <div className="w-9 h-9" />
           </div>
         </div>
 
