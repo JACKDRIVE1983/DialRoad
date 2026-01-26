@@ -4,7 +4,7 @@ import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { MapView } from '@/components/MapView';
-import { SearchBar } from '@/components/SearchBar';
+
 import { AppHeader } from '@/components/AppHeader';
 import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
@@ -16,7 +16,6 @@ const MapTabContent = memo(function MapTabContent() {
   return (
     <div className="relative h-screen">
       <AppHeader />
-      <SearchBar />
       <MapView />
     </div>
   );
