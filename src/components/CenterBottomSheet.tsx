@@ -44,9 +44,7 @@ export function CenterBottomSheet() {
 
   const handleCall = () => {
     if (selectedCenter) {
-      // Extract only the main phone number (before any "/" or other separators)
       const mainPhone = selectedCenter.phone.split('/')[0].trim();
-      // Remove any non-numeric characters except + at the start
       const cleanPhone = mainPhone.replace(/[^\d+]/g, '');
       window.open(`tel:${cleanPhone}`, '_self');
     }
@@ -81,7 +79,7 @@ export function CenterBottomSheet() {
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-40 bg-background/30 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -90,9 +88,9 @@ export function CenterBottomSheet() {
 
           {/* Bottom Sheet */}
           <motion.div
-            className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 dark:bg-card/95 backdrop-blur-2xl rounded-t-[2.5rem] max-h-[90vh] overflow-hidden border-t border-x border-white/20 dark:border-white/10"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 dark:bg-card/95 backdrop-blur-2xl rounded-t-[2rem] max-h-[90vh] overflow-hidden border-t border-x border-white/20 dark:border-white/10"
             style={{
-              boxShadow: '0 -10px 50px rgba(0, 0, 0, 0.15), 0 -2px 20px rgba(0, 0, 0, 0.05)'
+              boxShadow: '0 -10px 60px rgba(0, 0, 0, 0.2), 0 -2px 20px rgba(0, 0, 0, 0.08)'
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -110,18 +108,18 @@ export function CenterBottomSheet() {
               }
             }}
           >
-            {/* Handle */}
+            {/* Handle - Premium Style */}
             <div 
-              className="flex justify-center pt-4 pb-2 cursor-grab active:cursor-grabbing"
+              className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
               onPointerDown={(e) => dragControls.start(e)}
             >
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
+              <div className="w-12 h-1.5 rounded-full bg-muted-foreground/30" />
             </div>
 
             {/* Content */}
-            <div className={`overflow-y-auto ${isExpanded ? 'max-h-[85vh]' : 'max-h-[60vh]'} scrollbar-hide transition-all duration-300`}>
+            <div className={`overflow-y-auto ${isExpanded ? 'max-h-[85vh]' : 'max-h-[65vh]'} scrollbar-hide transition-all duration-300`}>
               {/* Header with image */}
-              <div className="relative h-52 overflow-hidden mx-4 rounded-2xl">
+              <div className="relative h-48 overflow-hidden mx-4 rounded-2xl">
                 <img 
                   src={centerImage} 
                   alt={selectedCenter.name}
@@ -129,12 +127,12 @@ export function CenterBottomSheet() {
                   loading="lazy"
                   decoding="async"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                 
                 {/* Close button */}
                 <button
                   onClick={handleClose}
-                  className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/50 dark:border-white/20 transition-transform hover:scale-105"
+                  className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/50 dark:border-white/20 transition-transform hover:scale-105 active:scale-95"
                 >
                   <X className="w-4 h-4 text-foreground" />
                 </button>
@@ -142,7 +140,7 @@ export function CenterBottomSheet() {
                 {/* Expand indicator */}
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="absolute top-3 left-3 w-9 h-9 rounded-full bg-white/90 dark:bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/50 dark:border-white/20 transition-transform hover:scale-105"
+                  className="absolute top-3 left-3 w-9 h-9 rounded-full bg-white/90 dark:bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/50 dark:border-white/20 transition-transform hover:scale-105 active:scale-95"
                 >
                   <ChevronUp className={`w-4 h-4 text-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                 </button>
@@ -160,7 +158,7 @@ export function CenterBottomSheet() {
               </div>
 
               {/* Center info */}
-              <div className="px-6 pt-5 pb-6">
+              <div className="px-5 pt-5 pb-6">
                 {/* Title */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -195,34 +193,27 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Action buttons - Elegant bordered icons */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
+                {/* Action buttons - Premium Pill Style */}
+                <div className="flex gap-3 mb-6">
                   <button
                     onClick={handleCall}
-                    className="flex flex-col items-center py-4 rounded-2xl border border-border/80 dark:border-white/10 bg-muted/30 dark:bg-white/5 hover:bg-muted/50 dark:hover:bg-white/10 transition-all duration-200 group"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-primary text-primary-foreground font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98]"
                   >
-                    <div className="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center mb-2 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all">
-                      <Phone className="w-5 h-5 text-primary" />
-                    </div>
-                    <span className="text-xs font-medium text-foreground">Chiama</span>
+                    <Phone className="w-5 h-5" />
+                    <span>Chiama</span>
                   </button>
                   <button
                     onClick={handleNavigate}
-                    className="flex flex-col items-center py-4 rounded-2xl border border-border/80 dark:border-white/10 bg-muted/30 dark:bg-white/5 hover:bg-muted/50 dark:hover:bg-white/10 transition-all duration-200 group"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-accent text-accent-foreground font-semibold text-sm shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 transition-all duration-200 active:scale-[0.98]"
                   >
-                    <div className="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center mb-2 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all">
-                      <Navigation className="w-5 h-5 text-primary" />
-                    </div>
-                    <span className="text-xs font-medium text-foreground">Naviga</span>
+                    <Navigation className="w-5 h-5" />
+                    <span>Naviga</span>
                   </button>
                   <button
                     onClick={handleShare}
-                    className="flex flex-col items-center py-4 rounded-2xl border border-border/80 dark:border-white/10 bg-muted/30 dark:bg-white/5 hover:bg-muted/50 dark:hover:bg-white/10 transition-all duration-200 group"
+                    className="flex items-center justify-center w-14 h-14 rounded-full bg-muted/80 dark:bg-white/10 border border-border/50 dark:border-white/10 text-foreground hover:bg-muted transition-all duration-200 active:scale-95"
                   >
-                    <div className="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center mb-2 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all">
-                      <Share2 className="w-5 h-5 text-primary" />
-                    </div>
-                    <span className="text-xs font-medium text-foreground">Condividi</span>
+                    <Share2 className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -241,8 +232,8 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Comments Section - Darker background box */}
-                <div className="bg-muted/50 dark:bg-white/5 rounded-2xl p-4 -mx-2 border border-border/50 dark:border-white/5">
+                {/* Comments Section */}
+                <div className="bg-muted/40 dark:bg-white/5 rounded-2xl p-4 -mx-1 border border-border/30 dark:border-white/5">
                   <div className="pb-safe-area-bottom">
                     <CenterComments 
                       centerId={selectedCenter.id} 
