@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
-import headerDialroadBg from '@/assets/header-dialroad-small.png';
+import logoIcon from '@/assets/dialroad-logo-transparent.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
@@ -10,15 +10,6 @@ interface AppHeaderProps {
 export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'help' | null>(null);
-  
-  const { scrollY } = useScroll({
-    container: scrollContainerRef
-  });
-  
-  // Transform values based on scroll
-  const opacity = useTransform(scrollY, [0, 60], [1, 0]);
-  const translateY = useTransform(scrollY, [0, 60], [0, -20]);
-  const scale = useTransform(scrollY, [0, 60], [1, 0.95]);
 
   const handleMenuItemClick = (modal: 'privacy' | 'help') => {
     setIsMenuOpen(false);
@@ -27,57 +18,58 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
 
   return (
     <>
+      {/* Floating Logo Container - Top Left */}
       <motion.div
-        className="absolute top-0 left-0 right-0 z-30"
-        style={{ opacity, y: translateY, scale }}
+        className="absolute top-4 left-4 z-30"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
       >
         <div 
-          className="mx-4 mt-4 mb-2 rounded-3xl overflow-hidden relative h-14 glass-panel"
+          className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/70 dark:bg-card/70 backdrop-blur-xl border border-white/50 dark:border-white/10"
+          style={{
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)'
+          }}
         >
-          {/* Background image with overlay for glassmorphism */}
           <img
-            src={headerDialroadBg}
+            src={logoIcon}
             alt="DialRoad"
-            className="absolute inset-0 w-full h-full object-cover object-[center_47%] opacity-90"
+            className="w-8 h-8 object-contain"
           />
-          {/* Glassmorphism overlay */}
-          <div className="absolute inset-0 bg-white/30 dark:bg-black/20 backdrop-blur-md" />
-
-          <div className="relative flex items-center justify-between px-3 h-full">
-            {/* Menu button on the left */}
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 hover:bg-white/40 pointer-events-auto z-10 bg-white/40 dark:bg-white/20 backdrop-blur-sm border border-white/50 dark:border-white/20"
-              aria-label="Menu"
-            >
-              <AnimatePresence mode="wait">
-                {isMenuOpen ? (
-                  <motion.div
-                    key="close"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <X className="w-4 h-4 text-foreground" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="menu"
-                    initial={{ rotate: 90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Menu className="w-4 h-4 text-foreground" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
-
-            {/* Spacer for balance */}
-            <div className="w-9 h-9" />
-          </div>
+          <span className="font-display font-bold text-sm text-foreground">
+            DialRoad
+          </span>
+          
+          {/* Menu button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="ml-1 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/10"
+            aria-label="Menu"
+          >
+            <AnimatePresence mode="wait">
+              {isMenuOpen ? (
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <X className="w-4 h-4 text-foreground" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Menu className="w-4 h-4 text-foreground" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </button>
         </div>
 
         {/* Dropdown Menu */}
@@ -88,44 +80,42 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute left-4 top-20 z-50 pointer-events-auto"
+              className="absolute left-0 top-14 z-50 pointer-events-auto"
             >
               <div 
-                className="rounded-xl overflow-hidden backdrop-blur-xl min-w-[200px]"
+                className="rounded-xl overflow-hidden backdrop-blur-xl min-w-[180px] bg-white/90 dark:bg-card/90 border border-white/50 dark:border-white/10"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid rgba(255, 255, 255, 0.5)'
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)'
                 }}
               >
                 <button
                   onClick={() => handleMenuItemClick('privacy')}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-foreground hover:bg-black/5 transition-colors text-left"
+                  className="w-full px-4 py-3 flex items-center gap-3 text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left"
                 >
                   <Shield className="w-5 h-5 text-green-500" />
-                  <span className="font-medium">Privacy</span>
+                  <span className="font-medium text-sm">Privacy</span>
                 </button>
-                <div className="h-px bg-black/10" />
+                <div className="h-px bg-border/50" />
                 <button
                   onClick={() => handleMenuItemClick('help')}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-foreground hover:bg-black/5 transition-colors text-left"
+                  className="w-full px-4 py-3 flex items-center gap-3 text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left"
                 >
                   <HelpCircle className="w-5 h-5 text-primary" />
-                  <span className="font-medium">Aiuto & Supporto</span>
+                  <span className="font-medium text-sm">Aiuto & Supporto</span>
                 </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Backdrop for closing menu */}
-        {isMenuOpen && (
-          <div 
-            className="fixed inset-0 z-40 pointer-events-auto"
-            onClick={() => setIsMenuOpen(false)}
-          />
-        )}
       </motion.div>
+
+      {/* Backdrop for closing menu */}
+      {isMenuOpen && (
+        <div 
+          className="fixed inset-0 z-20 pointer-events-auto"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
 
       {/* Privacy Modal */}
       <AnimatePresence>

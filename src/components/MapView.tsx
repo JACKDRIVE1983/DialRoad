@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useRef, Component, ReactNode, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Navigation, Loader2, AlertTriangle } from 'lucide-react';
-import { GoogleMap, useLoadScript, MarkerF, InfoWindowF, OverlayView } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, MarkerF, OverlayView } from '@react-google-maps/api';
 import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
@@ -95,7 +95,7 @@ class MapErrorBoundary extends Component<
 function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
   const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
-  const [selectedMarker, setSelectedMarker] = useState<DialysisCenter | null>(null);
+  
   const [showUserPopup, setShowUserPopup] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -164,17 +164,9 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
     handleLocate();
   }, [handleLocate]);
 
+  // Direct marker click opens bottom sheet
   const handleMarkerClick = (center: DialysisCenter) => {
-    setSelectedMarker(center);
-  };
-
-  const handleInfoWindowClose = () => {
-    setSelectedMarker(null);
-  };
-
-  const handleViewDetails = (center: DialysisCenter) => {
     setSelectedCenter(center);
-    setSelectedMarker(null);
   };
 
   const mapOptions = useMemo(() => {
@@ -284,23 +276,7 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
             </OverlayView>
           )}
 
-          {selectedMarker && (
-            <InfoWindowF
-              position={{ lat: selectedMarker.coordinates.lat, lng: selectedMarker.coordinates.lng }}
-              onCloseClick={handleInfoWindowClose}
-            >
-              <div className="p-2 max-w-xs">
-                <h3 className="font-bold text-sm text-gray-900 mb-1">{selectedMarker.name}</h3>
-                <p className="text-xs text-gray-600 mb-2">{selectedMarker.city}, {selectedMarker.province}</p>
-                <button
-                  onClick={() => handleViewDetails(selectedMarker)}
-                  className="w-full px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 transition-opacity"
-                >
-                  Vedi dettagli
-                </button>
-              </div>
-            </InfoWindowF>
-          )}
+          {/* InfoWindow removed - using bottom sheet only */}
         </GoogleMap>
       </MapErrorBoundary>
 
