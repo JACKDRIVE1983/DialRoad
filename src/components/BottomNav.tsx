@@ -4,6 +4,7 @@ import { Map, List, Settings, Moon, Sun, Search, SlidersHorizontal, X, MapPin } 
 import { useApp } from '@/contexts/AppContext';
 import { regions } from '@/data/mockCenters';
 import { Button } from '@/components/ui/button';
+import { AdBanner } from '@/components/AdBanner';
 
 type TabType = 'map' | 'list' | 'settings';
 
@@ -45,99 +46,105 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
         animate={{ y: 0 }}
         transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
       >
-        <div 
-          className="mx-auto max-w-sm rounded-[24px] overflow-hidden bg-white/90 dark:bg-card/90 backdrop-blur-2xl border border-white/60 dark:border-white/10"
-          style={{
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.1)'
-          }}
-        >
-          {/* Search bar row */}
-          <div className="px-3 pt-3 pb-2">
-            <div className="flex items-center gap-2 bg-muted/50 dark:bg-muted/30 rounded-xl px-3 py-2">
-              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Cerca centro..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="p-1 hover:bg-muted rounded-full transition-colors flex-shrink-0"
-                >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
-                  hasActiveFilters 
-                    ? 'text-primary bg-primary/10' 
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                {hasActiveFilters && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+        <div className="mx-auto max-w-sm flex flex-col gap-3">
+          {/* Search + Navigation Island */}
+          <div 
+            className="rounded-[24px] overflow-hidden bg-white/90 dark:bg-card/90 backdrop-blur-2xl border border-white/60 dark:border-white/10"
+            style={{
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            {/* Search bar row */}
+            <div className="px-3 pt-3 pb-2">
+              <div className="flex items-center gap-2 bg-muted/50 dark:bg-muted/30 rounded-xl px-3 py-2">
+                <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Cerca centro..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="p-1 hover:bg-muted rounded-full transition-colors flex-shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
                 )}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
+                    hasActiveFilters 
+                      ? 'text-primary bg-primary/10' 
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {hasActiveFilters && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="mx-3 h-px bg-border/50" />
+
+            {/* Navigation row */}
+            <div className="relative flex items-center justify-around py-2 px-4">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => onTabChange(tab.id)}
+                    className="relative flex items-center justify-center w-12 h-12 transition-all duration-200"
+                  >
+                    {isActive && (
+                      <motion.div
+                        className="absolute inset-1 rounded-xl bg-primary/15 dark:bg-primary/25"
+                        layoutId="activeTab"
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <Icon 
+                      className={`relative z-10 transition-all duration-200 ${
+                        isActive 
+                          ? 'w-6 h-6 text-primary' 
+                          : 'w-5 h-5 text-muted-foreground'
+                      }`} 
+                    />
+                  </button>
+                );
+              })}
+
+              {/* Theme toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className="relative flex items-center justify-center w-12 h-12 transition-all duration-200 group"
+              >
+                <motion.div
+                  initial={false}
+                  animate={{ rotate: isDarkMode ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative z-10"
+                >
+                  {isDarkMode ? (
+                    <Sun className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  ) : (
+                    <Moon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  )}
+                </motion.div>
               </button>
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="mx-3 h-px bg-border/50" />
-
-          {/* Navigation row */}
-          <div className="relative flex items-center justify-around py-2 px-4">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
-                  className="relative flex items-center justify-center w-12 h-12 transition-all duration-200"
-                >
-                  {isActive && (
-                    <motion.div
-                      className="absolute inset-1 rounded-xl bg-primary/15 dark:bg-primary/25"
-                      layoutId="activeTab"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <Icon 
-                    className={`relative z-10 transition-all duration-200 ${
-                      isActive 
-                        ? 'w-6 h-6 text-primary' 
-                        : 'w-5 h-5 text-muted-foreground'
-                    }`} 
-                  />
-                </button>
-              );
-            })}
-
-            {/* Theme toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="relative flex items-center justify-center w-12 h-12 transition-all duration-200 group"
-            >
-              <motion.div
-                initial={false}
-                animate={{ rotate: isDarkMode ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-                className="relative z-10"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                ) : (
-                  <Moon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                )}
-              </motion.div>
-            </button>
-          </div>
+          {/* Ad Banner below navigation */}
+          <AdBanner />
         </div>
       </motion.nav>
 
