@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Clock, Navigation } from 'lucide-react';
+import { MapPin, Clock, Navigation, Phone } from 'lucide-react';
 import { DialysisCenter } from '@/data/mockCenters';
 import { formatDistance } from '@/lib/distance';
 import centerImage from '@/assets/center-placeholder.jpg';
@@ -11,6 +11,14 @@ interface CenterCardProps {
 }
 
 function CenterCardComponent({ center, distance, onSelect }: CenterCardProps) {
+  const handleCall = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (center.phone) {
+      const phoneNumber = center.phone.split('/')[0].replace(/[^\d+]/g, '');
+      window.location.href = `tel:${phoneNumber}`;
+    }
+  };
+
   return (
     <button
       className="w-full text-left transition-transform active:scale-[0.98]"
@@ -30,36 +38,50 @@ function CenterCardComponent({ center, distance, onSelect }: CenterCardProps) {
           </div>
 
           {/* Content */}
-          <div className="flex-1 p-4">
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-display font-semibold text-foreground text-sm leading-tight pr-2">
-                {center.name}
-              </h3>
-              <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                center.isOpen 
-                  ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
-                  : 'bg-red-500/20 text-red-600 dark:text-red-400'
-              }`}>
-                {center.isOpen ? 'Aperto' : 'Chiuso'}
-              </span>
-            </div>
+          <div className="flex-1 p-4 flex flex-col justify-between">
+            <div>
+              <div className="flex items-start justify-between mb-1">
+                <h3 className="font-display font-semibold text-foreground text-sm leading-tight pr-2 line-clamp-2">
+                  {center.name}
+                </h3>
+                <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                  center.isOpen 
+                    ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
+                    : 'bg-red-500/20 text-red-600 dark:text-red-400'
+                }`}>
+                  {center.isOpen ? 'Aperto' : 'Chiuso'}
+                </span>
+              </div>
 
-            <div className="flex items-center text-muted-foreground text-xs mb-2">
-              <MapPin className="w-3 h-3 mr-1" />
-              {center.city}
+              <div className="flex items-center text-muted-foreground text-xs mb-1">
+                <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                <span className="truncate">{center.city}</span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
-              {distance !== null && (
-                <div className="flex items-center text-primary text-xs font-medium">
-                  <Navigation className="w-3 h-3 mr-1" />
-                  {formatDistance(distance)}
+              <div className="flex items-center gap-3">
+                {distance !== null && (
+                  <div className="flex items-center text-sm font-semibold text-sky-500">
+                    <Navigation className="w-3.5 h-3.5 mr-1" />
+                    {formatDistance(distance)}
+                  </div>
+                )}
+                <div className="flex items-center text-muted-foreground text-[10px]">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {center.openingHours.split(':')[0]}
+                </div>
+              </div>
+
+              {/* Phone button - large touch target */}
+              {center.phone && (
+                <div
+                  onClick={handleCall}
+                  className="w-11 h-11 -mr-1 -mb-1 flex items-center justify-center rounded-xl bg-primary/10 active:bg-primary/20 transition-colors"
+                >
+                  <Phone className="w-5 h-5 text-primary" />
                 </div>
               )}
-              <div className="flex items-center text-muted-foreground text-[10px] ml-auto">
-                <Clock className="w-3 h-3 mr-1" />
-                {center.openingHours.split(':')[0]}
-              </div>
             </div>
           </div>
         </div>
