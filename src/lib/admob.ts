@@ -11,6 +11,16 @@ const INTERSTITIAL_COOLDOWN_MS = 1.5 * 60 * 1000;
 let lastInterstitialTime = 0;
 let interstitialLoaded = false;
 
+// Ensure we initialize AdMob exactly once, and that every ad call waits for it.
+let initPromise: Promise<void> | null = null;
+
+async function ensureInitialized(): Promise<void> {
+  if (!initPromise) {
+    initPromise = initializeAdMob();
+  }
+  await initPromise;
+}
+
 // Initialize AdMob
 export async function initializeAdMob(): Promise<void> {
   try {
@@ -18,15 +28,16 @@ export async function initializeAdMob(): Promise<void> {
       testingDevices: [],
       initializeForTesting: false,
     });
-    console.log('AdMob initialized successfully');
+    console.log('[AdMob] initialized successfully');
   } catch (error) {
-    console.error('AdMob initialization error:', error);
+    console.error('[AdMob] initialization error:', error);
   }
 }
 
 // Show banner ad
 export async function showBannerAd(): Promise<void> {
   try {
+    await ensureInitialized();
     const options: BannerAdOptions = {
       adId: BANNER_ID,
       adSize: BannerAdSize.ADAPTIVE_BANNER,
@@ -36,24 +47,26 @@ export async function showBannerAd(): Promise<void> {
     };
     
     await AdMob.showBanner(options);
-    console.log('Banner ad displayed at bottom');
+    console.log('[AdMob] banner displayed');
   } catch (error) {
-    console.error('Banner ad error:', error);
+    console.error('[AdMob] banner error:', error);
   }
 }
 
 // Hide banner ad
 export async function hideBannerAd(): Promise<void> {
   try {
+    await ensureInitialized();
     await AdMob.hideBanner();
   } catch (error) {
-    console.error('Hide banner error:', error);
+    console.error('[AdMob] hide banner error:', error);
   }
 }
 
 // Preload interstitial ad
 export async function prepareInterstitialAd(): Promise<void> {
   try {
+    await ensureInitialized();
     const options: AdOptions = {
       adId: INTERSTITIAL_ID,
       isTesting: false,
@@ -61,26 +74,27 @@ export async function prepareInterstitialAd(): Promise<void> {
     
     await AdMob.prepareInterstitial(options);
     interstitialLoaded = true;
-    console.log('Interstitial ad prepared');
+    console.log('[AdMob] interstitial prepared');
   } catch (error) {
-    console.error('Prepare interstitial error:', error);
+    console.error('[AdMob] prepare interstitial error:', error);
     interstitialLoaded = false;
   }
 }
 
 // Show interstitial ad with rate limiting (max once every 3 minutes)
 export async function showInterstitialAd(): Promise<boolean> {
+  await ensureInitialized();
   const now = Date.now();
   
   // Check cooldown
   if (now - lastInterstitialTime < INTERSTITIAL_COOLDOWN_MS) {
-    console.log('Interstitial on cooldown, skipping...');
+    console.log('[AdMob] interstitial on cooldown, skipping...');
     return false;
   }
   
   // Check if ad is loaded
   if (!interstitialLoaded) {
-    console.log('Interstitial not loaded, preparing...');
+    console.log('[AdMob] interstitial not loaded, preparing...');
     await prepareInterstitialAd();
     if (!interstitialLoaded) {
       return false;
@@ -97,10 +111,10 @@ export async function showInterstitialAd(): Promise<boolean> {
       prepareInterstitialAd();
     }, 1000);
     
-    console.log('Interstitial ad shown');
+    console.log('[AdMob] interstitial shown');
     return true;
   } catch (error) {
-    console.error('Show interstitial error:', error);
+    console.error('[AdMob] show interstitial error:', error);
     interstitialLoaded = false;
     return false;
   }
