@@ -280,8 +280,13 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
         </GoogleMap>
       </MapErrorBoundary>
 
+      {/* Ad Banner - exactly above bottom nav */}
+      <div className="absolute bottom-[140px] left-0 right-0 z-30 flex justify-center px-4">
+        <AdBanner />
+      </div>
+
       {/* Controls row - above the ad banner */}
-      <div className="absolute bottom-52 left-4 right-4 z-30 flex items-center justify-between">
+      <div className="absolute bottom-[210px] left-4 right-4 z-30 flex items-center justify-between">
         <motion.div
           className="glass-card px-4 py-2 rounded-full"
           initial={{ opacity: 0, y: 20 }}
@@ -303,11 +308,6 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
             className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
           />
         </motion.button>
-      </div>
-
-      {/* Ad Banner - centered above bottom nav */}
-      <div className="absolute bottom-[88px] left-0 right-0 z-30 flex justify-center px-4">
-        <AdBanner />
       </div>
     </div>
   );
