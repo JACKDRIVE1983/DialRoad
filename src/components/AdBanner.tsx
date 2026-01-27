@@ -23,17 +23,21 @@ export function AdBanner({ show = true }: AdBannerProps) {
     };
   }, [show, isNative]);
 
+  // Container wrapper with debug styling
+  const containerClasses = "w-full min-h-[50px] h-[50px] z-50 relative";
+  const debugBg = "bg-[#222]"; // Temporary debug background
+
   // On native platforms, AdMob renders natively above the WebView
   // We just need to add spacing for the banner
   if (!isNative) {
     // Show placeholder on web for development/preview
     return (
-      <div className="w-full h-14 bg-muted/50 border border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center">
-        <span className="text-xs text-muted-foreground">Banner Ad Placeholder</span>
+      <div className={`${containerClasses} ${debugBg} flex items-center justify-center rounded-lg`}>
+        <span className="text-xs text-white/70">Banner Ad Placeholder</span>
       </div>
     );
   }
 
-  // Native banner is rendered by AdMob plugin, we provide spacing
-  return <div className="w-full h-14" />;
+  // Native banner is rendered by AdMob plugin, we provide spacing with debug bg
+  return <div className={`${containerClasses} ${debugBg}`} />;
 }
