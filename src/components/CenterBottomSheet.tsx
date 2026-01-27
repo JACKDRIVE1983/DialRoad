@@ -3,14 +3,15 @@ import {
   X, Phone, Navigation, Clock, 
   MapPin, ChevronUp, Share2
 } from 'lucide-react';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
 import centerImage from '@/assets/center-placeholder.jpg';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
-
+import { Capacitor } from '@capacitor/core';
+import { showInterstitialAd } from '@/lib/admob';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
   
@@ -37,7 +38,16 @@ export function CenterBottomSheet() {
   const [isExpanded, setIsExpanded] = useState(false);
   const dragControls = useDragControls();
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    // Show interstitial ad on close (with rate limiting)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await showInterstitialAd();
+      } catch (error) {
+        console.error('Interstitial error:', error);
+      }
+    }
+    
     setSelectedCenter(null);
     setIsExpanded(false);
   };
