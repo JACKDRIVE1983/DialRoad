@@ -281,12 +281,12 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       </MapErrorBoundary>
 
       {/* Ad Banner - exactly above bottom nav */}
-      <div className="absolute bottom-[140px] left-0 right-0 z-30 flex justify-center px-4">
+      <div className="absolute bottom-[155px] left-0 right-0 z-30 flex justify-center px-4">
         <AdBanner />
       </div>
 
       {/* Controls row - above the ad banner */}
-      <div className="absolute bottom-[210px] left-4 right-4 z-30 flex items-center justify-between">
+      <div className="absolute bottom-[225px] left-4 right-4 z-30 flex items-center justify-between">
         <motion.div
           className="glass-card px-4 py-2 rounded-full"
           initial={{ opacity: 0, y: 20 }}
