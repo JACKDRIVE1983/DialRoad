@@ -1,28 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
-import { MapPin, Navigation, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logoIcon from '@/assets/dialroad-logo-login.png';
-import mapBackground from '@/assets/onboarding-map-bg.png';
+import slide1 from '@/assets/onboarding-slide-1.png';
+import slide2 from '@/assets/onboarding-slide-2.png';
+import slide3 from '@/assets/onboarding-slide-3.png';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
 }
 
-const slides = [
-  {
-    icon: Navigation,
-    title: "Benvenuto su DialRoad",
-    description: "La tua guida completa per trovare centri dialisi in tutta Italia. Un'app pensata per semplificare la vita dei pazienti in dialisi e dei loro familiari.",
-    color: "from-primary to-accent"
-  },
-  {
-    icon: MapPin,
-    title: "Mappa Interattiva",
-    description: "Visualizza tutti i centri dialisi sulla mappa. Usa la geolocalizzazione per trovare la struttura più vicina a te. Puoi anche lasciare recensioni e valutazioni per ogni centro visitato, senza bisogno di registrarti!",
-    color: "from-accent to-primary"
-  }
-];
+const slides = [slide1, slide2, slide3];
 
 export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -40,131 +27,72 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     }
   };
 
+  const isLastSlide = currentSlide === slides.length - 1;
+
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex flex-col"
+      className="fixed inset-0 z-50 flex flex-col bg-black"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Stylized map background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${mapBackground})` }}
-      />
-      
-      {/* Light overlay for better readability */}
-      <div className="absolute inset-0 bg-white/60" />
-
-      {/* Logo icon at top - larger */}
-      <motion.div
-        className="relative z-10 flex flex-col items-center pt-12 pb-4"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-      >
-        <img 
-          src={logoIcon} 
-          alt="DialRoad" 
-          className="w-40 h-40 object-contain"
-        />
-      </motion.div>
-
-      {/* Skip button */}
-      <div className="relative z-10 flex justify-end px-4">
+      {/* Skip / Start button in top right */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex justify-end p-4 safe-area-top">
         <Button 
           variant="ghost" 
-          onClick={handleComplete}
-          className="text-muted-foreground hover:text-foreground hover:bg-white/50"
+          onClick={isLastSlide ? handleComplete : handleComplete}
+          className="text-white/90 hover:text-white hover:bg-white/20 font-semibold text-base px-4 py-2 rounded-full backdrop-blur-sm bg-black/20"
         >
-          Salta
+          {isLastSlide ? 'Inizia' : 'Salta'}
         </Button>
       </div>
 
       {/* Slides */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-8">
+      <div className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            className="flex flex-col items-center text-center"
-            initial={{ opacity: 0, x: 50 }}
+            className="absolute inset-0"
+            initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
-            {/* Icon */}
-            <motion.div
-              className={`w-28 h-28 rounded-full bg-gradient-to-br ${slides[currentSlide].color} flex items-center justify-center mb-8 shadow-xl`}
-              initial={{ scale: 0.5 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              style={{
-                boxShadow: '0 20px 40px rgba(0, 180, 216, 0.3)'
-              }}
-            >
-              {(() => {
-                const Icon = slides[currentSlide].icon;
-                return <Icon className="w-14 h-14 text-primary-foreground" strokeWidth={1.5} />;
-              })()}
-            </motion.div>
-
-            {/* Title */}
-            <motion.h2
-              className="text-2xl font-display font-bold text-foreground mb-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              {slides[currentSlide].title}
-            </motion.h2>
-
-            {/* Description */}
-            <motion.p
-              className="text-base text-muted-foreground max-w-sm leading-relaxed"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              {slides[currentSlide].description}
-            </motion.p>
+            <img 
+              src={slides[currentSlide]} 
+              alt={`Onboarding slide ${currentSlide + 1}`}
+              className="w-full h-full object-cover"
+            />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Progress dots and button */}
-      <div className="relative z-10 p-8 pb-12">
-        {/* Dots */}
-        <div className="flex justify-center space-x-3 mb-8">
+      {/* Bottom navigation area */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 pb-12 pt-8 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
+        {/* Progress dots */}
+        <div className="flex justify-center space-x-3 mb-6">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`transition-all duration-300 rounded-full ${
                 index === currentSlide 
-                  ? 'w-8 h-2 bg-primary' 
-                  : 'w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                  ? 'w-8 h-2 bg-white' 
+                  : 'w-2 h-2 bg-white/50 hover:bg-white/70'
               }`}
             />
           ))}
         </div>
 
         {/* Next/Start button */}
-        <Button
-          onClick={handleNext}
-          className="w-full h-14 text-lg font-semibold rounded-2xl gradient-bg text-primary-foreground hover:opacity-90 transition-opacity shadow-lg"
-          style={{
-            boxShadow: '0 10px 30px rgba(0, 180, 216, 0.3)'
-          }}
-        >
-          {currentSlide === slides.length - 1 ? (
-            "Inizia ad Esplorare"
-          ) : (
-            <span className="flex items-center">
-              Continua
-              <ChevronRight className="ml-2 w-5 h-5" />
-            </span>
-          )}
-        </Button>
+        <div className="px-8">
+          <Button
+            onClick={handleNext}
+            className="w-full h-14 text-lg font-semibold rounded-full bg-white text-primary hover:bg-white/90 transition-all shadow-lg"
+          >
+            {isLastSlide ? "Inizia ad Esplorare" : "Continua"}
+          </Button>
+        </div>
       </div>
     </motion.div>
   );
