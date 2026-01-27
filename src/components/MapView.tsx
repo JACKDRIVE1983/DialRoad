@@ -281,12 +281,18 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       </MapErrorBoundary>
 
       {/* Ad Banner - exactly above bottom nav */}
-      <div className="absolute bottom-[155px] left-0 right-0 z-30 flex justify-center px-4">
+      <div
+        className="absolute left-0 right-0 z-30 flex justify-center px-4"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 155px)' }}
+      >
         <AdBanner />
       </div>
 
       {/* Controls row - above the ad banner */}
-      <div className="absolute bottom-[225px] left-4 right-4 z-30 flex items-center justify-between">
+      <div
+        className="absolute left-4 right-4 z-30 flex items-center justify-between"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 225px)' }}
+      >
         <motion.div
           className="glass-card px-4 py-2 rounded-full"
           initial={{ opacity: 0, y: 20 }}
@@ -495,29 +501,40 @@ function FallbackMap() {
         </div>
       </div>
 
-      <motion.button
-        className="absolute bottom-36 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center"
-        onClick={handleLocate}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        disabled={isLocating}
+      {/* Ad Banner - exactly above bottom nav (also in fallback) */}
+      <div
+        className="absolute left-0 right-0 z-30 flex justify-center px-4"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 155px)' }}
       >
-        <Navigation 
-          className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
-        />
-      </motion.button>
+        <AdBanner />
+      </div>
 
-      <motion.div
-        className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full flex items-center gap-2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+      {/* Controls row - above the ad banner (also in fallback) */}
+      <div
+        className="absolute left-4 right-4 z-30 flex items-center justify-between"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 225px)' }}
       >
-        <AlertTriangle className="w-4 h-4 text-yellow-500" />
-        <span className="text-sm font-medium text-foreground">
-          {filteredCenters.length} centri • Mappa semplificata
-        </span>
-      </motion.div>
+        <motion.div
+          className="glass-card px-4 py-2 rounded-full flex items-center gap-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <AlertTriangle className="w-4 h-4 text-yellow-500" />
+          <span className="text-sm font-medium text-foreground">
+            {filteredCenters.length} centri • Mappa semplificata
+          </span>
+        </motion.div>
 
+        <motion.button
+          className="w-12 h-12 rounded-full glass-card flex items-center justify-center"
+          onClick={handleLocate}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={isLocating}
+        >
+          <Navigation className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} />
+        </motion.button>
+      </div>
     </div>
   );
 }
