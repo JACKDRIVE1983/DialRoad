@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { showBannerAd, hideBannerAd } from '@/lib/admob';
 
 interface AdBannerProps {
   show?: boolean;
@@ -9,25 +8,17 @@ interface AdBannerProps {
 export function AdBanner({ show = true }: AdBannerProps) {
   const [isNative] = useState(() => Capacitor.isNativePlatform());
 
-  useEffect(() => {
-    if (!isNative) return;
-
-    if (show) {
-      showBannerAd();
-    } else {
-      hideBannerAd();
-    }
-
-    return () => {
-      hideBannerAd();
-    };
-  }, [show, isNative]);
-
   // Container wrapper styling
   const containerClasses = "w-full min-h-[50px] h-[50px] z-50 relative";
 
-  // On native platforms, AdMob renders natively above the WebView
-  // We just need to add spacing for the banner
+  // IMPORTANT:
+  // On native platforms, the AdMob plugin renders the banner outside the WebView.
+  // This component should ONLY reserve space in the UI, otherwise multiple mounts/unmounts
+  // across screens can accidentally hide the native banner.
+
+  if (!show) return null;
+
+  // Show placeholder on web for development/preview
   if (!isNative) {
     // Show placeholder on web for development/preview
     return (
