@@ -30,13 +30,13 @@ export async function showBannerAd(): Promise<void> {
     const options: BannerAdOptions = {
       adId: BANNER_ID,
       adSize: BannerAdSize.ADAPTIVE_BANNER,
-      position: BannerAdPosition.TOP_CENTER,
-      margin: 120, // Positioned below header area
+      position: BannerAdPosition.BOTTOM_CENTER,
+      margin: 140, // Positioned above bottom nav (~140px from bottom)
       isTesting: false,
     };
     
     await AdMob.showBanner(options);
-    console.log('Banner ad displayed');
+    console.log('Banner ad displayed at bottom');
   } catch (error) {
     console.error('Banner ad error:', error);
   }
