@@ -1,10 +1,10 @@
 // AdMob configuration and utilities
 import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, AdOptions, AdLoadInfo, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 
-// AdMob IDs
-const APP_ID = 'ca-app-pub-1836089076727059~3797268338';
-const BANNER_ID = 'ca-app-pub-1836089076727059/4591535320';
-const INTERSTITIAL_ID = 'ca-app-pub-1836089076727059/6044157721';
+// AdMob IDs - TESTING MODE (use Google universal test IDs)
+const APP_ID = 'ca-app-pub-3940256099942544~3347511713'; // Google test app ID
+const BANNER_ID = 'ca-app-pub-3940256099942544/6300978111'; // Google test banner
+const INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712'; // Google test interstitial
 
 // Interstitial rate limiting (1.5 minutes = 90000ms)
 const INTERSTITIAL_COOLDOWN_MS = 1.5 * 60 * 1000;
