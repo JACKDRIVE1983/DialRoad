@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import logo from '@/assets/dialroad-logo-transparent.png';
 
 declare const __BUILD_ID__: string;
@@ -11,12 +17,29 @@ type ThemeOption = 'light' | 'dark' | 'system';
 export function SettingsView() {
   const { centers } = useApp();
   const { theme, setTheme } = useTheme();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
 
   const themeOptions: { value: ThemeOption; label: string; icon: React.ReactNode }[] = [
     { value: 'light', label: 'Chiaro', icon: <Sun className="w-4 h-4" /> },
     { value: 'dark', label: 'Scuro', icon: <Moon className="w-4 h-4" /> },
     { value: 'system', label: 'Sistema', icon: <Smartphone className="w-4 h-4" /> },
   ];
+
+  const handleSendFeedback = () => {
+    if (!feedbackText.trim()) {
+      toast.error('Scrivi un messaggio prima di inviare');
+      return;
+    }
+
+    const subject = encodeURIComponent('Feedback DialRoad');
+    const body = encodeURIComponent(feedbackText);
+    window.open(`mailto:giacomo748@gmail.com?subject=${subject}&body=${body}`, '_blank');
+    
+    setFeedbackText('');
+    setFeedbackOpen(false);
+    toast.success('App email aperta con il tuo feedback');
+  };
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
@@ -51,6 +74,27 @@ export function SettingsView() {
             </button>
           ))}
         </div>
+      </motion.div>
+
+      {/* Send Feedback */}
+      <motion.div
+        className="glass-card rounded-xl p-4 mb-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="flex items-center gap-4 w-full text-left"
+        >
+          <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-secondary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-medium text-foreground">Invia Feedback</h3>
+            <p className="text-sm text-muted-foreground">Contatta direttamente lo sviluppatore</p>
+          </div>
+        </button>
       </motion.div>
 
       {/* App Info */}
@@ -99,6 +143,54 @@ export function SettingsView() {
         <p className="text-xs text-muted-foreground mt-1">Versione 1.0.0</p>
         <p className="text-[11px] text-muted-foreground mt-1">build {__BUILD_ID__}</p>
       </motion.div>
+
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent className="mx-4 max-w-[calc(100vw-2rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-primary" />
+              Invia Feedback
+            </DialogTitle>
+            <DialogDescription>
+              Scrivi i tuoi suggerimenti, segnala bug o condividi le tue impressioni sull'app.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="feedback">Il tuo messaggio</Label>
+              <Textarea
+                id="feedback"
+                placeholder="Scrivi qui il tuo feedback..."
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                className="min-h-[120px] resize-none"
+                maxLength={1000}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {feedbackText.length}/1000
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setFeedbackOpen(false)}
+                className="flex-1"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={handleSendFeedback}
+                className="flex-1 gap-2"
+                disabled={!feedbackText.trim()}
+              >
+                <Send className="w-4 h-4" />
+                Invia
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
