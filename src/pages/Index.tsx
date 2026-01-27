@@ -10,6 +10,7 @@ import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
 import { BottomNav } from '@/components/BottomNav';
+import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
 const MapTabContent = memo(function MapTabContent() {
@@ -64,6 +65,9 @@ function AppContent() {
     activeTab,
     setActiveTab
   } = useApp();
+  
+  // Initialize AdMob on native platforms
+  useAdMob();
 
   // Show splash screen first
   if (showSplash) {

@@ -6,7 +6,7 @@ import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
 import { getRegionColor, createRegionMarkerIcon } from '@/lib/regionColors';
-
+import { AdBanner } from './AdBanner';
 const mapContainerStyle = {
   width: '100%',
   height: '100%'
@@ -280,27 +280,35 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
         </GoogleMap>
       </MapErrorBoundary>
 
-      <motion.button
-        className="absolute bottom-36 right-4 z-30 w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
-        onClick={handleLocate}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        disabled={isLocating}
-      >
-        <Navigation 
-          className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
-        />
-      </motion.button>
+      {/* Controls row - above the ad banner */}
+      <div className="absolute bottom-52 left-4 right-4 z-30 flex items-center justify-between">
+        <motion.div
+          className="glass-card px-4 py-2 rounded-full"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <span className="text-sm font-medium text-foreground">
+            {filteredCenters.length} centri trovati
+          </span>
+        </motion.div>
 
-      <motion.div
-        className="absolute bottom-36 left-4 z-30 glass-card px-4 py-2 rounded-full"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <span className="text-sm font-medium text-foreground">
-          {filteredCenters.length} centri trovati
-        </span>
-      </motion.div>
+        <motion.button
+          className="w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
+          onClick={handleLocate}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          disabled={isLocating}
+        >
+          <Navigation 
+            className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
+          />
+        </motion.button>
+      </div>
+
+      {/* Ad Banner - centered above bottom nav */}
+      <div className="absolute bottom-[88px] left-0 right-0 z-30 flex justify-center px-4">
+        <AdBanner />
+      </div>
     </div>
   );
 }
