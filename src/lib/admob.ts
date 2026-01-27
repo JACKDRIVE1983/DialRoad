@@ -6,8 +6,8 @@ const APP_ID = 'ca-app-pub-1836089076727059~3797268338';
 const BANNER_ID = 'ca-app-pub-1836089076727059/4591535320';
 const INTERSTITIAL_ID = 'ca-app-pub-1836089076727059/6044157721';
 
-// Interstitial rate limiting (3 minutes = 180000ms)
-const INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000;
+// Interstitial rate limiting (1.5 minutes = 90000ms)
+const INTERSTITIAL_COOLDOWN_MS = 1.5 * 60 * 1000;
 let lastInterstitialTime = 0;
 let interstitialLoaded = false;
 
