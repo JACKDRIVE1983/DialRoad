@@ -88,13 +88,44 @@ export function CenterBottomSheet() {
     if (!selectedCenter) return;
     
     try {
-      const encodedName = encodeURIComponent(selectedCenter.name.trim());
-      const lat = encodeURIComponent(selectedCenter.coordinates.lat.toString());
-      const lng = encodeURIComponent(selectedCenter.coordinates.lng.toString());
-      const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
-      
-      console.log('[Booking] Opening URL:', bookingUrl);
-      await openExternalUrl(bookingUrl);
+      const nomeCentro = selectedCenter.name?.trim();
+      if (!nomeCentro) {
+        alert('Errore: nome del centro non disponibile.');
+        return;
+      }
+
+      const latValue = selectedCenter.coordinates?.lat;
+      const lngValue = selectedCenter.coordinates?.lng;
+
+      const hasValidCoords =
+        typeof latValue === 'number' &&
+        typeof lngValue === 'number' &&
+        Number.isFinite(latValue) &&
+        Number.isFinite(lngValue);
+
+      const base = 'https://www.booking.com/searchresults.html';
+      const encodedName = encodeURIComponent(nomeCentro);
+      const aid = '2015501';
+
+      const url = hasValidCoords
+        ? `${base}?ss=${encodedName}&latitude=${encodeURIComponent(String(latValue))}&longitude=${encodeURIComponent(String(lngValue))}&aid=${aid}`
+        : `${base}?ss=${encodedName}&aid=${aid}`;
+
+      console.log('URL Generato:', url);
+
+      // Ultra-stable open: small delay so the UI can finish the tap animation
+      await new Promise<void>((resolve, reject) => {
+        setTimeout(() => {
+          try {
+            // On native, Capacitor Browser.open can sometimes lead to white page/freeze for some sites.
+            // window.open('_system') delegates to the OS default browser.
+            window.open(url, '_system');
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        }, 100);
+      });
     } catch (error) {
       console.error('[Booking] Failed to open hotel search:', error);
     }
