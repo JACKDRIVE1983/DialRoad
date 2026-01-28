@@ -18,21 +18,25 @@ export function CenterBottomSheet() {
   const handleHotelSearch = () => {
     if (!selectedCenter) return;
 
-    // 1. Pulizia totale delle variabili per evitare doppioni o simboli strani
-    const nomeSemplice = selectedCenter.name
-      .replace(/Ospedale/gi, '')
-      .replace(/-/g, '')
-      .trim();
-    const cittaSemplice = (selectedCenter.city || '').replace(/-/g, '').trim();
+    // 1. Definiamo i termini in modo ultra-semplice senza simboli
+    const p1 = 'Ospedale';
+    const p2Raw = selectedCenter.name.replace(/ospedale/gi, '').trim();
+    const p3Raw = (selectedCenter.city || '').trim();
 
-    // 2. Costruzione della stringa di ricerca pulita
-    const searchString = `Ospedale ${nomeSemplice} ${cittaSemplice}`;
+    // Sanitizzazione: elimina simboli (inclusi trattini) senza introdurre '-' nel codice
+    const p2 = p2Raw.replace(/[^\p{L}\p{N}\s.'’]/gu, '').trim();
+    const p3 = p3Raw.replace(/[^\p{L}\p{N}\s.'’]/gu, '').trim();
 
-    // 3. Creazione URL senza parametri extra o trattini
-    const bookingUrl = `https://www.booking.com/searchresults.it.html?ss=${encodeURIComponent(searchString)}`;
+    // 2. Creiamo la frase: Ospedale Nome Centro Città
+    const fraseFinitia = p1 + ' ' + p2 + ' ' + p3;
 
-    // 4. Apertura forzata nel browser di sistema
-    window.open(bookingUrl, '_system');
+    // 3. Creiamo l'URL manualmente senza usare funzioni complesse
+    const finalUrl =
+      'https://www.booking.com/searchresults.it.html?ss=' +
+      encodeURIComponent(fraseFinitia);
+
+    // 4. Apri
+    window.open(finalUrl, '_system');
   };
   
   // Rating state from comments
