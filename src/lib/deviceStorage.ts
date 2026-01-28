@@ -1,7 +1,27 @@
-// Device-based storage for tracking reviews and likes without user accounts
+// Device-based storage for tracking reviews, likes, and preferences without user accounts
 
 const REVIEWS_KEY = 'dialroad_reviews';
 const LIKES_KEY = 'dialroad_likes';
+const BOOKING_BROWSER_KEY = 'dialroad_booking_browser';
+
+// Booking browser preference (default: true = always open in browser for coordinate search)
+export function getBookingBrowserPreference(): boolean {
+  try {
+    const value = localStorage.getItem(BOOKING_BROWSER_KEY);
+    // Default to true (browser) if not set
+    return value === null ? true : value === 'true';
+  } catch {
+    return true;
+  }
+}
+
+export function setBookingBrowserPreference(useBrowser: boolean): void {
+  try {
+    localStorage.setItem(BOOKING_BROWSER_KEY, useBrowser.toString());
+  } catch {
+    // Silently fail if localStorage is not available
+  }
+}
 
 // Check if device has already reviewed a center
 export function hasReviewedCenter(centerId: string): boolean {

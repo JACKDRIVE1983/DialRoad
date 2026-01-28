@@ -13,6 +13,8 @@ import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { showInterstitialAd } from '@/lib/admob';
+import { getBookingBrowserPreference } from '@/lib/deviceStorage';
+
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
 
@@ -107,36 +109,20 @@ export function CenterBottomSheet() {
     const url = getBookingUrl();
     if (!url) return;
 
-    // IMPORTANT:
-    // - Booking app tends to ignore the geo params when it intercepts the link.
-    // - On Android, force opening in Chrome to keep the coordinate-based results.
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-      const intentUrl = `intent://www.booking.com${new URL(url).pathname}${new URL(url).search}#Intent;scheme=https;package=com.android.chrome;end`;
-      // Try Chrome intent first
-      window.location.href = intentUrl;
-      // Fallback to system browser if intent isn't handled
-      setTimeout(() => {
-        Browser.open({ url }).catch(() => {
-          window.open(url, '_blank', 'noopener,noreferrer');
-        });
-      }, 600);
-      return;
-    }
+    const useBrowser = getBookingBrowserPreference();
 
-    // Other native platforms: use system browser (Custom Tabs / SFSafariViewController)
-    // to avoid blank pages caused by in-webview navigation.
-    if (Capacitor.isNativePlatform()) {
+    // If user chose to open in browser (default) -> force browser to keep coordinate search
+    if (useBrowser && Capacitor.isNativePlatform()) {
       try {
-        await Browser.open({
-          url,
-          presentationStyle: 'popover',
-        });
+        await Browser.open({ url, presentationStyle: 'popover' });
         return;
       } catch {
         // fall through to window.open
       }
     }
 
+    // If user chose to open in app (useBrowser = false) -> let system handle (may open app)
+    // On web or fallback: just open in new tab
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
