@@ -11,23 +11,9 @@ import centerImage from '@/assets/center-placeholder.jpg';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
 import { showInterstitialAd } from '@/lib/admob';
 
-// Helper to open URLs in external system browser
-const openExternalUrl = async (url: string) => {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      await Browser.open({ url, windowName: '_system' });
-    } catch (error) {
-      console.error('[Browser] Failed to open external URL:', error);
-      // Fallback to window.open
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  } else {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
-};
+const isWebPlatform = () => Capacitor.getPlatform() === 'web';
 
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
@@ -81,7 +67,12 @@ export function CenterBottomSheet() {
     if (!selectedCenter) return;
     const { lat, lng } = selectedCenter.coordinates;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    openExternalUrl(mapsUrl);
+    // Keep it simple and avoid in-app webviews
+    if (isWebPlatform()) {
+      window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.assign(mapsUrl);
+    }
   };
 
   const handleSearchHotels = async () => {
@@ -94,40 +85,39 @@ export function CenterBottomSheet() {
         return;
       }
 
-      const latValue = selectedCenter.coordinates?.lat;
-      const lngValue = selectedCenter.coordinates?.lng;
-
-      const hasValidCoords =
-        typeof latValue === 'number' &&
-        typeof lngValue === 'number' &&
-        Number.isFinite(latValue) &&
-        Number.isFinite(lngValue);
-
-      const base = 'https://www.booking.com/searchresults.html';
-      const encodedName = encodeURIComponent(nomeCentro);
-      const aid = '2015501';
-
-      const url = hasValidCoords
-        ? `${base}?ss=${encodedName}&latitude=${encodeURIComponent(String(latValue))}&longitude=${encodeURIComponent(String(lngValue))}&aid=${aid}`
-        : `${base}?ss=${encodedName}&aid=${aid}`;
+      // Reset approach: always use the simplest Booking search URL (name only)
+      const url =
+        'https://www.booking.com/searchresults.html?ss=' +
+        encodeURIComponent(nomeCentro) +
+        '&aid=2015501';
 
       console.log('URL Generato:', url);
 
-      // Ultra-stable open: small delay so the UI can finish the tap animation
-      await new Promise<void>((resolve, reject) => {
-        setTimeout(() => {
-          try {
-            // On native, Capacitor Browser.open can sometimes lead to white page/freeze for some sites.
-            // window.open('_system') delegates to the OS default browser.
-            window.open(url, '_system');
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        }, 100);
-      });
+      // Ultra-stable: avoid plugins; avoid async thread blocking; let OS handle navigation.
+      if (isWebPlatform()) {
+        // Web: open a new tab
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        // Native: direct navigation tends to be the most stable across WebView shells
+        window.location.assign(url);
+      }
     } catch (error) {
       console.error('[Booking] Failed to open hotel search:', error);
+    }
+  };
+
+  const handleOpenGoogleTest = () => {
+    try {
+      const url = 'https://www.google.com';
+      console.log('URL Generato (test Google):', url);
+
+      if (isWebPlatform()) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.assign(url);
+      }
+    } catch (error) {
+      console.error('[ExternalLink] Failed to open Google test:', error);
     }
   };
 
@@ -274,6 +264,14 @@ export function CenterBottomSheet() {
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
+                </button>
+
+                {/* External open test button */}
+                <button
+                  onClick={handleOpenGoogleTest}
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-6 rounded-full bg-muted text-foreground font-semibold text-sm border border-border/60 hover:bg-muted/80 transition-all duration-200 active:scale-[0.98]"
+                >
+                  <span>Apri Google (test)</span>
                 </button>
 
                 {/* Action buttons - Premium Pill Style */}
