@@ -206,8 +206,9 @@ export function CenterBottomSheet() {
                 {/* Booking.com Hotel Search Button */}
                 <button
                   onClick={() => {
-                    const encodedName = encodeURIComponent(selectedCenter.name);
-                    const bookingUrl = `https://www.booking.com/searchresults.it.html?ss=${encodedName}`;
+                    const searchQuery = `ospedale ${selectedCenter.name} ${selectedCenter.city}`;
+                    const encodedQuery = encodeURIComponent(searchQuery);
+                    const bookingUrl = `https://www.booking.com/searchresults.it.html?ss=${encodedQuery}`;
                     window.open(bookingUrl, '_system');
                   }}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
