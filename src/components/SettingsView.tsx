@@ -12,6 +12,7 @@ import logo from '@/assets/dialroad-logo-transparent.png';
 import { Capacitor } from '@capacitor/core';
 
 declare const __BUILD_ID__: string;
+declare const __BUILD_TIME__: string;
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
@@ -218,6 +219,14 @@ export function SettingsView() {
             <span className="text-foreground font-medium">1.4.0</span>
           </div>
           <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Build ID</span>
+            <span className="text-foreground font-medium font-mono text-xs">{__BUILD_ID__}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-border">
+            <span className="text-muted-foreground">Build time</span>
+            <span className="text-foreground font-medium font-mono text-xs">{__BUILD_TIME__}</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Centri dialisi</span>
             <span className="text-foreground font-medium">{centers.length}</span>
           </div>
@@ -240,7 +249,8 @@ export function SettingsView() {
         <img src={logo} alt="DialRoad" className="w-24 h-24 object-contain mb-3" />
         <p className="text-sm font-display font-semibold gradient-text">DialRoad</p>
         <p className="text-xs text-muted-foreground mt-1">Versione 1.4.0</p>
-        <p className="text-[11px] text-muted-foreground mt-1">build {__BUILD_ID__}</p>
+        <p className="text-[11px] text-muted-foreground mt-1 font-mono">build {__BUILD_ID__}</p>
+        <p className="text-[11px] text-muted-foreground mt-1 font-mono">{__BUILD_TIME__}</p>
         
       </motion.div>
 
