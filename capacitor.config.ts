@@ -19,15 +19,7 @@ const config: CapacitorConfig = {
   },
   server: {
     // Enable hardware back button handling
-    androidScheme: 'https',
-    // Allow navigation to external domains when opened from inside the WebView
-    // (useful for <a target="_blank"> links on native)
-    allowNavigation: [
-      'www.booking.com',
-      'booking.com',
-      'www.google.com',
-      'google.com'
-    ]
+    androidScheme: 'https'
   }
 };
 

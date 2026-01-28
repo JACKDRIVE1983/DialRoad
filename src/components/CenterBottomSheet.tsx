@@ -12,44 +12,6 @@ import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
 import { showInterstitialAd } from '@/lib/admob';
-
-const isWebPlatform = () => Capacitor.getPlatform() === 'web';
-
-function normalizeHttpsUrl(rawUrl: string): string {
-  // Prevent malformed schemes like https:////example.com
-  return rawUrl
-    .trim()
-    .replace(/^https:\/+/, 'https://')
-    .replace(/^http:\/+/, 'http://');
-}
-
-function openExternalUrl(rawUrl: string) {
-  const url = normalizeHttpsUrl(rawUrl);
-
-  // Basic sanity check: must be absolute http(s)
-  if (!/^https?:\/\//i.test(url)) {
-    alert('Errore: URL non valido.');
-    return;
-  }
-
-  console.log('URL Generato:', url);
-
-  // On native, force system handling to avoid in-app webview freezes.
-  if (Capacitor.isNativePlatform()) {
-    setTimeout(() => {
-      // `_system` is supported by Capacitor WebView bridges and opens the system browser.
-      const opened = window.open(url, '_system');
-      // Fallback if window.open is blocked/returns null
-      if (!opened) window.location.href = url;
-    }, 100);
-    return;
-  }
-
-  // Web: open in a new tab (or fallback to same-page navigation)
-  const opened = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!opened) window.location.href = url;
-}
-
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
   
@@ -102,22 +64,8 @@ export function CenterBottomSheet() {
     if (!selectedCenter) return;
     const { lat, lng } = selectedCenter.coordinates;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    // Keep it simple and avoid in-app webviews
-    if (isWebPlatform()) {
-      window.open(mapsUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      window.location.assign(mapsUrl);
-    }
+    window.open(mapsUrl, '_blank', 'noopener,noreferrer');
   };
-
-  const bookingUrl = useMemo(() => {
-    const nomeCentro = selectedCenter?.name?.trim();
-    if (!nomeCentro) return null;
-    const url = new URL('https://www.booking.com/searchresults.html');
-    url.searchParams.set('ss', nomeCentro);
-    url.searchParams.set('aid', '2015501');
-    return url.toString();
-  }, [selectedCenter?.name]);
 
   const handleShare = async () => {
     if (!selectedCenter) return;
@@ -255,29 +203,18 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Booking.com Hotel Search - native opening */}
+                {/* Booking.com Hotel Search Button */}
                 <button
-                  type="button"
                   onClick={() => {
-                    if (!bookingUrl) {
-                      alert('Errore: nome del centro non disponibile.');
-                      return;
-                    }
-                    openExternalUrl(bookingUrl);
+                    const encodedName = encodeURIComponent(selectedCenter.name);
+                    const { lat, lng } = selectedCenter.coordinates;
+                    const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
+                    window.open(bookingUrl, '_blank', 'noopener,noreferrer');
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-primary text-primary-foreground font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
-                </button>
-
-                {/* External open test - Google */}
-                <button
-                  type="button"
-                  onClick={() => openExternalUrl('https://www.google.com')}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-6 rounded-full bg-muted text-foreground font-semibold text-sm border border-border/60 hover:bg-muted/80 transition-all duration-200 active:scale-[0.98]"
-                >
-                  <span>Apri Google (test)</span>
                 </button>
 
                 {/* Action buttons - Premium Pill Style */}

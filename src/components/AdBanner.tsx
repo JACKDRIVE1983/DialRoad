@@ -6,14 +6,10 @@ interface AdBannerProps {
   show?: boolean;
 }
 
-// TEMP: keep in sync with src/lib/admob.ts to disable ads while diagnosing freezes.
-const ADMOB_DISABLED = true;
-
 export function AdBanner({ show = true }: AdBannerProps) {
   const [isNative] = useState(() => Capacitor.isNativePlatform());
 
   useEffect(() => {
-    if (ADMOB_DISABLED) return;
     if (!isNative) return;
 
     if (show) {

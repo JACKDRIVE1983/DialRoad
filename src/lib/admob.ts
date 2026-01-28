@@ -1,10 +1,6 @@
 // AdMob configuration and utilities
 import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, AdOptions, AdLoadInfo, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 
-// TEMP: disable AdMob to isolate potential native freezes while opening external links.
-// Set to false to re-enable.
-const ADMOB_DISABLED = true;
-
 // AdMob IDs - TESTING MODE (use Google universal test IDs)
 const APP_ID = 'ca-app-pub-3940256099942544~3347511713'; // Google test app ID
 const BANNER_ID = 'ca-app-pub-3940256099942544/6300978111'; // Google test banner
@@ -27,7 +23,6 @@ async function ensureInitialized(): Promise<void> {
 
 // Initialize AdMob
 export async function initializeAdMob(): Promise<void> {
-  if (ADMOB_DISABLED) return;
   try {
     await AdMob.initialize({
       testingDevices: [],
@@ -41,7 +36,6 @@ export async function initializeAdMob(): Promise<void> {
 
 // Show banner ad
 export async function showBannerAd(): Promise<void> {
-  if (ADMOB_DISABLED) return;
   try {
     await ensureInitialized();
     const options: BannerAdOptions = {
@@ -61,7 +55,6 @@ export async function showBannerAd(): Promise<void> {
 
 // Hide banner ad
 export async function hideBannerAd(): Promise<void> {
-  if (ADMOB_DISABLED) return;
   try {
     await ensureInitialized();
     await AdMob.hideBanner();
@@ -72,7 +65,6 @@ export async function hideBannerAd(): Promise<void> {
 
 // Preload interstitial ad
 export async function prepareInterstitialAd(): Promise<void> {
-  if (ADMOB_DISABLED) return;
   try {
     await ensureInitialized();
     const options: AdOptions = {
@@ -91,7 +83,6 @@ export async function prepareInterstitialAd(): Promise<void> {
 
 // Show interstitial ad with rate limiting (max once every 3 minutes)
 export async function showInterstitialAd(): Promise<boolean> {
-  if (ADMOB_DISABLED) return false;
   await ensureInitialized();
   const now = Date.now();
   
@@ -131,6 +122,5 @@ export async function showInterstitialAd(): Promise<boolean> {
 
 // Check if interstitial can be shown (not on cooldown)
 export function canShowInterstitial(): boolean {
-  if (ADMOB_DISABLED) return false;
   return Date.now() - lastInterstitialTime >= INTERSTITIAL_COOLDOWN_MS;
 }
