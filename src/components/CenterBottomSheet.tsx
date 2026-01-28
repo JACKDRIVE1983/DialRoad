@@ -113,6 +113,15 @@ export function CenterBottomSheet() {
 
     // If user chose to open in browser (default) -> force browser to keep coordinate search
     if (useBrowser && Capacitor.isNativePlatform()) {
+      if (Capacitor.getPlatform() === 'android') {
+        // On Android, use googlechrome:// scheme to force Chrome and bypass app interception
+        // This prevents Booking app from intercepting the link
+        const chromeUrl = url.replace('https://', 'googlechrome://');
+        window.location.href = chromeUrl;
+        return;
+      }
+      
+      // iOS: use Browser.open (SFSafariViewController doesn't trigger app interception)
       try {
         await Browser.open({ url, presentationStyle: 'popover' });
         return;
