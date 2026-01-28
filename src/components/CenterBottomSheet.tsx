@@ -15,66 +15,14 @@ import { showInterstitialAd } from '@/lib/admob';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
 
-  const getBookingUrls = () => {
-    if (!selectedCenter) return { httpsUrl: '', intentUrl: '' };
+  const getBookingUrl = () => {
+    // Richiesto: link HTTPS diretto che apre nel browser nel formato
+    // https://www.booking.com/searchresults.it.html?ss=...
+    if (!selectedCenter) return '';
 
-    const city = (selectedCenter.city || '').trim();
-    const ss = encodeURIComponent(city).replace(/%20/g, '+');
-    const httpsUrl = `https://www.booking.com/searchresults.it.html?ss=${ss}&aid=2015501`;
-
-    // Android: prova ad aprire l'app Booking direttamente via intent
-    const withoutScheme = httpsUrl.replace(/^https?:\/\//, '');
-    const intentUrl = `intent://${withoutScheme}#Intent;scheme=https;package=com.booking;end`;
-
-    return { httpsUrl, intentUrl };
-  };
-
-  const openBooking = () => {
-    const { httpsUrl, intentUrl } = getBookingUrls();
-    if (!httpsUrl) return;
-
-    const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
-    console.log('[booking] openBooking', { isAndroidNative, httpsUrl, intentUrl });
-
-    if (isAndroidNative) {
-      // Strategia Android più affidabile in WebView:
-      // 1) Trigger intent:// con location.href (gesture diretta)
-      // 2) Ripristina subito l'URL originale per evitare pagina bianca al rientro
-      // 3) Se l'app non si apre, fallback a https
-      const beforeHref = window.location.href;
-      const beforePath = window.location.pathname + window.location.search + window.location.hash;
-
-      console.log('[booking] android trigger intent', { intentUrl, beforeHref });
-      try {
-        window.location.href = intentUrl;
-      } catch (e) {
-        console.warn('[booking] location.href intent error', e);
-      }
-
-      // Ripristino immediato (non affidarti al codice dopo aver lasciato l'app)
-      window.setTimeout(() => {
-        try {
-          // Mantieni la WebView su una URL http(s) valida
-          window.history.replaceState(null, '', beforePath);
-        } catch (e) {
-          console.warn('[booking] restore url error', e);
-        }
-      }, 0);
-
-      // Fallback se l'intent viene ignorato
-      window.setTimeout(() => {
-        // Se siamo ancora sulla stessa pagina (tipicamente l'intent è stato bloccato)
-        if (window.location.href === beforeHref) {
-          console.warn('[booking] intent likely blocked -> fallback https');
-          toast.message('Apro Booking nel browser');
-          window.open(httpsUrl, '_blank', 'noopener,noreferrer');
-        }
-      }, 700);
-
-      return;
-    }
-
-    window.open(httpsUrl, '_blank', 'noopener,noreferrer');
+    const query = `${selectedCenter.name} ${selectedCenter.city || ''}`.trim();
+    const ss = encodeURIComponent(query).replace(/%20/g, '+');
+    return `https://www.booking.com/searchresults.it.html?ss=${ss}`;
   };
 
   const getBookingInstallUrl = () => {
@@ -274,14 +222,15 @@ export function CenterBottomSheet() {
                 </div>
 
                 {/* Booking.com Hotel Search */}
-                <button
-                  type="button"
-                  onClick={openBooking}
+                <a
+                  href={getBookingUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
-                </button>
+                </a>
 
                 <a
                   href={getBookingInstallUrl()}
