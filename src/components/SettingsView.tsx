@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, Hotel, Globe } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import logo from '@/assets/dialroad-logo-transparent.png';
+import { getBookingBrowserPreference, setBookingBrowserPreference } from '@/lib/deviceStorage';
 
 declare const __BUILD_ID__: string;
 
@@ -19,6 +21,18 @@ export function SettingsView() {
   const { theme, setTheme } = useTheme();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
+  const [bookingInBrowser, setBookingInBrowser] = useState(true);
+
+  // Load booking preference on mount
+  useEffect(() => {
+    setBookingInBrowser(getBookingBrowserPreference());
+  }, []);
+
+  const handleBookingToggle = (checked: boolean) => {
+    setBookingInBrowser(checked);
+    setBookingBrowserPreference(checked);
+    toast.success(checked ? 'Booking si aprirà nel browser' : 'Booking si aprirà nell\'app (se installata)');
+  };
 
   const handleSimulatePremium = () => {
     togglePremium();
@@ -124,6 +138,33 @@ export function SettingsView() {
               <span className="text-xs font-medium">{option.label}</span>
             </button>
           ))}
+        </div>
+      </motion.div>
+
+      {/* Booking Browser Toggle */}
+      <motion.div
+        className="glass-card rounded-xl p-4 mb-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.07 }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#003580]/10 flex items-center justify-center">
+            <Hotel className="w-5 h-5 text-[#003580]" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-foreground">Apri Booking nel browser</h3>
+              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Consigliato: la ricerca per coordinate funziona solo nel browser, non nell'app Booking
+            </p>
+          </div>
+          <Switch
+            checked={bookingInBrowser}
+            onCheckedChange={handleBookingToggle}
+          />
         </div>
       </motion.div>
 
