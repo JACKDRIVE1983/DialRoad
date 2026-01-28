@@ -11,7 +11,24 @@ import centerImage from '@/assets/center-placeholder.jpg';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { showInterstitialAd } from '@/lib/admob';
+
+// Helper to open URLs in external system browser
+const openExternalUrl = async (url: string) => {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await Browser.open({ url, windowName: '_system' });
+    } catch (error) {
+      console.error('[Browser] Failed to open external URL:', error);
+      // Fallback to window.open
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
   
@@ -64,7 +81,15 @@ export function CenterBottomSheet() {
     if (!selectedCenter) return;
     const { lat, lng } = selectedCenter.coordinates;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+    openExternalUrl(mapsUrl);
+  };
+
+  const handleSearchHotels = () => {
+    if (!selectedCenter) return;
+    const encodedName = encodeURIComponent(selectedCenter.name);
+    const { lat, lng } = selectedCenter.coordinates;
+    const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
+    openExternalUrl(bookingUrl);
   };
 
   const handleShare = async () => {
@@ -205,12 +230,7 @@ export function CenterBottomSheet() {
 
                 {/* Booking.com Hotel Search Button */}
                 <button
-                  onClick={() => {
-                    const encodedName = encodeURIComponent(selectedCenter.name);
-                    const { lat, lng } = selectedCenter.coordinates;
-                    const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
-                    window.open(bookingUrl, '_blank', 'noopener,noreferrer');
-                  }}
+                  onClick={handleSearchHotels}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
