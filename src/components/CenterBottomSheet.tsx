@@ -37,22 +37,39 @@ export function CenterBottomSheet() {
     console.log('[booking] openBooking', { isAndroidNative, httpsUrl, intentUrl });
 
     if (isAndroidNative) {
-      // IMPORTANT: non usare location.assign(intent://) perché quando torni in app
-      // la WebView può restare su una pagina bianca (non-http). Apriamo “fuori” dall’app.
-      let opened: Window | null = null;
+      // Strategia Android più affidabile in WebView:
+      // 1) Trigger intent:// con location.href (gesture diretta)
+      // 2) Ripristina subito l'URL originale per evitare pagina bianca al rientro
+      // 3) Se l'app non si apre, fallback a https
+      const beforeHref = window.location.href;
+      const beforePath = window.location.pathname + window.location.search + window.location.hash;
+
+      console.log('[booking] android trigger intent', { intentUrl, beforeHref });
       try {
-        opened = window.open(intentUrl, '_system');
+        window.location.href = intentUrl;
       } catch (e) {
-        console.warn('[booking] intent window.open error', e);
+        console.warn('[booking] location.href intent error', e);
       }
 
+      // Ripristino immediato (non affidarti al codice dopo aver lasciato l'app)
       window.setTimeout(() => {
-        // Se l'intent non viene gestito, facciamo fallback al link https
-        if (!opened) {
-          console.warn('[booking] intent not opened -> fallback https');
-          window.open(httpsUrl, '_system');
+        try {
+          // Mantieni la WebView su una URL http(s) valida
+          window.history.replaceState(null, '', beforePath);
+        } catch (e) {
+          console.warn('[booking] restore url error', e);
         }
-      }, 250);
+      }, 0);
+
+      // Fallback se l'intent viene ignorato
+      window.setTimeout(() => {
+        // Se siamo ancora sulla stessa pagina (tipicamente l'intent è stato bloccato)
+        if (window.location.href === beforeHref) {
+          console.warn('[booking] intent likely blocked -> fallback https');
+          toast.message('Apro Booking nel browser');
+          window.open(httpsUrl, '_blank', 'noopener,noreferrer');
+        }
+      }, 700);
 
       return;
     }
