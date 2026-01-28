@@ -1,9 +1,9 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Clock, 
-  MapPin, ChevronUp, Share2, Hotel
+  MapPin, ChevronUp, Share2, Hotel, Globe, Smartphone
 } from 'lucide-react';
-import { useState, useMemo, useCallback, useEffect, type MouseEvent } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
@@ -13,7 +13,7 @@ import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { showInterstitialAd } from '@/lib/admob';
-import { getBookingBrowserPreference } from '@/lib/deviceStorage';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
@@ -57,6 +57,7 @@ export function CenterBottomSheet() {
   }, [userLocation, selectedCenter]);
   
   const [isExpanded, setIsExpanded] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const dragControls = useDragControls();
 
   const handleClose = async () => {
@@ -104,34 +105,28 @@ export function CenterBottomSheet() {
     }
   };
 
-  const handleOpenBooking = async (e?: MouseEvent<HTMLAnchorElement>) => {
-    e?.preventDefault();
+  // Open in browser (coordinates work)
+  const handleOpenInBrowser = async () => {
     const url = getBookingUrl();
     if (!url) return;
+    setBookingDialogOpen(false);
 
-    const useBrowser = getBookingBrowserPreference();
-
-    // If user chose to open in browser (default) -> force browser to keep coordinate search
-    if (useBrowser && Capacitor.isNativePlatform()) {
-      if (Capacitor.getPlatform() === 'android') {
-        // On Android, use googlechrome:// scheme to force Chrome and bypass app interception
-        // This prevents Booking app from intercepting the link
-        const chromeUrl = url.replace('https://', 'googlechrome://');
-        window.location.href = chromeUrl;
-        return;
-      }
-      
-      // iOS: use Browser.open (SFSafariViewController doesn't trigger app interception)
+    if (Capacitor.isNativePlatform()) {
       try {
         await Browser.open({ url, presentationStyle: 'popover' });
         return;
       } catch {
-        // fall through to window.open
+        // fall through
       }
     }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
-    // If user chose to open in app (useBrowser = false) -> let system handle (may open app)
-    // On web or fallback: just open in new tab
+  // Open in app (let system handle, coordinates may not work)
+  const handleOpenInApp = () => {
+    const url = getBookingUrl();
+    if (!url) return;
+    setBookingDialogOpen(false);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -256,16 +251,13 @@ export function CenterBottomSheet() {
                 </div>
 
                 {/* Booking.com Hotel Search */}
-                <a
-                  href={getBookingUrl()}
-                  onClick={handleOpenBooking}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setBookingDialogOpen(true)}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
-                </a>
+                </button>
 
                 <a
                   href={getBookingInstallUrl()}
@@ -273,8 +265,54 @@ export function CenterBottomSheet() {
                   rel="noreferrer"
                   className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors mb-5 -mt-3"
                 >
-                  Non hai Booking? Installa l’app
+                  Non hai Booking? Installa l'app
                 </a>
+
+                {/* Booking Choice Dialog */}
+                <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
+                  <DialogContent className="mx-4 max-w-[calc(100vw-2rem)] sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Hotel className="w-5 h-5 text-[#003580]" />
+                        Cerca Hotel Vicini
+                      </DialogTitle>
+                      <DialogDescription className="text-left">
+                        Scegli come aprire Booking.com
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 pt-2">
+                      <button
+                        onClick={handleOpenInBrowser}
+                        className="w-full flex items-start gap-3 p-4 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <Globe className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">Apri nel Browser</p>
+                          <p className="text-sm text-muted-foreground">
+                            Consigliato: mostra hotel vicini alle coordinate esatte dell'ospedale
+                          </p>
+                        </div>
+                      </button>
+                      
+                      <button
+                        onClick={handleOpenInApp}
+                        className="w-full flex items-start gap-3 p-4 rounded-xl bg-muted/50 border border-border/50 hover:bg-muted transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                          <Smartphone className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">Apri nell'App Booking</p>
+                          <p className="text-sm text-muted-foreground">
+                            L'app potrebbe ignorare le coordinate e mostrare risultati generici
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Action buttons - Premium Pill Style */}
                 <div className="flex gap-3 mb-6">
