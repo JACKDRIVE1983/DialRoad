@@ -15,36 +15,50 @@ import { showInterstitialAd } from '@/lib/admob';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
 
-  // Genera URL Booking; su Android usa intent:// per aprire davvero l'app (se installata)
-  const getBookingUrl = () => {
-    if (!selectedCenter) return '#';
+  const getBookingUrls = () => {
+    if (!selectedCenter) return { httpsUrl: '', intentUrl: '' };
 
     const city = (selectedCenter.city || '').trim();
     const ss = encodeURIComponent(city).replace(/%20/g, '+');
-    const httpsUrl =
-      'https://www.booking.com/searchresults.it.html?ss=' + ss + '&aid=2015501';
+    const httpsUrl = `https://www.booking.com/searchresults.it.html?ss=${ss}&aid=2015501`;
 
-    // Android: prova ad aprire l'app Booking direttamente
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-      const withoutScheme = httpsUrl.replace(/^https?:\/\//, '');
-      return `intent://${withoutScheme}#Intent;scheme=https;package=com.booking;end`;
-    }
+    // Android: prova ad aprire l'app Booking direttamente via intent
+    const withoutScheme = httpsUrl.replace(/^https?:\/\//, '');
+    const intentUrl = `intent://${withoutScheme}#Intent;scheme=https;package=com.booking;end`;
 
-    return httpsUrl;
+    return { httpsUrl, intentUrl };
   };
 
   const openBooking = () => {
-    const url = getBookingUrl();
-    if (!url || url === '#') return;
+    const { httpsUrl, intentUrl } = getBookingUrls();
+    if (!httpsUrl) return;
 
-    // Su Android, i link intent:// spesso non partono con <a target="_blank">,
-    // quindi usiamo una navigazione diretta.
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-      window.location.href = url;
+    const isAndroidNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+    console.log('[booking] openBooking', { isAndroidNative, httpsUrl, intentUrl });
+
+    if (isAndroidNative) {
+      // 1) Tentativo: intent:// (può essere bloccato su alcune WebView)
+      // 2) Fallback: apri in browser se non succede nulla
+      const before = window.location.href;
+      try {
+        window.location.assign(intentUrl);
+      } catch (e) {
+        console.warn('[booking] intent assign error', e);
+      }
+
+      window.setTimeout(() => {
+        // Se la WebView ha bloccato l'intent, spesso l'URL resta invariato: apriamo il web.
+        if (window.location.href === before) {
+          console.warn('[booking] intent blocked -> fallback https');
+          toast.message('Apro Booking nel browser (app non disponibile)');
+          window.open(httpsUrl, '_blank', 'noopener,noreferrer');
+        }
+      }, 500);
+
       return;
     }
 
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(httpsUrl, '_blank', 'noopener,noreferrer');
   };
 
   const getBookingInstallUrl = () => {
