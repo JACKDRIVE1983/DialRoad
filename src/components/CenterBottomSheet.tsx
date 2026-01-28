@@ -15,18 +15,12 @@ import { showInterstitialAd } from '@/lib/admob';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
 
-  const handleHotelSearch = () => {
-    if (!selectedCenter) return;
-
-    // Google Maps gestisce meglio la ricerca "hotel vicino ospedale X"
-    const name = (selectedCenter.name || '').trim();
+  // Genera URL Booking con solo città (più affidabile)
+  const getBookingUrl = () => {
+    if (!selectedCenter) return '#';
     const city = (selectedCenter.city || '').trim();
-    const query = 'hotel vicino ' + name + ' ' + city;
-
-    const url = 'https://www.google.com/maps/search/' + encodeURIComponent(query);
-
-    console.debug('[hotel-url]', url);
-    window.open(url, '_system');
+    const ss = encodeURIComponent(city).replace(/%20/g, '+');
+    return 'https://www.booking.com/searchresults.it.html?ss=' + ss + '&aid=2015501';
   };
   
   // Rating state from comments
@@ -217,14 +211,16 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Google Maps Hotel Search Button */}
-                <button
-                  onClick={handleHotelSearch}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-emerald-600 text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:bg-emerald-700 transition-all duration-200 active:scale-[0.98]"
+                {/* Booking.com Hotel Search - link nativo */}
+                <a
+                  href={getBookingUrl()}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
-                  <span>Hotel nelle vicinanze</span>
-                </button>
+                  <span>Cerca Hotel Vicini</span>
+                </a>
 
                 {/* Action buttons - Premium Pill Style */}
                 <div className="flex gap-3 mb-6">
