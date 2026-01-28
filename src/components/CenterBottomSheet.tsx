@@ -16,16 +16,13 @@ export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
 
   const getBookingUrl = () => {
-    // Formato richiesto: solo il nome dell'ospedale
-    // es. Ospedale M. Bufalini
+    // Ricerca per coordinate geografiche dell'ospedale
+    // Booking mostra hotel vicini alle coordinate fornite
     if (!selectedCenter) return '';
 
-    // Nota: Booking spesso "normalizza" ss in un luogo e cambia il testo visibile.
-    // ss_raw aiuta a mantenere la query digitata visibile nella barra di ricerca.
-    const raw = selectedCenter.name.trim();
-    const ss = encodeURIComponent(raw).replace(/%20/g, '+');
-    const ssRaw = encodeURIComponent(raw).replace(/%20/g, '+');
-    return `https://www.booking.com/searchresults.it.html?ss=${ss}&ss_raw=${ssRaw}`;
+    const { lat, lng } = selectedCenter.coordinates;
+    // latitude, longitude e label per la ricerca geolocalizzata
+    return `https://www.booking.com/searchresults.it.html?latitude=${lat}&longitude=${lng}&radius=5`;
   };
 
   const getBookingInstallUrl = () => {
