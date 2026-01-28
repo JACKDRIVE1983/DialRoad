@@ -16,10 +16,6 @@ const config: CapacitorConfig = {
   },
   ios: {
     contentInset: 'automatic'
-  },
-  server: {
-    // Enable hardware back button handling
-    androidScheme: 'https'
   }
 };
 
