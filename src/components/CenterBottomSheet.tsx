@@ -18,14 +18,22 @@ export function CenterBottomSheet() {
   const handleHotelSearch = () => {
     if (!selectedCenter) return;
 
-    const cleanName = (selectedCenter.name || '').replace(/-/g, ' ').trim();
-    const cleanCity = (selectedCenter.city || '').replace(/-/g, ' ').trim();
+    // 1. Pulizia drastica: togliamo ogni simbolo e doppione
+    const rawName = (selectedCenter.name || '')
+      .replace(/ospedale/gi, '')
+      .replace(/[^\w\s]/gi, '')
+      .trim();
+    const rawCity = (selectedCenter.city || '').replace(/[^\w\s]/gi, '').trim();
 
+    // 2. Costruiamo la ricerca: solo parole e spazi
+    const query = `Ospedale ${rawName} ${rawCity}`.trim();
+
+    // 3. URL pulito con AID (spazi come '+', come nell'esempio)
+    const ss = encodeURIComponent(query).replace(/%20/g, '+');
     const url =
-      'https://www.booking.com/searchresults.it.html?ss=' +
-      encodeURIComponent('Ospedale ' + cleanName + ' ' + cleanCity) +
-      '&aid=2015501';
+      'https://www.booking.com/searchresults.it.html?ss=' + ss + '&aid=2015501';
 
+    // 4. Apertura esterna
     window.open(url, '_system');
   };
   
