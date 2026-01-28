@@ -19,7 +19,8 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
     searchQuery,
     setSearchQuery,
     selectedRegion,
-    setSelectedRegion
+    setSelectedRegion,
+    setIsSearchFocused
   } = useApp();
 
   const [showFilters, setShowFilters] = useState(false);
@@ -60,6 +61,8 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                 placeholder="Cerca centro..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
                 className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
               />
               {searchQuery && (

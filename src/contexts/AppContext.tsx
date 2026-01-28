@@ -46,6 +46,8 @@ interface AppContextType {
   setActiveTab: (tab: 'map' | 'list' | 'settings') => void;
   isPremium: boolean;
   togglePremium: () => void;
+  isSearchFocused: boolean;
+  setIsSearchFocused: (focused: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -150,7 +152,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // Mark session as initialized
+  // Search focus state for hiding Premium button during search
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   useEffect(() => {
     markSessionInitialized();
   }, []);
@@ -298,12 +301,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeTab,
     setActiveTab,
     isPremium,
-    togglePremium
+    togglePremium,
+    isSearchFocused,
+    setIsSearchFocused
   }), [
     isDarkMode, toggleDarkMode, user, centers, selectedCenter, 
     toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
     selectedRegion, selectedServices, filteredCenters, showOnboarding,
-    showSplash, activeTab, isPremium, togglePremium
+    showSplash, activeTab, isPremium, togglePremium, isSearchFocused
   ]);
 
   return (

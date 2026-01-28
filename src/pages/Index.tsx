@@ -13,10 +13,14 @@ import { BottomNav } from '@/components/BottomNav';
 import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
-const MapTabContent = memo(function MapTabContent() {
+const MapTabContent = memo(function MapTabContent({ 
+  isSearchFocused 
+}: { 
+  isSearchFocused: boolean 
+}) {
   return (
     <div className="relative h-screen">
-      <AppHeader />
+      <AppHeader isSearchFocused={isSearchFocused} />
       <MapView />
     </div>
   );
@@ -63,7 +67,8 @@ function AppContent() {
     setShowOnboarding, 
     setSelectedCenter,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    isSearchFocused
   } = useApp();
   
   // Initialize AdMob on native platforms
@@ -82,7 +87,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-background safe-area-top">
       <AnimatePresence mode="wait">
-        {activeTab === 'map' && <MapTabContent key="map" />}
+        {activeTab === 'map' && <MapTabContent key="map" isSearchFocused={isSearchFocused} />}
         {activeTab === 'list' && (
           <ListTabContent key="list" onSelectCenter={setSelectedCenter} />
         )}
