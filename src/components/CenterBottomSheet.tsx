@@ -33,6 +33,20 @@ export function CenterBottomSheet() {
     return httpsUrl;
   };
 
+  const openBooking = () => {
+    const url = getBookingUrl();
+    if (!url || url === '#') return;
+
+    // Su Android, i link intent:// spesso non partono con <a target="_blank">,
+    // quindi usiamo una navigazione diretta.
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      window.location.href = url;
+      return;
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const getBookingInstallUrl = () => {
     // Fallback install (Android)
     if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
@@ -229,16 +243,15 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Booking.com Hotel Search - link nativo */}
-                <a
-                  href={getBookingUrl()}
-                  target="_blank"
-                  rel="noreferrer"
+                {/* Booking.com Hotel Search */}
+                <button
+                  type="button"
+                  onClick={openBooking}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
-                </a>
+                </button>
 
                 <a
                   href={getBookingInstallUrl()}
