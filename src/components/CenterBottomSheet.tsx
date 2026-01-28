@@ -207,9 +207,8 @@ export function CenterBottomSheet() {
                 <button
                   onClick={() => {
                     const encodedName = encodeURIComponent(selectedCenter.name);
-                    const { lat, lng } = selectedCenter.coordinates;
-                    const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
-                    window.open(bookingUrl, '_blank', 'noopener,noreferrer');
+                    const bookingUrl = `https://www.booking.com/searchresults.it.html?ss=${encodedName}`;
+                    window.open(bookingUrl, '_system');
                   }}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
