@@ -52,11 +52,53 @@ export function SettingsView() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
+      {/* Premium Card - Top Position */}
+      <motion.div
+        className={`rounded-xl p-4 mb-4 ${
+          isPremium 
+            ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30'
+            : 'bg-gradient-to-r from-amber-500 to-orange-500'
+        }`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+            isPremium ? 'bg-amber-500/30' : 'bg-white/20'
+          }`}>
+            <Crown className={`w-6 h-6 ${isPremium ? 'text-amber-500' : 'text-white'}`} />
+          </div>
+          <div className="flex-1">
+            <h3 className={`font-semibold ${isPremium ? 'text-foreground' : 'text-white'}`}>
+              {isPremium ? 'Premium Attivo' : 'Passa a Premium'}
+            </h3>
+            <p className={`text-sm ${isPremium ? 'text-muted-foreground' : 'text-white/80'}`}>
+              {isPremium ? 'Hai accesso a tutte le funzionalità' : 'Sblocca recensioni e rimuovi le pubblicità'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleSimulatePremium}
+          className={`w-full mt-4 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+            isPremium
+              ? 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              : 'bg-white text-amber-600 hover:bg-white/90 shadow-lg'
+          }`}
+        >
+          <Crown className="w-4 h-4" />
+          {isPremium ? 'Disattiva Premium (Test)' : 'Attiva Premium'}
+        </button>
+        <p className="text-[10px] text-center mt-2 opacity-60 text-white">
+          Pulsante test - v1.4
+        </p>
+      </motion.div>
+
       {/* Theme Selector */}
       <motion.div
         className="glass-card rounded-xl p-4 mb-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
       >
         <div className="flex items-center gap-4 mb-4">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -152,36 +194,6 @@ export function SettingsView() {
         <p className="text-xs text-muted-foreground mt-1">Versione 1.4.0</p>
         <p className="text-[11px] text-muted-foreground mt-1">build {__BUILD_ID__}</p>
         
-        {/* Premium status badge */}
-        {isPremium && (
-          <div className="mt-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
-            <Crown className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">Premium Attivo</span>
-          </div>
-        )}
-      </motion.div>
-
-      {/* Simulate Premium Button (temporary for testing) */}
-      <motion.div
-        className="mt-6 px-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.25 }}
-      >
-        <button
-          onClick={handleSimulatePremium}
-          className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-            isPremium
-              ? 'bg-muted text-muted-foreground border border-border'
-              : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg'
-          }`}
-        >
-          <Crown className="w-4 h-4" />
-          {isPremium ? 'Disattiva Premium (Test)' : 'Simula Acquisto Premium'}
-        </button>
-        <p className="text-[10px] text-muted-foreground text-center mt-2">
-          Pulsante temporaneo per test - v1.4
-        </p>
       </motion.div>
 
       {/* Feedback Dialog */}

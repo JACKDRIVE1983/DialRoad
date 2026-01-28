@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, HelpCircle, Mail } from 'lucide-react';
+import { Menu, X, Shield, HelpCircle, Mail, Crown } from 'lucide-react';
+import { useApp } from '@/contexts/AppContext';
 import logoIcon from '@/assets/dialroad-logo-transparent.png';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
+  isSearchFocused?: boolean;
 }
 
-export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
+export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHeaderProps) {
+  const { isPremium, togglePremium } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'help' | null>(null);
 
@@ -108,6 +111,38 @@ export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Premium Button - Top Right (hides when searching) */}
+      <AnimatePresence>
+        {!isSearchFocused && (
+          <motion.div
+            className="absolute top-4 right-4 z-30"
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            transition={{ delay: 0.15, type: 'spring', stiffness: 200 }}
+          >
+            <button
+              onClick={togglePremium}
+              className={`flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-xl border transition-all duration-200 ${
+                isPremium
+                  ? 'bg-gradient-to-r from-amber-500/90 to-orange-500/90 border-amber-400/50 text-white shadow-lg shadow-amber-500/25'
+                  : 'bg-white/70 dark:bg-card/70 border-white/50 dark:border-white/10 hover:border-amber-500/50'
+              }`}
+              style={{
+                boxShadow: isPremium 
+                  ? '0 4px 24px rgba(245, 158, 11, 0.3)' 
+                  : '0 4px 24px rgba(0, 0, 0, 0.08)'
+              }}
+            >
+              <Crown className={`w-4 h-4 ${isPremium ? 'text-white' : 'text-amber-500'}`} />
+              <span className={`font-semibold text-xs ${isPremium ? 'text-white' : 'text-amber-600 dark:text-amber-400'}`}>
+                {isPremium ? 'Premium' : 'PRO'}
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Backdrop for closing menu */}
       {isMenuOpen && (
