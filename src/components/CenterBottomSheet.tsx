@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Clock, 
-  MapPin, ChevronUp, Share2
+  MapPin, ChevronUp, Share2, Hotel
 } from 'lucide-react';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
@@ -195,13 +195,27 @@ export function CenterBottomSheet() {
                 </div>
 
                 {/* Address and hours */}
-                <div className="space-y-2 mb-5">
+                <div className="space-y-2 mb-4">
                   <p className="text-sm text-muted-foreground">{selectedCenter.address}</p>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Clock className="w-4 h-4 mr-2" />
                     {selectedCenter.openingHours}
                   </div>
                 </div>
+
+                {/* Booking.com Hotel Search Button */}
+                <button
+                  onClick={() => {
+                    const encodedName = encodeURIComponent(selectedCenter.name);
+                    const { lat, lng } = selectedCenter.coordinates;
+                    const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
+                    window.open(bookingUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
+                >
+                  <Hotel className="w-5 h-5" />
+                  <span>Cerca Hotel Vicini</span>
+                </button>
 
                 {/* Action buttons - Premium Pill Style */}
                 <div className="flex gap-3 mb-6">
