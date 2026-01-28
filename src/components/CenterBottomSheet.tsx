@@ -75,51 +75,15 @@ export function CenterBottomSheet() {
     }
   };
 
-  const handleSearchHotels = async () => {
-    if (!selectedCenter) return;
-    
-    try {
-      const nomeCentro = selectedCenter.name?.trim();
-      if (!nomeCentro) {
-        alert('Errore: nome del centro non disponibile.');
-        return;
-      }
-
-      // Reset approach: always use the simplest Booking search URL (name only)
-      const url =
-        'https://www.booking.com/searchresults.html?ss=' +
-        encodeURIComponent(nomeCentro) +
-        '&aid=2015501';
-
-      console.log('URL Generato:', url);
-
-      // Ultra-stable: avoid plugins; avoid async thread blocking; let OS handle navigation.
-      if (isWebPlatform()) {
-        // Web: open a new tab
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        // Native: direct navigation tends to be the most stable across WebView shells
-        window.location.assign(url);
-      }
-    } catch (error) {
-      console.error('[Booking] Failed to open hotel search:', error);
-    }
-  };
-
-  const handleOpenGoogleTest = () => {
-    try {
-      const url = 'https://www.google.com';
-      console.log('URL Generato (test Google):', url);
-
-      if (isWebPlatform()) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        window.location.assign(url);
-      }
-    } catch (error) {
-      console.error('[ExternalLink] Failed to open Google test:', error);
-    }
-  };
+  const bookingHref = useMemo(() => {
+    const nomeCentro = selectedCenter?.name?.trim();
+    if (!nomeCentro) return '#';
+    return (
+      'https://www.booking.com/searchresults.html?ss=' +
+      encodeURIComponent(nomeCentro) +
+      '&aid=2015501'
+    );
+  }, [selectedCenter?.name]);
 
   const handleShare = async () => {
     if (!selectedCenter) return;
@@ -257,22 +221,36 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Booking.com Hotel Search Button */}
-                <button
-                  onClick={handleSearchHotels}
+                {/* Booking.com Hotel Search Link (simple <a>) */}
+                <a
+                  href={bookingHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => {
+                    const nomeCentro = selectedCenter?.name?.trim();
+                    if (!nomeCentro) {
+                      e.preventDefault();
+                      alert('Errore: nome del centro non disponibile.');
+                      return;
+                    }
+                    console.log('URL Generato:', bookingHref);
+                  }}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
-                </button>
+                </a>
 
-                {/* External open test button */}
-                <button
-                  onClick={handleOpenGoogleTest}
+                {/* External open test link */}
+                <a
+                  href="https://www.google.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => console.log('URL Generato (test Google): https://www.google.com')}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-6 rounded-full bg-muted text-foreground font-semibold text-sm border border-border/60 hover:bg-muted/80 transition-all duration-200 active:scale-[0.98]"
                 >
                   <span>Apri Google (test)</span>
-                </button>
+                </a>
 
                 {/* Action buttons - Premium Pill Style */}
                 <div className="flex gap-3 mb-6">

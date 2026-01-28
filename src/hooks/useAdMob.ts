@@ -10,10 +10,14 @@ import {
 
 let isInitialized = false;
 
+// TEMP: keep in sync with src/lib/admob.ts to disable ads while diagnosing freezes.
+const ADMOB_DISABLED = true;
+
 export function useAdMob() {
   const initRef = useRef(false);
 
   useEffect(() => {
+    if (ADMOB_DISABLED) return;
     // Only run on native platforms
     if (!Capacitor.isNativePlatform()) {
       return;
