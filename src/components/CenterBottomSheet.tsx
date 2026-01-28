@@ -15,12 +15,30 @@ import { showInterstitialAd } from '@/lib/admob';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
 
-  // Genera URL Booking con solo città (più affidabile)
+  // Genera URL Booking; su Android usa intent:// per aprire davvero l'app (se installata)
   const getBookingUrl = () => {
     if (!selectedCenter) return '#';
+
     const city = (selectedCenter.city || '').trim();
     const ss = encodeURIComponent(city).replace(/%20/g, '+');
-    return 'https://www.booking.com/searchresults.it.html?ss=' + ss + '&aid=2015501';
+    const httpsUrl =
+      'https://www.booking.com/searchresults.it.html?ss=' + ss + '&aid=2015501';
+
+    // Android: prova ad aprire l'app Booking direttamente
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      const withoutScheme = httpsUrl.replace(/^https?:\/\//, '');
+      return `intent://${withoutScheme}#Intent;scheme=https;package=com.booking;end`;
+    }
+
+    return httpsUrl;
+  };
+
+  const getBookingInstallUrl = () => {
+    // Fallback install (Android)
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      return 'market://details?id=com.booking';
+    }
+    return 'https://play.google.com/store/apps/details?id=com.booking';
   };
   
   // Rating state from comments
@@ -220,6 +238,15 @@ export function CenterBottomSheet() {
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
+                </a>
+
+                <a
+                  href={getBookingInstallUrl()}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors mb-5 -mt-3"
+                >
+                  Non hai Booking? Installa l’app
                 </a>
 
                 {/* Action buttons - Premium Pill Style */}
