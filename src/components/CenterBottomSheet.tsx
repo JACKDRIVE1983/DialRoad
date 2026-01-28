@@ -107,7 +107,23 @@ export function CenterBottomSheet() {
     const url = getBookingUrl();
     if (!url) return;
 
-    // On native platforms, use Capacitor Browser (Custom Tabs / SFSafariViewController)
+    // IMPORTANT:
+    // - Booking app tends to ignore the geo params when it intercepts the link.
+    // - On Android, force opening in Chrome to keep the coordinate-based results.
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+      const intentUrl = `intent://www.booking.com${new URL(url).pathname}${new URL(url).search}#Intent;scheme=https;package=com.android.chrome;end`;
+      // Try Chrome intent first
+      window.location.href = intentUrl;
+      // Fallback to system browser if intent isn't handled
+      setTimeout(() => {
+        Browser.open({ url }).catch(() => {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        });
+      }, 600);
+      return;
+    }
+
+    // Other native platforms: use system browser (Custom Tabs / SFSafariViewController)
     // to avoid blank pages caused by in-webview navigation.
     if (Capacitor.isNativePlatform()) {
       try {
