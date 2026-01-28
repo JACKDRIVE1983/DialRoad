@@ -1,11 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MessageSquare, Send, AlertCircle, ThumbsUp } from 'lucide-react';
+import { MessageSquare, Send, AlertCircle, ThumbsUp, Lock, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { StarRating } from './StarRating';
+import { useApp } from '@/contexts/AppContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   hasReviewedCenter, 
   markCenterReviewed, 
@@ -49,6 +59,7 @@ const formatDate = (dateString: string): string => {
 };
 
 export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps) {
+  const { isPremium } = useApp();
   const [comments, setComments] = useState<Comment[]>([]);
   const [name, setName] = useState('');
   const [commentText, setCommentText] = useState('');
@@ -57,6 +68,7 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
+  const [showPremiumDialog, setShowPremiumDialog] = useState(false);
 
   // Calculate and report rating updates
   const calculateRating = useCallback((commentsList: Comment[]) => {
@@ -220,75 +232,121 @@ export function CenterComments({ centerId, onRatingUpdate }: CenterCommentsProps
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-3 mb-6">
-          {/* Star Rating */}
-          <div>
-            <label className="text-sm text-muted-foreground mb-2 block">
-              La tua valutazione *
-            </label>
-            <StarRating 
-              rating={rating} 
-              onRatingChange={setRating} 
-              size="lg"
+        <div className="relative">
+          {/* Premium Overlay */}
+          {!isPremium && (
+            <div 
+              className="absolute inset-0 z-10 cursor-pointer"
+              onClick={() => setShowPremiumDialog(true)}
             />
-            {rating === 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Seleziona da 1 a 5 stelle
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Input
-              placeholder="Il tuo nome *"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={50}
-              className="bg-background/50 border-border/50"
-            />
-            {name.length > 0 && !isNameValid && (
-              <p className="text-xs text-destructive mt-1">Minimo 3 caratteri</p>
-            )}
-          </div>
+          )}
           
-          <div>
-            <Textarea
-              placeholder="Scrivi la tua recensione... *"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              maxLength={500}
-              rows={3}
-              className="bg-background/50 border-border/50 resize-none"
-            />
-            {commentText.length > 0 && !isCommentValid && (
-              <p className="text-xs text-destructive mt-1">Minimo 10 caratteri</p>
-            )}
-          </div>
+          <form onSubmit={handleSubmit} className={`space-y-3 mb-6 ${!isPremium ? 'opacity-60' : ''}`}>
+            {/* Star Rating */}
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">
+                La tua valutazione *
+              </label>
+              <StarRating 
+                rating={rating} 
+                onRatingChange={isPremium ? setRating : () => {}} 
+                size="lg"
+              />
+              {rating === 0 && isPremium && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Seleziona da 1 a 5 stelle
+                </p>
+              )}
+            </div>
 
-          {/* Disclaimer */}
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/30">
-            <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Il nome sarà visibile pubblicamente. Le recensioni sono pubbliche e non verificate. Non condividere informazioni mediche sensibili.
-            </p>
-          </div>
+            <div>
+              <Input
+                placeholder="Il tuo nome *"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={50}
+                disabled={!isPremium}
+                className="bg-background/50 border-border/50"
+              />
+              {name.length > 0 && !isNameValid && isPremium && (
+                <p className="text-xs text-destructive mt-1">Minimo 3 caratteri</p>
+              )}
+            </div>
+            
+            <div>
+              <Textarea
+                placeholder="Scrivi la tua recensione... *"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                maxLength={500}
+                rows={3}
+                disabled={!isPremium}
+                className="bg-background/50 border-border/50 resize-none"
+              />
+              {commentText.length > 0 && !isCommentValid && isPremium && (
+                <p className="text-xs text-destructive mt-1">Minimo 10 caratteri</p>
+              )}
+            </div>
 
-          <Button 
-            type="submit" 
-            disabled={!canSubmit}
-            className="w-full"
-          >
-            {isSubmitting ? (
-              'Invio in corso...'
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-2" />
-                Pubblica Recensione
-              </>
+            {/* Premium Banner for non-premium users */}
+            {!isPremium && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <Lock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                  🔒 Funzione riservata agli utenti Premium
+                </p>
+              </div>
             )}
-          </Button>
-        </form>
+
+            {/* Disclaimer - only show for premium users */}
+            {isPremium && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/30">
+                <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Il nome sarà visibile pubblicamente. Le recensioni sono pubbliche e non verificate. Non condividere informazioni mediche sensibili.
+                </p>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              disabled={!canSubmit || !isPremium}
+              className="w-full"
+            >
+              {isSubmitting ? (
+                'Invio in corso...'
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Pubblica Recensione
+                </>
+              )}
+            </Button>
+          </form>
+        </div>
       )}
+
+      {/* Premium Dialog */}
+      <AlertDialog open={showPremiumDialog} onOpenChange={setShowPremiumDialog}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-amber-500" />
+              Funzione Premium
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left">
+              Per lasciare recensioni e condividere la tua esperienza con la community, è necessario un abbonamento Premium.
+              <br /><br />
+              Vai nelle <strong>Impostazioni</strong> per attivare Premium e sbloccare tutte le funzionalità!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction className="w-full">
+              Ho capito
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Comments List */}
       <div className="space-y-4">
