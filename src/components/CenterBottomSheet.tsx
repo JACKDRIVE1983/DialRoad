@@ -18,12 +18,22 @@ export function CenterBottomSheet() {
   const handleHotelSearch = () => {
     if (!selectedCenter) return;
 
-    // Usiamo solo "Ospedale + città" per evitare che Booking filtri via il nome lungo
-    const cleanCity = (selectedCenter.city || '').replace(/[^\w\s]/gi, '').trim();
-    const query = 'Ospedale ' + cleanCity;
+    // Estrai nome semplificato: rimuovi "Ospedale", "Centro", "di", "della", "delle", ecc.
+    const rawName = (selectedCenter.name || '')
+      .replace(/ospedale|centro|dialisi|di|della|delle|del|comunità|comunita/gi, ' ')
+      .replace(/[^\w\s]/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const cleanCity = (selectedCenter.city || '')
+      .replace(/[^\w\s]/gi, '')
+      .trim();
+
+    // Costruisci: Ospedale + nome semplificato + città
+    const query = 'Ospedale ' + rawName + ' ' + cleanCity;
 
     // Spazi come '+' per URL pulito
-    const ss = encodeURIComponent(query).replace(/%20/g, '+');
+    const ss = query.split(/\s+/).join('+');
     const url = 'https://www.booking.com/searchresults.it.html?ss=' + ss;
 
     console.debug('[booking-url]', url);
