@@ -18,11 +18,15 @@ export function CenterBottomSheet() {
   const handleHotelSearch = () => {
     if (!selectedCenter) return;
 
-    // Ricerca hotel su Google Maps vicino all'ospedale
-    const searchTerm = selectedCenter.name + ' ' + (selectedCenter.city || '');
-    const mapUrl = 'https://www.google.com/maps/search/hotel+vicino+ospedale+' + encodeURIComponent(searchTerm);
+    const cleanName = (selectedCenter.name || '').replace(/-/g, ' ').trim();
+    const cleanCity = (selectedCenter.city || '').replace(/-/g, ' ').trim();
 
-    window.open(mapUrl, '_system');
+    const url =
+      'https://www.booking.com/searchresults.it.html?ss=' +
+      encodeURIComponent('Ospedale ' + cleanName + ' ' + cleanCity) +
+      '&aid=2015501';
+
+    window.open(url, '_system');
   };
   
   // Rating state from comments
@@ -213,13 +217,13 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Google Maps Hotel Search Button */}
+                {/* Booking.com Hotel Search Button */}
                 <button
                   onClick={handleHotelSearch}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-emerald-600 text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:bg-emerald-700 transition-all duration-200 active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
-                  <span>Hotel nelle vicinanze</span>
+                  <span>Cerca Hotel Vicini</span>
                 </button>
 
                 {/* Action buttons - Premium Pill Style */}
