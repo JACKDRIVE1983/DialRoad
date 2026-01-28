@@ -16,11 +16,12 @@ export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
 
   const getBookingUrl = () => {
-    // Richiesto: link HTTPS diretto che apre nel browser nel formato
-    // https://www.booking.com/searchresults.it.html?ss=...
+    // Formato richiesto: OSPEDALE [NOME] [CITTÀ]
+    // es. OSPEDALE M. BUFALINI CESENA
     if (!selectedCenter) return '';
 
-    const query = `${selectedCenter.name} ${selectedCenter.city || ''}`.trim();
+    const city = (selectedCenter.city || '').trim().toUpperCase();
+    const query = `OSPEDALE ${selectedCenter.name} ${city}`.trim();
     const ss = encodeURIComponent(query).replace(/%20/g, '+');
     return `https://www.booking.com/searchresults.it.html?ss=${ss}`;
   };
