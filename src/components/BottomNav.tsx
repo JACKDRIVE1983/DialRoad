@@ -52,45 +52,65 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.1)'
           }}
         >
-          {/* Search bar row */}
-          <div className="px-3 pt-3 pb-2">
-            <div className="flex items-center gap-2 bg-muted/50 dark:bg-muted/30 rounded-xl px-3 py-2">
-              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Cerca centro..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="p-1 hover:bg-muted rounded-full transition-colors flex-shrink-0"
-                >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
-                  hasActiveFilters 
-                    ? 'text-primary bg-primary/10' 
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
+        {/* Search bar row - hidden on settings tab */}
+          <AnimatePresence>
+            {activeTab !== 'settings' && (
+              <motion.div 
+                className="px-3 pt-3 pb-2"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
               >
-                <SlidersHorizontal className="w-4 h-4" />
-                {hasActiveFilters && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
-                )}
-              </button>
-            </div>
-          </div>
+                <div className="flex items-center gap-2 bg-muted/50 dark:bg-muted/30 rounded-xl px-3 py-2">
+                  <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Cerca centro..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="p-1 hover:bg-muted rounded-full transition-colors flex-shrink-0"
+                    >
+                      <X className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
+                      hasActiveFilters 
+                        ? 'text-primary bg-primary/10' 
+                        : 'text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <SlidersHorizontal className="w-4 h-4" />
+                    {hasActiveFilters && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* Divider */}
-          <div className="mx-3 h-px bg-border/50" />
+          {/* Divider - hidden on settings tab */}
+          <AnimatePresence>
+            {activeTab !== 'settings' && (
+              <motion.div 
+                className="mx-3 h-px bg-border/50"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              />
+            )}
+          </AnimatePresence>
 
           {/* Navigation row */}
           <div className="relative flex items-center justify-around py-2 px-4">
