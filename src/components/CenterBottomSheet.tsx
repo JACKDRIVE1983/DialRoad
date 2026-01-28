@@ -20,8 +20,12 @@ export function CenterBottomSheet() {
     // es. Ospedale M. Bufalini
     if (!selectedCenter) return '';
 
-    const ss = encodeURIComponent(selectedCenter.name).replace(/%20/g, '+');
-    return `https://www.booking.com/searchresults.it.html?ss=${ss}`;
+    // Nota: Booking spesso "normalizza" ss in un luogo e cambia il testo visibile.
+    // ss_raw aiuta a mantenere la query digitata visibile nella barra di ricerca.
+    const raw = selectedCenter.name.trim();
+    const ss = encodeURIComponent(raw).replace(/%20/g, '+');
+    const ssRaw = encodeURIComponent(raw).replace(/%20/g, '+');
+    return `https://www.booking.com/searchresults.it.html?ss=${ss}&ss_raw=${ssRaw}`;
   };
 
   const getBookingInstallUrl = () => {
