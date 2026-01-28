@@ -28,10 +28,12 @@ export function CenterBottomSheet() {
     // 2. Costruiamo la ricerca: solo parole e spazi
     const query = `Ospedale ${rawName} ${rawCity}`.trim();
 
-    // 3. URL pulito con AID (spazi come '+', come nell'esempio)
+    // 3. URL pulito (spazi come '+', come nell'esempio)
     const ss = encodeURIComponent(query).replace(/%20/g, '+');
-    const url =
-      'https://www.booking.com/searchresults.it.html?ss=' + ss + '&aid=2015501';
+    const url = 'https://www.booking.com/searchresults.it.html?ss=' + ss;
+
+    // Debug: utile per confrontare l'URL generato con quello che funziona
+    console.debug('[booking-url]', url);
 
     // 4. Apertura esterna
     window.open(url, '_system');
