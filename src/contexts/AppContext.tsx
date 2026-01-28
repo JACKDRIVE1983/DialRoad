@@ -44,6 +44,8 @@ interface AppContextType {
   setShowSplash: (show: boolean) => void;
   activeTab: 'map' | 'list' | 'settings';
   setActiveTab: (tab: 'map' | 'list' | 'settings') => void;
+  isPremium: boolean;
+  togglePremium: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -131,6 +133,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<'map' | 'list' | 'settings'>(
     () => initialState.persistedState?.activeTab || 'map'
   );
+
+  // Premium state with localStorage persistence
+  const [isPremium, setIsPremium] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dialroad-premium') === 'true';
+    }
+    return false;
+  });
+
+  const togglePremium = useCallback(() => {
+    setIsPremium(prev => {
+      const newValue = !prev;
+      localStorage.setItem('dialroad-premium', String(newValue));
+      return newValue;
+    });
+  }, []);
 
   // Mark session as initialized
   useEffect(() => {
@@ -278,12 +296,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     showSplash,
     setShowSplash,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    isPremium,
+    togglePremium
   }), [
     isDarkMode, toggleDarkMode, user, centers, selectedCenter, 
     toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
     selectedRegion, selectedServices, filteredCenters, showOnboarding,
-    showSplash, activeTab
+    showSplash, activeTab, isPremium, togglePremium
   ]);
 
   return (

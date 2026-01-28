@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -15,10 +15,19 @@ declare const __BUILD_ID__: string;
 type ThemeOption = 'light' | 'dark' | 'system';
 
 export function SettingsView() {
-  const { centers } = useApp();
+  const { centers, isPremium, togglePremium } = useApp();
   const { theme, setTheme } = useTheme();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
+
+  const handleSimulatePremium = () => {
+    togglePremium();
+    toast.success(
+      isPremium 
+        ? 'Stato Premium disattivato' 
+        : '🎉 Acquisto Premium simulato con successo!'
+    );
+  };
 
   const themeOptions: { value: ThemeOption; label: string; icon: React.ReactNode }[] = [
     { value: 'light', label: 'Chiaro', icon: <Sun className="w-4 h-4" /> },
@@ -116,7 +125,7 @@ export function SettingsView() {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Versione</span>
-            <span className="text-foreground font-medium">1.0.0</span>
+            <span className="text-foreground font-medium">1.4.0</span>
           </div>
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Centri dialisi</span>
@@ -140,8 +149,39 @@ export function SettingsView() {
       >
         <img src={logo} alt="DialRoad" className="w-24 h-24 object-contain mb-3" />
         <p className="text-sm font-display font-semibold gradient-text">DialRoad</p>
-        <p className="text-xs text-muted-foreground mt-1">Versione 1.0.0</p>
+        <p className="text-xs text-muted-foreground mt-1">Versione 1.4.0</p>
         <p className="text-[11px] text-muted-foreground mt-1">build {__BUILD_ID__}</p>
+        
+        {/* Premium status badge */}
+        {isPremium && (
+          <div className="mt-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+            <Crown className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium">Premium Attivo</span>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Simulate Premium Button (temporary for testing) */}
+      <motion.div
+        className="mt-6 px-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.25 }}
+      >
+        <button
+          onClick={handleSimulatePremium}
+          className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+            isPremium
+              ? 'bg-muted text-muted-foreground border border-border'
+              : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg'
+          }`}
+        >
+          <Crown className="w-4 h-4" />
+          {isPremium ? 'Disattiva Premium (Test)' : 'Simula Acquisto Premium'}
+        </button>
+        <p className="text-[10px] text-muted-foreground text-center mt-2">
+          Pulsante temporaneo per test - v1.4
+        </p>
       </motion.div>
 
       {/* Feedback Dialog */}
