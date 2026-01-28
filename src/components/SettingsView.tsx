@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -9,16 +9,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import logo from '@/assets/dialroad-logo-transparent.png';
+import { Capacitor } from '@capacitor/core';
 
 declare const __BUILD_ID__: string;
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
 export function SettingsView() {
-  const { centers, isPremium, togglePremium } = useApp();
+  const { centers, isPremium, togglePremium, setPremium } = useApp();
   const { theme, setTheme } = useTheme();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const handleSimulatePremium = () => {
     togglePremium();
@@ -27,6 +29,36 @@ export function SettingsView() {
         ? 'Stato Premium disattivato' 
         : '🎉 Acquisto Premium simulato con successo!'
     );
+  };
+
+  const handleRestorePurchases = async () => {
+    setIsRestoring(true);
+    
+    try {
+      // TODO: Integrate with RevenueCat or Capacitor-InAppPurchase
+      // For now, simulate the restore check
+      // In production, this will call the actual IAP plugin:
+      // const purchases = await Purchases.restorePurchases();
+      // const hasPremium = purchases.entitlements.active['premium'] !== undefined;
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Check localStorage for previous purchase (placeholder logic)
+      const hasPreviousPurchase = localStorage.getItem('dialroad_premium_purchased') === 'true';
+      
+      if (hasPreviousPurchase) {
+        setPremium(true);
+        toast.success('Acquisto ripristinato con successo!');
+      } else {
+        toast.info('Nessun acquisto precedente trovato per questo account');
+      }
+    } catch (error) {
+      console.error('Error restoring purchases:', error);
+      toast.error('Errore durante il ripristino. Riprova più tardi.');
+    } finally {
+      setIsRestoring(false);
+    }
   };
 
   const themeOptions: { value: ThemeOption; label: string; icon: React.ReactNode }[] = [
@@ -88,6 +120,21 @@ export function SettingsView() {
           <Crown className="w-4 h-4" />
           {isPremium ? 'Disattiva Premium (Test)' : 'Attiva Premium'}
         </button>
+        
+        {/* Restore Purchases Button */}
+        <button
+          onClick={handleRestorePurchases}
+          disabled={isRestoring}
+          className={`w-full mt-2 py-2 px-4 rounded-xl text-xs font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+            isPremium
+              ? 'text-muted-foreground hover:text-foreground'
+              : 'text-white/70 hover:text-white'
+          }`}
+        >
+          <RotateCcw className={`w-3 h-3 ${isRestoring ? 'animate-spin' : ''}`} />
+          {isRestoring ? 'Ripristino in corso...' : 'Ripristina Acquisti'}
+        </button>
+        
         <p className="text-[10px] text-center mt-2 opacity-60 text-white">
           Pulsante test - v1.4
         </p>

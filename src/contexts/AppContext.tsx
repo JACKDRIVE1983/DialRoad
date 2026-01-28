@@ -45,6 +45,7 @@ interface AppContextType {
   activeTab: 'map' | 'list' | 'settings';
   setActiveTab: (tab: 'map' | 'list' | 'settings') => void;
   isPremium: boolean;
+  setPremium: (value: boolean) => void;
   togglePremium: () => void;
   isSearchFocused: boolean;
   setIsSearchFocused: (focused: boolean) => void;
@@ -144,10 +145,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return false;
   });
 
+  const setPremium = useCallback((value: boolean) => {
+    setIsPremium(value);
+    localStorage.setItem('dialroad-premium', String(value));
+    if (value) {
+      localStorage.setItem('dialroad_premium_purchased', 'true');
+    }
+  }, []);
+
   const togglePremium = useCallback(() => {
     setIsPremium(prev => {
       const newValue = !prev;
       localStorage.setItem('dialroad-premium', String(newValue));
+      if (newValue) {
+        localStorage.setItem('dialroad_premium_purchased', 'true');
+      }
       return newValue;
     });
   }, []);
@@ -301,6 +313,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeTab,
     setActiveTab,
     isPremium,
+    setPremium,
     togglePremium,
     isSearchFocused,
     setIsSearchFocused
@@ -308,7 +321,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isDarkMode, toggleDarkMode, user, centers, selectedCenter, 
     toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
     selectedRegion, selectedServices, filteredCenters, showOnboarding,
-    showSplash, activeTab, isPremium, togglePremium, isSearchFocused
+    showSplash, activeTab, isPremium, setPremium, togglePremium, isSearchFocused
   ]);
 
   return (
