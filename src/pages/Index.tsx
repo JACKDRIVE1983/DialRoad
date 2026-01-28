@@ -33,14 +33,6 @@ const ListTabContent = memo(function ListTabContent({
 }) {
   return (
     <div className="flex flex-col h-screen">
-      <div className="pt-4 px-4">
-        <h1 className="text-2xl font-display font-bold text-foreground mb-1">
-          Centri Dialisi
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Trova il centro più adatto alle tue esigenze
-        </p>
-      </div>
       <CentersList onSelectCenter={onSelectCenter} />
     </div>
   );

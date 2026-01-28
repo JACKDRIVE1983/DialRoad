@@ -225,6 +225,14 @@ export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHe
                       <p className="font-medium text-foreground">D) Dati sanitari</p>
                       <p className="leading-relaxed">DialRoad non raccoglie dati sanitari o clinici. Ti invitiamo a non condividere informazioni mediche sensibili nelle recensioni.</p>
                     </div>
+                    <div>
+                      <p className="font-medium text-foreground">E) Cookie e Identificatori di Pubblicità (Terze Parti)</p>
+                      <p className="leading-relaxed">L'app utilizza identificatori univoci del dispositivo per personalizzare gli annunci pubblicitari tramite il servizio Google AdMob. Questi dati possono includere il tuo ID pubblicitario (IDFA su iOS o AAID su Android) per mostrare inserzioni pertinenti.</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">F) Link di Affiliazione</p>
+                      <p className="leading-relaxed">L'app partecipa al programma di affiliazione di Booking.com. Cliccando sul tasto "Hotel nelle vicinanze", verrai reindirizzato al sito di Booking.com. Questo servizio può utilizzare cookie per tracciare la provenienza della prenotazione e attribuire una commissione al titolare dell'app.</p>
+                    </div>
                   </div>
                 </section>
 
@@ -249,9 +257,16 @@ export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHe
 
                 <section>
                   <h3 className="font-bold text-foreground mb-2">7) Condivisione dei dati</h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed mb-3">
                     I dati delle recensioni sono pubblici nell'app. I servizi tecnici (es. mappe, hosting) possono trattare dati necessari al funzionamento. DialRoad non vende dati a terzi.
                   </p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    <span className="font-medium text-foreground">Partner pubblicitari e di affiliazione:</span> I dati tecnici e pubblicitari possono essere condivisi con:
+                  </p>
+                  <ul className="text-muted-foreground list-disc list-inside space-y-1 mt-2">
+                    <li><strong>Google AdMob:</strong> Per l'erogazione di banner e annunci pubblicitari (si rimanda alla Privacy Policy di Google).</li>
+                    <li><strong>Booking.com:</strong> Per la gestione delle ricerche hotel e dell'affiliazione.</li>
+                  </ul>
                 </section>
 
                 <section>
@@ -265,6 +280,13 @@ export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHe
                   <h3 className="font-bold text-foreground mb-2">9) Modifiche</h3>
                   <p className="text-muted-foreground leading-relaxed">
                     La presente informativa può essere aggiornata. La data di aggiornamento è indicata in alto.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="font-bold text-foreground mb-2">10) Gestione del consenso pubblicitario</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Gli utenti possono limitare il tracciamento pubblicitario direttamente dalle impostazioni del proprio sistema operativo (Android o iOS) resettando o disattivando l'ID pubblicitario. Per gli utenti Premium, la raccolta di dati a fini pubblicitari viene interrotta in quanto la pubblicità viene rimossa.
                   </p>
                 </section>
               </div>
@@ -305,19 +327,32 @@ export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHe
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
-                <p className="text-foreground leading-relaxed">
-                  DialRoad ti aiuta a trovare rapidamente i centri dialisi in tutta Italia tramite una mappa interattiva. Puoi cercare per zona o località e consultare informazioni utili come indirizzo, contatti e dettagli principali della struttura.
-                </p>
-                <p className="text-foreground leading-relaxed">
-                  È pensata per le persone in dialisi che vogliono organizzare una vacanza o uno spostamento con più serenità: ti permette di individuare in anticipo i centri disponibili vicino alla tua destinazione.
-                </p>
-                <p className="text-foreground leading-relaxed">
-                  <strong>Recensioni senza registrazione:</strong> Puoi lasciare recensioni e valutazioni per ogni centro dialisi visitato, semplicemente inserendo un nome a tua scelta. Non è richiesta nessuna registrazione, email o password.
-                </p>
-                <p className="text-foreground leading-relaxed">
-                  <strong>Privacy:</strong> L'app utilizza solo la tua posizione GPS (se autorizzata) per mostrarti i centri più vicini. Non raccogliamo dati personali, email o informazioni di contatto.
-                </p>
+              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <section>
+                  <h3 className="font-bold text-foreground mb-2">Cos'è DialRoad?</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    DialRoad è l'assistente indispensabile per le persone in dialisi che desiderano spostarsi o pianificare una vacanza in Italia con la massima serenità. Grazie a una mappa interattiva aggiornata, trovi in pochi secondi i centri dialisi più vicini alla tua destinazione.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="font-bold text-foreground mb-2">Cosa puoi fare con l'app:</h3>
+                  <ul className="text-muted-foreground space-y-2">
+                    <li><strong>Mappa Interattiva:</strong> Individua i centri dialisi su tutto il territorio nazionale.</li>
+                    <li><strong>Info Dettagliate:</strong> Consulta indirizzi, numeri di telefono e dettagli logistici di ogni struttura.</li>
+                    <li><strong>Organizza il tuo Soggiorno:</strong> Grazie all'integrazione con Booking.com, puoi cercare hotel e alloggi nelle immediate vicinanze del centro dialisi scelto.</li>
+                    <li><strong>Recensioni Anonime:</strong> Condividi la tua esperienza o leggi i consigli degli altri utenti. Non serve registrazione: basta un nickname per lasciare una valutazione.</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="font-bold text-foreground mb-2">Privacy e Trasparenza:</h3>
+                  <ul className="text-muted-foreground space-y-2">
+                    <li><strong>Nessun Account:</strong> L'app si usa senza email o password. La tua privacy è garantita.</li>
+                    <li><strong>GPS Facoltativo:</strong> Usiamo la tua posizione solo per mostrarti i centri intorno a te. Non salviamo i tuoi spostamenti.</li>
+                    <li><strong>Contenuti Pubblicitari:</strong> Per mantenere il servizio gratuito, l'app include banner pubblicitari gestiti da Google AdMob.</li>
+                  </ul>
+                </section>
                 
                 <div className="pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground mb-3">Contatto supporto:</p>
