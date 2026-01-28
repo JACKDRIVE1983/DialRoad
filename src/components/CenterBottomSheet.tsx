@@ -14,6 +14,26 @@ import { Capacitor } from '@capacitor/core';
 import { showInterstitialAd } from '@/lib/admob';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
+
+  const handleHotelSearch = () => {
+    if (!selectedCenter) return;
+
+    // 1. Pulizia totale delle variabili per evitare doppioni o simboli strani
+    const nomeSemplice = selectedCenter.name
+      .replace(/Ospedale/gi, '')
+      .replace(/-/g, '')
+      .trim();
+    const cittaSemplice = (selectedCenter.city || '').replace(/-/g, '').trim();
+
+    // 2. Costruzione della stringa di ricerca pulita
+    const searchString = `Ospedale ${nomeSemplice} ${cittaSemplice}`;
+
+    // 3. Creazione URL senza parametri extra o trattini
+    const bookingUrl = `https://www.booking.com/searchresults.it.html?ss=${encodeURIComponent(searchString)}`;
+
+    // 4. Apertura forzata nel browser di sistema
+    window.open(bookingUrl, '_system');
+  };
   
   // Rating state from comments
   const [averageRating, setAverageRating] = useState(0);
@@ -205,17 +225,7 @@ export function CenterBottomSheet() {
 
                 {/* Booking.com Hotel Search Button */}
                 <button
-                  onClick={() => {
-                    const cleanName = selectedCenter.name.replace(/Ospedale/gi, '').trim();
-                    const cleanCity = (selectedCenter.city || '').trim();
-
-                    const searchQuery = 'Ospedale ' + cleanName + ' ' + cleanCity;
-                    const url =
-                      'https://www.booking.com/searchresults.it.html?ss=' +
-                      encodeURIComponent(searchQuery);
-
-                    window.open(url, '_system');
-                  }}
+                  onClick={handleHotelSearch}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
