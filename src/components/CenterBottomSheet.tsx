@@ -3,7 +3,7 @@ import {
   X, Phone, Navigation, Clock, 
   MapPin, ChevronUp, Share2, Hotel
 } from 'lucide-react';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, type MouseEvent } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
@@ -11,6 +11,7 @@ import centerImage from '@/assets/center-placeholder.jpg';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { showInterstitialAd } from '@/lib/admob';
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
@@ -99,6 +100,28 @@ export function CenterBottomSheet() {
       await navigator.clipboard.writeText(`${selectedCenter.name} - ${selectedCenter.address}`);
       toast.success('Copiato negli appunti');
     }
+  };
+
+  const handleOpenBooking = async (e?: MouseEvent<HTMLAnchorElement>) => {
+    e?.preventDefault();
+    const url = getBookingUrl();
+    if (!url) return;
+
+    // On native platforms, use Capacitor Browser (Custom Tabs / SFSafariViewController)
+    // to avoid blank pages caused by in-webview navigation.
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Browser.open({
+          url,
+          presentationStyle: 'popover',
+        });
+        return;
+      } catch {
+        // fall through to window.open
+      }
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -224,6 +247,7 @@ export function CenterBottomSheet() {
                 {/* Booking.com Hotel Search */}
                 <a
                   href={getBookingUrl()}
+                  onClick={handleOpenBooking}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
