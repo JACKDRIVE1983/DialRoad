@@ -18,25 +18,11 @@ export function CenterBottomSheet() {
   const handleHotelSearch = () => {
     if (!selectedCenter) return;
 
-    // 1. Definiamo i termini in modo ultra-semplice senza simboli
-    const p1 = 'Ospedale';
-    const p2Raw = selectedCenter.name.replace(/ospedale/gi, '').trim();
-    const p3Raw = (selectedCenter.city || '').trim();
+    // Ricerca hotel su Google Maps vicino all'ospedale
+    const searchTerm = selectedCenter.name + ' ' + (selectedCenter.city || '');
+    const mapUrl = 'https://www.google.com/maps/search/hotel+vicino+ospedale+' + encodeURIComponent(searchTerm);
 
-    // Sanitizzazione: elimina simboli (inclusi trattini) senza introdurre '-' nel codice
-    const p2 = p2Raw.replace(/[^\p{L}\p{N}\s.'’]/gu, '').trim();
-    const p3 = p3Raw.replace(/[^\p{L}\p{N}\s.'’]/gu, '').trim();
-
-    // 2. Creiamo la frase: Ospedale Nome Centro Città
-    const fraseFinitia = p1 + ' ' + p2 + ' ' + p3;
-
-    // 3. Creiamo l'URL manualmente senza usare funzioni complesse
-    const finalUrl =
-      'https://www.booking.com/searchresults.it.html?ss=' +
-      encodeURIComponent(fraseFinitia);
-
-    // 4. Apri
-    window.open(finalUrl, '_system');
+    window.open(mapUrl, '_system');
   };
   
   // Rating state from comments
@@ -227,13 +213,13 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Booking.com Hotel Search Button */}
+                {/* Google Maps Hotel Search Button */}
                 <button
                   onClick={handleHotelSearch}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-emerald-600 text-white font-semibold text-sm shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:bg-emerald-700 transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
-                  <span>Cerca Hotel Vicini</span>
+                  <span>Hotel nelle vicinanze</span>
                 </button>
 
                 {/* Action buttons - Premium Pill Style */}
