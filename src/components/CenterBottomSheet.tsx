@@ -84,12 +84,20 @@ export function CenterBottomSheet() {
     openExternalUrl(mapsUrl);
   };
 
-  const handleSearchHotels = () => {
+  const handleSearchHotels = async () => {
     if (!selectedCenter) return;
-    const encodedName = encodeURIComponent(selectedCenter.name);
-    const { lat, lng } = selectedCenter.coordinates;
-    const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
-    openExternalUrl(bookingUrl);
+    
+    try {
+      const encodedName = encodeURIComponent(selectedCenter.name.trim());
+      const lat = encodeURIComponent(selectedCenter.coordinates.lat.toString());
+      const lng = encodeURIComponent(selectedCenter.coordinates.lng.toString());
+      const bookingUrl = `https://www.booking.com/searchresults.html?ss=${encodedName}&latitude=${lat}&longitude=${lng}&aid=2015501`;
+      
+      console.log('[Booking] Opening URL:', bookingUrl);
+      await openExternalUrl(bookingUrl);
+    } catch (error) {
+      console.error('[Booking] Failed to open hotel search:', error);
+    }
   };
 
   const handleShare = async () => {
