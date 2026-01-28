@@ -37,23 +37,22 @@ export function CenterBottomSheet() {
     console.log('[booking] openBooking', { isAndroidNative, httpsUrl, intentUrl });
 
     if (isAndroidNative) {
-      // 1) Tentativo: intent:// (può essere bloccato su alcune WebView)
-      // 2) Fallback: apri in browser se non succede nulla
-      const before = window.location.href;
+      // IMPORTANT: non usare location.assign(intent://) perché quando torni in app
+      // la WebView può restare su una pagina bianca (non-http). Apriamo “fuori” dall’app.
+      let opened: Window | null = null;
       try {
-        window.location.assign(intentUrl);
+        opened = window.open(intentUrl, '_system');
       } catch (e) {
-        console.warn('[booking] intent assign error', e);
+        console.warn('[booking] intent window.open error', e);
       }
 
       window.setTimeout(() => {
-        // Se la WebView ha bloccato l'intent, spesso l'URL resta invariato: apriamo il web.
-        if (window.location.href === before) {
-          console.warn('[booking] intent blocked -> fallback https');
-          toast.message('Apro Booking nel browser (app non disponibile)');
-          window.open(httpsUrl, '_blank', 'noopener,noreferrer');
+        // Se l'intent non viene gestito, facciamo fallback al link https
+        if (!opened) {
+          console.warn('[booking] intent not opened -> fallback https');
+          window.open(httpsUrl, '_system');
         }
-      }, 500);
+      }, 250);
 
       return;
     }
