@@ -18,24 +18,15 @@ export function CenterBottomSheet() {
   const handleHotelSearch = () => {
     if (!selectedCenter) return;
 
-    // 1. Pulizia drastica: togliamo ogni simbolo e doppione
-    const rawName = (selectedCenter.name || '')
-      .replace(/ospedale/gi, '')
-      .replace(/[^\w\s]/gi, '')
-      .trim();
-    const rawCity = (selectedCenter.city || '').replace(/[^\w\s]/gi, '').trim();
+    // Usiamo solo "Ospedale + città" per evitare che Booking filtri via il nome lungo
+    const cleanCity = (selectedCenter.city || '').replace(/[^\w\s]/gi, '').trim();
+    const query = 'Ospedale ' + cleanCity;
 
-    // 2. Costruiamo la ricerca: solo parole e spazi
-    const query = `Ospedale ${rawName} ${rawCity}`.trim();
-
-    // 3. URL pulito (spazi come '+', come nell'esempio)
+    // Spazi come '+' per URL pulito
     const ss = encodeURIComponent(query).replace(/%20/g, '+');
     const url = 'https://www.booking.com/searchresults.it.html?ss=' + ss;
 
-    // Debug: utile per confrontare l'URL generato con quello che funziona
     console.debug('[booking-url]', url);
-
-    // 4. Apertura esterna
     window.open(url, '_system');
   };
   
