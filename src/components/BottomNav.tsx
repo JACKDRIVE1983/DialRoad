@@ -41,7 +41,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <>
       <motion.nav
-        className="fixed bottom-0 left-0 right-0 z-30 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))]"
+        className="fixed bottom-[4.5rem] left-0 right-0 z-30 p-4"
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
