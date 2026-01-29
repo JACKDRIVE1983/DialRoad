@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { 
@@ -11,11 +11,30 @@ import {
 
 let isInitialized = false;
 
-// Interstitial auto-show interval (1.5 minutes = 90000ms)
-const INTERSTITIAL_INTERVAL_MS = 90_000;
+// Click counter for interstitial (every 12 clicks)
+const CLICKS_FOR_INTERSTITIAL = 12;
+let clickCount = 0;
 
 export function useAdMob() {
   const initRef = useRef(false);
+
+  // Handle click-based interstitial
+  const handleScreenClick = useCallback(async () => {
+    if (!Capacitor.isNativePlatform() || !isInitialized) return;
+    
+    clickCount++;
+    console.log(`[AdMob] Click count: ${clickCount}/${CLICKS_FOR_INTERSTITIAL}`);
+    
+    if (clickCount >= CLICKS_FOR_INTERSTITIAL) {
+      clickCount = 0;
+      try {
+        console.log('[AdMob] Showing interstitial after 12 clicks...');
+        await showInterstitialAd();
+      } catch (e) {
+        console.error('[AdMob] click interstitial error:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Only run on native platforms
@@ -51,7 +70,6 @@ export function useAdMob() {
         await showBannerAd();
 
         // Refresh banner every 90 seconds (requested behavior)
-        // IMPORTANT: avoid hide->show; if show fails once, banner can remain hidden.
         const bannerRefreshId = window.setInterval(async () => {
           try {
             await showBannerAd();
@@ -63,27 +81,19 @@ export function useAdMob() {
         // Preload interstitial for later use
         await prepareInterstitialAd();
 
-        // Auto-show interstitial every 1.5 minutes
-        const interstitialIntervalId = window.setInterval(async () => {
-          try {
-            console.log('[AdMob] Auto-showing interstitial...');
-            await showInterstitialAd();
-          } catch (e) {
-            console.error('[AdMob] auto interstitial error:', e);
-          }
-        }, INTERSTITIAL_INTERVAL_MS);
-
         return () => {
           window.clearInterval(bannerRefreshId);
-          window.clearInterval(interstitialIntervalId);
-          // Do NOT hide banner in React cleanup.
-          // In React 18 StrictMode, effects can mount/unmount twice in dev,
-          // and a late async cleanup can hide the native banner "a few seconds" after startup.
         };
       } catch (error) {
         console.error('AdMob hook init error:', error);
       }
     };
+
+    // Add global click listener for interstitial trigger
+    const clickHandler = () => {
+      handleScreenClick();
+    };
+    document.addEventListener('click', clickHandler, { passive: true });
 
     let cleanup: void | (() => void);
     init().then((c) => {
@@ -91,6 +101,7 @@ export function useAdMob() {
     });
 
     return () => {
+      document.removeEventListener('click', clickHandler);
       if (typeof cleanup === 'function') cleanup();
       appStateSub
         .then((sub) => sub.remove())
@@ -98,7 +109,7 @@ export function useAdMob() {
           /* ignore */
         });
     };
-  }, []);
+  }, [handleScreenClick]);
 
   return {
     showBanner: showBannerAd,
