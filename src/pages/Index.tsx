@@ -83,6 +83,11 @@ function AppContent() {
       </AnimatePresence>
 
       <CenterBottomSheet />
+      
+      {/* Ad Banner - fixed at absolute bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-[env(safe-area-inset-bottom)]">
+        <AdBanner />
+      </div>
     </div>
   );
 }
