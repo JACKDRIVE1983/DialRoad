@@ -19,6 +19,11 @@ export function useCenterImage(
     let isMounted = true;
 
     async function fetchImage() {
+      // Skip if no center ID provided
+      if (!centerId) {
+        return;
+      }
+
       // Check memory cache first
       if (imageCache.has(centerId)) {
         const cached = imageCache.get(centerId);
