@@ -9,7 +9,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
-import { BottomNav } from '@/components/BottomNav';
+import { AdBanner } from '@/components/AdBanner';
 import { AdBanner } from '@/components/AdBanner';
 import { useAdMob } from '@/hooks/useAdMob';
 
