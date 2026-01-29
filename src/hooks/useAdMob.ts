@@ -16,7 +16,6 @@ const INTERSTITIAL_INTERVAL_MS = 80_000;
 
 export function useAdMob() {
   const initRef = useRef(false);
-  const interstitialIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Only run on native platforms
@@ -30,6 +29,9 @@ export function useAdMob() {
     }
     
     initRef.current = true;
+
+    let bannerRefreshId: number | undefined;
+    let interstitialIntervalId: number | undefined;
 
     // Keep banner alive across app lifecycle (Android can hide overlays on resume)
     const appStateSub = CapacitorApp.addListener('appStateChange', async ({ isActive }) => {
@@ -52,7 +54,7 @@ export function useAdMob() {
         await showBannerAd();
 
         // Refresh banner every 90 seconds
-        const bannerRefreshId = window.setInterval(async () => {
+        bannerRefreshId = window.setInterval(async () => {
           try {
             await showBannerAd();
           } catch (e) {
@@ -64,7 +66,7 @@ export function useAdMob() {
         await prepareInterstitialAd();
 
         // Auto-show interstitial every 1 minute 20 seconds
-        interstitialIntervalRef.current = window.setInterval(async () => {
+        interstitialIntervalId = window.setInterval(async () => {
           try {
             console.log('[AdMob] Auto-showing interstitial...');
             await showInterstitialAd();
@@ -72,25 +74,16 @@ export function useAdMob() {
             console.error('[AdMob] auto interstitial error:', e);
           }
         }, INTERSTITIAL_INTERVAL_MS);
-
-        return () => {
-          window.clearInterval(bannerRefreshId);
-          if (interstitialIntervalRef.current) {
-            window.clearInterval(interstitialIntervalRef.current);
-          }
-        };
       } catch (error) {
         console.error('AdMob hook init error:', error);
       }
     };
 
-    let cleanup: void | (() => void);
-    init().then((c) => {
-      cleanup = c;
-    });
+    init();
 
     return () => {
-      if (typeof cleanup === 'function') cleanup();
+      if (bannerRefreshId) window.clearInterval(bannerRefreshId);
+      if (interstitialIntervalId) window.clearInterval(interstitialIntervalId);
       appStateSub
         .then((sub) => sub.remove())
         .catch(() => {
