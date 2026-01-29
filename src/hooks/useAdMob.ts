@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { 
@@ -15,26 +15,26 @@ let isInitialized = false;
 const CLICKS_FOR_INTERSTITIAL = 12;
 let clickCount = 0;
 
+// Click handler defined outside component to avoid hook issues
+async function handleScreenClick() {
+  if (!Capacitor.isNativePlatform() || !isInitialized) return;
+  
+  clickCount++;
+  console.log(`[AdMob] Click count: ${clickCount}/${CLICKS_FOR_INTERSTITIAL}`);
+  
+  if (clickCount >= CLICKS_FOR_INTERSTITIAL) {
+    clickCount = 0;
+    try {
+      console.log('[AdMob] Showing interstitial after 12 clicks...');
+      await showInterstitialAd();
+    } catch (e) {
+      console.error('[AdMob] click interstitial error:', e);
+    }
+  }
+}
+
 export function useAdMob() {
   const initRef = useRef(false);
-
-  // Handle click-based interstitial
-  const handleScreenClick = useCallback(async () => {
-    if (!Capacitor.isNativePlatform() || !isInitialized) return;
-    
-    clickCount++;
-    console.log(`[AdMob] Click count: ${clickCount}/${CLICKS_FOR_INTERSTITIAL}`);
-    
-    if (clickCount >= CLICKS_FOR_INTERSTITIAL) {
-      clickCount = 0;
-      try {
-        console.log('[AdMob] Showing interstitial after 12 clicks...');
-        await showInterstitialAd();
-      } catch (e) {
-        console.error('[AdMob] click interstitial error:', e);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     // Only run on native platforms
@@ -90,10 +90,7 @@ export function useAdMob() {
     };
 
     // Add global click listener for interstitial trigger
-    const clickHandler = () => {
-      handleScreenClick();
-    };
-    document.addEventListener('click', clickHandler, { passive: true });
+    document.addEventListener('click', handleScreenClick, { passive: true });
 
     let cleanup: void | (() => void);
     init().then((c) => {
@@ -101,7 +98,7 @@ export function useAdMob() {
     });
 
     return () => {
-      document.removeEventListener('click', clickHandler);
+      document.removeEventListener('click', handleScreenClick);
       if (typeof cleanup === 'function') cleanup();
       appStateSub
         .then((sub) => sub.remove())
@@ -109,7 +106,7 @@ export function useAdMob() {
           /* ignore */
         });
     };
-  }, [handleScreenClick]);
+  }, []);
 
   return {
     showBanner: showBannerAd,
