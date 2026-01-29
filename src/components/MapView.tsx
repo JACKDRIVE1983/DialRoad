@@ -6,7 +6,7 @@ import { useApp } from '@/contexts/AppContext';
 import { DialysisCenter } from '@/data/mockCenters';
 import { supabase } from '@/integrations/supabase/client';
 import { getRegionColor, createRegionMarkerIcon } from '@/lib/regionColors';
-import { AdBanner } from './AdBanner';
+
 const mapContainerStyle = {
   width: '100%',
   height: '100%'
@@ -280,13 +280,6 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
         </GoogleMap>
       </MapErrorBoundary>
 
-      {/* Ad Banner - exactly above bottom nav */}
-      <div
-        className="absolute left-0 right-0 z-30 flex justify-center px-4"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 155px)' }}
-      >
-        <AdBanner />
-      </div>
 
       {/* Controls row - above the ad banner */}
       <div
@@ -501,13 +494,6 @@ function FallbackMap() {
         </div>
       </div>
 
-      {/* Ad Banner - exactly above bottom nav (also in fallback) */}
-      <div
-        className="absolute left-0 right-0 z-30 flex justify-center px-4"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 155px)' }}
-      >
-        <AdBanner />
-      </div>
 
       {/* Controls row - above the ad banner (also in fallback) */}
       <div
