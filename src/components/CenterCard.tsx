@@ -2,7 +2,7 @@ import React from 'react';
 import { MapPin, Clock, Navigation, Phone } from 'lucide-react';
 import { DialysisCenter } from '@/data/mockCenters';
 import { formatDistance } from '@/lib/distance';
-import centerImage from '@/assets/center-placeholder.jpg';
+import { useCenterImage } from '@/hooks/useCenterImage';
 
 interface CenterCardProps {
   center: DialysisCenter;
@@ -11,6 +11,8 @@ interface CenterCardProps {
 }
 
 function CenterCardComponent({ center, distance, onSelect }: CenterCardProps) {
+  // Fetch real Google Places photo with caching
+  const imageUrl = useCenterImage(center.id, center.name, center.address, center.city);
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (center.phone) {
@@ -27,9 +29,9 @@ function CenterCardComponent({ center, distance, onSelect }: CenterCardProps) {
       <div className="glass-card rounded-2xl overflow-hidden">
         <div className="flex">
           {/* Image with lazy loading */}
-          <div className="w-28 h-28 flex-shrink-0">
+          <div className="w-28 h-28 flex-shrink-0 bg-muted">
             <img 
-              src={centerImage} 
+              src={imageUrl} 
               alt={center.name}
               className="w-full h-full object-cover"
               loading="lazy"
