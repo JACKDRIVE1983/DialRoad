@@ -4,7 +4,7 @@ import { Menu, X, Shield, HelpCircle, Crown, Mail, Map, List, Settings, Moon, Su
 import { useApp } from '@/contexts/AppContext';
 import { regions } from '@/data/mockCenters';
 import { Button } from '@/components/ui/button';
-import logoIcon from '@/assets/dialroad-logo-transparent.png';
+import logoIcon from '@/assets/dialroad-logo-new-icon.png';
 
 type TabType = 'map' | 'list' | 'settings';
 
@@ -66,7 +66,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               <img
                 src={logoIcon}
                 alt="DialRoad"
-                className="w-10 h-10 object-cover scale-150 mix-blend-multiply dark:mix-blend-screen dark:brightness-150"
+                className="w-10 h-10 object-cover rounded-lg"
               />
               <span className="font-display font-bold text-sm text-foreground hidden sm:inline">
                 DialRoad
