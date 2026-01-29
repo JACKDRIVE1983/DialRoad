@@ -36,17 +36,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Skip / Start button in top right */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex justify-end p-4 safe-area-top">
-        <Button 
-          variant="ghost" 
-          onClick={isLastSlide ? handleComplete : handleComplete}
-          className="text-white/90 hover:text-white hover:bg-white/20 font-semibold text-base px-4 py-2 rounded-full backdrop-blur-sm bg-black/20"
-        >
-          {isLastSlide ? 'Inizia' : 'Salta'}
-        </Button>
-      </div>
-
       {/* Slides */}
       <div className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait">
@@ -68,9 +57,32 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </div>
 
       {/* Bottom navigation area - positioned above ad banner */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 pb-20 pt-6 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 z-20 pb-16 pt-4 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
+        {/* Navigation buttons row */}
+        <div className="flex justify-between items-center px-4 mb-4">
+          {/* Continua button on the left - hidden on last slide */}
+          {!isLastSlide ? (
+            <button 
+              onClick={handleNext}
+              className="text-white/90 hover:text-white hover:bg-white/20 font-semibold text-base px-4 py-2 rounded-full backdrop-blur-sm bg-black/20 transition-all"
+            >
+              Continua
+            </button>
+          ) : (
+            <div />
+          )}
+          
+          {/* Inizia button on the right */}
+          <button 
+            onClick={handleComplete}
+            className="text-white/90 hover:text-white hover:bg-white/20 font-semibold text-base px-4 py-2 rounded-full backdrop-blur-sm bg-black/20 transition-all"
+          >
+            Inizia
+          </button>
+        </div>
+
         {/* Progress dots */}
-        <div className="flex justify-center space-x-3 mb-6">
+        <div className="flex justify-center space-x-3">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -82,16 +94,6 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               }`}
             />
           ))}
-        </div>
-
-        {/* Next/Start button */}
-        <div className="px-8">
-          <Button
-            onClick={handleNext}
-            className="w-full h-14 text-lg font-semibold rounded-full bg-white text-primary hover:bg-white/90 transition-all shadow-lg"
-          >
-            {isLastSlide ? "Inizia ad Esplorare" : "Continua"}
-          </Button>
         </div>
       </div>
     </motion.div>
