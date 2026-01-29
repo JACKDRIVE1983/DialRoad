@@ -68,7 +68,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </div>
 
       {/* Bottom navigation area - positioned above ad banner */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 pb-24 pt-8 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 z-20 pb-20 pt-6 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
         {/* Progress dots */}
         <div className="flex justify-center space-x-3 mb-6">
           {slides.map((_, index) => (
