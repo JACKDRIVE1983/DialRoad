@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import logo from '@/assets/dialroad-logo-transparent.png';
+import logo from '@/assets/dialroad-logo-new-icon.png';
 import { Capacitor } from '@capacitor/core';
 
 declare const __BUILD_ID__: string;
