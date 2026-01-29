@@ -1,78 +1,157 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, HelpCircle, Mail, Crown } from 'lucide-react';
+import { Menu, X, Shield, HelpCircle, Crown, Search, SlidersHorizontal, MapPin, Mail } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import logoIcon from '@/assets/dialroad-logo-transparent.png';
+import { regions } from '@/data/mockCenters';
+import { Button } from '@/components/ui/button';
 
 interface AppHeaderProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
   isSearchFocused?: boolean;
 }
 
-export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHeaderProps) {
-  const { isPremium, togglePremium } = useApp();
+export function AppHeader({ scrollContainerRef }: AppHeaderProps) {
+  const { 
+    isPremium, 
+    togglePremium,
+    searchQuery,
+    setSearchQuery,
+    selectedRegion,
+    setSelectedRegion,
+    setIsSearchFocused
+  } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'help' | null>(null);
+
+  const hasActiveFilters = selectedRegion !== 'Tutte le Regioni';
 
   const handleMenuItemClick = (modal: 'privacy' | 'help') => {
     setIsMenuOpen(false);
     setActiveModal(modal);
   };
 
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedRegion('Tutte le Regioni');
+  };
+
   return (
     <>
-      {/* Floating Logo Container - Top Left */}
+      {/* Unified Top Header Bar */}
       <motion.div
-        className="absolute top-4 left-4 z-30"
+        className="fixed top-0 left-0 right-0 z-40 safe-area-top"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
       >
         <div 
-          className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/70 dark:bg-card/70 backdrop-blur-xl border border-white/50 dark:border-white/10"
+          className="mx-3 mt-3 rounded-2xl bg-white/90 dark:bg-card/90 backdrop-blur-2xl border border-white/60 dark:border-white/10"
           style={{
-            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)'
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05)'
           }}
         >
-          <img
-            src={logoIcon}
-            alt="DialRoad"
-            className="w-8 h-8 object-contain"
-          />
-          <span className="font-display font-bold text-sm text-foreground">
-            DialRoad
-          </span>
-          
-          {/* Menu button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="ml-1 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/10"
-            aria-label="Menu"
-          >
-            <AnimatePresence mode="wait">
-              {isMenuOpen ? (
-                <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+          {/* Top row: Logo, Menu, PRO button */}
+          <div className="flex items-center justify-between px-3 py-2.5">
+            {/* Logo and Menu */}
+            <div className="flex items-center gap-2">
+              <img
+                src={logoIcon}
+                alt="DialRoad"
+                className="w-8 h-8 object-contain"
+              />
+              <span className="font-display font-bold text-sm text-foreground">
+                DialRoad
+              </span>
+              
+              {/* Menu button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="ml-1 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/10"
+                aria-label="Menu"
+              >
+                <AnimatePresence mode="wait">
+                  {isMenuOpen ? (
+                    <motion.div
+                      key="close"
+                      initial={{ rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <X className="w-4 h-4 text-foreground" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="menu"
+                      initial={{ rotate: 90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: -90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Menu className="w-4 h-4 text-foreground" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
+
+            {/* Premium Button */}
+            <button
+              onClick={togglePremium}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-xl border transition-all duration-200 ${
+                isPremium
+                  ? 'bg-gradient-to-r from-amber-500/90 to-orange-500/90 border-amber-400/50 text-white shadow-lg shadow-amber-500/25'
+                  : 'bg-muted/50 border-border/50 hover:border-amber-500/50'
+              }`}
+            >
+              <Crown className={`w-3.5 h-3.5 ${isPremium ? 'text-white' : 'text-amber-500'}`} />
+              <span className={`font-semibold text-xs ${isPremium ? 'text-white' : 'text-amber-600 dark:text-amber-400'}`}>
+                {isPremium ? 'Premium' : 'PRO'}
+              </span>
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-3 h-px bg-border/40" />
+
+          {/* Search bar row */}
+          <div className="px-3 py-2.5">
+            <div className="flex items-center gap-2 bg-muted/40 dark:bg-muted/30 rounded-xl px-3 py-2.5">
+              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <input
+                type="text"
+                placeholder="Cerca centro o città..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="p-1 hover:bg-muted rounded-full transition-colors flex-shrink-0"
                 >
-                  <X className="w-4 h-4 text-foreground" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="menu"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Menu className="w-4 h-4 text-foreground" />
-                </motion.div>
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
               )}
-            </AnimatePresence>
-          </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`p-1.5 rounded-lg transition-colors flex-shrink-0 relative ${
+                  hasActiveFilters 
+                    ? 'text-primary bg-primary/10' 
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                {hasActiveFilters && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Dropdown Menu */}
@@ -83,10 +162,10 @@ export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHe
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute left-0 top-14 z-50 pointer-events-auto"
+              className="absolute left-3 top-[calc(100%+8px)] z-50"
             >
               <div 
-                className="rounded-xl overflow-hidden backdrop-blur-xl min-w-[180px] bg-white/90 dark:bg-card/90 border border-white/50 dark:border-white/10"
+                className="rounded-xl overflow-hidden backdrop-blur-xl min-w-[180px] bg-white/95 dark:bg-card/95 border border-white/50 dark:border-white/10"
                 style={{
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)'
                 }}
@@ -112,42 +191,83 @@ export function AppHeader({ scrollContainerRef, isSearchFocused = false }: AppHe
         </AnimatePresence>
       </motion.div>
 
-      {/* Premium Button - Top Right (hides when searching) */}
+      {/* Filter panel */}
       <AnimatePresence>
-        {!isSearchFocused && (
-          <motion.div
-            className="absolute top-4 right-4 z-30"
-            initial={{ opacity: 0, y: -20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.9 }}
-            transition={{ delay: 0.15, type: 'spring', stiffness: 200 }}
-          >
-            <button
-              onClick={togglePremium}
-              className={`flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-xl border transition-all duration-200 ${
-                isPremium
-                  ? 'bg-gradient-to-r from-amber-500/90 to-orange-500/90 border-amber-400/50 text-white shadow-lg shadow-amber-500/25'
-                  : 'bg-white/70 dark:bg-card/70 border-white/50 dark:border-white/10 hover:border-amber-500/50'
-              }`}
+        {showFilters && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowFilters(false)}
+            />
+
+            {/* Filter panel */}
+            <motion.div
+              className="fixed top-32 right-4 left-4 z-50 bg-background/95 dark:bg-card/95 backdrop-blur-2xl rounded-3xl p-5 max-h-[60vh] overflow-y-auto border border-white/20 dark:border-white/10"
               style={{
-                boxShadow: isPremium 
-                  ? '0 4px 24px rgba(245, 158, 11, 0.3)' 
-                  : '0 4px 24px rgba(0, 0, 0, 0.08)'
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)'
               }}
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
-              <Crown className={`w-4 h-4 ${isPremium ? 'text-white' : 'text-amber-500'}`} />
-              <span className={`font-semibold text-xs ${isPremium ? 'text-white' : 'text-amber-600 dark:text-amber-400'}`}>
-                {isPremium ? 'Premium' : 'PRO'}
-              </span>
-            </button>
-          </motion.div>
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-display font-bold text-foreground">Filtra per Regione</h3>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="text-primary text-sm"
+                  >
+                    Resetta
+                  </Button>
+                )}
+              </div>
+
+              {/* Region filter */}
+              <div className="mb-5">
+                <label className="text-xs font-medium text-muted-foreground mb-3 block flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5" />
+                  Seleziona Regione
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {regions.map((region) => (
+                    <button
+                      key={region}
+                      onClick={() => setSelectedRegion(region)}
+                      className={`px-3.5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                        selectedRegion === region
+                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                          : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {region}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apply button */}
+              <Button
+                onClick={() => setShowFilters(false)}
+                className="w-full h-12 rounded-full bg-primary text-primary-foreground font-semibold shadow-lg shadow-primary/25"
+              >
+                Applica Filtro
+              </Button>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
       {/* Backdrop for closing menu */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 z-20 pointer-events-auto"
+          className="fixed inset-0 z-30 pointer-events-auto"
           onClick={() => setIsMenuOpen(false)}
         />
       )}

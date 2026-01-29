@@ -14,14 +14,10 @@ import { AdBanner } from '@/components/AdBanner';
 import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
-const MapTabContent = memo(function MapTabContent({ 
-  isSearchFocused 
-}: { 
-  isSearchFocused: boolean 
-}) {
+const MapTabContent = memo(function MapTabContent() {
   return (
-    <div className="relative h-screen">
-      <AppHeader isSearchFocused={isSearchFocused} />
+    <div className="relative h-screen pt-28">
+      <AppHeader />
       <MapView />
     </div>
   );
@@ -80,7 +76,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-background safe-area-top">
       <AnimatePresence mode="wait">
-        {activeTab === 'map' && <MapTabContent key="map" isSearchFocused={isSearchFocused} />}
+        {activeTab === 'map' && <MapTabContent key="map" />}
         {activeTab === 'list' && (
           <ListTabContent key="list" onSelectCenter={setSelectedCenter} />
         )}
