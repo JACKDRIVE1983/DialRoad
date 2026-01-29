@@ -7,7 +7,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
-import centerImage from '@/assets/center-placeholder.jpg';
+import { useCenterImage } from '@/hooks/useCenterImage';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
@@ -16,6 +16,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation } = useApp();
+  
+  // Fetch real image from Google Places/Street View
+  const centerImage = useCenterImage(
+    selectedCenter?.id ?? '',
+    selectedCenter?.name ?? '',
+    selectedCenter?.address ?? '',
+    selectedCenter?.city ?? '',
+    selectedCenter?.coordinates?.lat,
+    selectedCenter?.coordinates?.lng
+  );
 
   const getBookingUrl = () => {
     // Ricerca per coordinate geografiche dell'ospedale
