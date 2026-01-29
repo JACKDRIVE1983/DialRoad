@@ -58,7 +58,7 @@ function CentersListComponent({ onSelectCenter }: CentersListProps) {
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
       {/* Header */}
-      <div className="mb-4">
+      <div className="mb-4 mt-2">
         <h1 className="text-2xl font-display font-bold text-foreground mb-1">
           Centri Dialisi
         </h1>
