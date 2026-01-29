@@ -15,7 +15,7 @@ import { useAdMob } from '@/hooks/useAdMob';
 // Memoized tab content components to prevent unnecessary re-renders
 const MapTabContent = memo(function MapTabContent() {
   return (
-    <div className="relative h-screen pt-24">
+    <div className="relative pt-24 pb-[calc(56px+env(safe-area-inset-bottom))] h-[calc(100vh-56px-env(safe-area-inset-bottom))]">
       <MapView />
     </div>
   );
@@ -27,7 +27,7 @@ const ListTabContent = memo(function ListTabContent({
   onSelectCenter: (center: any) => void 
 }) {
   return (
-    <div className="flex flex-col h-screen pt-24">
+    <div className="flex flex-col pt-24 pb-[calc(56px+env(safe-area-inset-bottom))] h-[calc(100vh-56px-env(safe-area-inset-bottom))]">
       <CentersList onSelectCenter={onSelectCenter} />
     </div>
   );
@@ -35,7 +35,7 @@ const ListTabContent = memo(function ListTabContent({
 
 const SettingsTabContent = memo(function SettingsTabContent() {
   return (
-    <div className="flex flex-col h-screen pt-14">
+    <div className="flex flex-col pt-14 pb-[calc(56px+env(safe-area-inset-bottom))] h-[calc(100vh-56px-env(safe-area-inset-bottom))]">
       <div className="pt-4 px-4">
         <h1 className="text-2xl font-display font-bold text-foreground mb-1">
           Impostazioni
@@ -86,7 +86,7 @@ function AppContent() {
       <CenterBottomSheet />
       
       {/* Ad Banner - fixed at absolute bottom, always on top */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-[env(safe-area-inset-bottom)]">
         <AdBanner />
       </div>
     </div>
