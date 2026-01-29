@@ -66,7 +66,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               <img
                 src={logoIcon}
                 alt="DialRoad"
-                className="w-8 h-8 object-contain"
+                className="w-10 h-10 object-cover scale-150"
               />
               <span className="font-display font-bold text-sm text-foreground hidden sm:inline">
                 DialRoad
