@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      center_images: {
+        Row: {
+          center_id: string
+          created_at: string
+          fetched_at: string
+          id: string
+          image_url: string | null
+          place_id: string | null
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          image_url?: string | null
+          place_id?: string | null
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          image_url?: string | null
+          place_id?: string | null
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           center_id: string
