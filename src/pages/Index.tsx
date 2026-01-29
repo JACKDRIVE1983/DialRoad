@@ -15,7 +15,7 @@ import { useAdMob } from '@/hooks/useAdMob';
 // Memoized tab content components to prevent unnecessary re-renders
 const MapTabContent = memo(function MapTabContent() {
   return (
-    <div className="relative pt-24 pb-[calc(44px+env(safe-area-inset-bottom))] h-[calc(100vh-44px-env(safe-area-inset-bottom))]">
+    <div className="relative pt-24 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
       <MapView />
     </div>
   );
@@ -27,7 +27,7 @@ const ListTabContent = memo(function ListTabContent({
   onSelectCenter: (center: any) => void 
 }) {
   return (
-    <div className="flex flex-col pt-24 pb-[calc(44px+env(safe-area-inset-bottom))] h-[calc(100vh-44px-env(safe-area-inset-bottom))]">
+    <div className="flex flex-col pt-24 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
       <CentersList onSelectCenter={onSelectCenter} />
     </div>
   );
@@ -35,7 +35,7 @@ const ListTabContent = memo(function ListTabContent({
 
 const SettingsTabContent = memo(function SettingsTabContent() {
   return (
-    <div className="flex flex-col pt-14 pb-[calc(44px+env(safe-area-inset-bottom))] h-[calc(100vh-44px-env(safe-area-inset-bottom))]">
+    <div className="flex flex-col pt-14 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
       <div className="pt-4 px-4">
         <h1 className="text-2xl font-display font-bold text-foreground mb-1">
           Impostazioni
