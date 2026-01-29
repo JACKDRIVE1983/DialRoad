@@ -327,7 +327,6 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
           className="fixed inset-0 z-30"
           onClick={() => setIsMenuOpen(false)}
         />
-        />
       )}
 
       {/* Privacy Modal */}
