@@ -10,6 +10,7 @@ import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
 import { AdBanner } from '@/components/AdBanner';
+import { BottomNav } from '@/components/BottomNav';
 import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
@@ -54,7 +55,8 @@ function AppContent() {
     setShowOnboarding, 
     setSelectedCenter,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    isSearchFocused
   } = useApp();
   
   // Initialize AdMob on native platforms
@@ -72,7 +74,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background safe-area-top">
-      <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <AppHeader isSearchFocused={isSearchFocused} />
       
       <AnimatePresence mode="wait">
         {activeTab === 'map' && <MapTabContent key="map" />}
@@ -83,6 +85,7 @@ function AppContent() {
       </AnimatePresence>
 
       <CenterBottomSheet />
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       
       {/* Ad Banner - fixed at absolute bottom */}
       <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-[env(safe-area-inset-bottom)]">
