@@ -57,7 +57,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
       </div>
 
       {/* Bottom navigation area - positioned above ad banner */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 pb-16 pt-4 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 z-20 pb-24 pt-4 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
         {/* Navigation buttons row */}
         <div className="flex justify-between items-center px-4 mb-4">
           {/* Continua button on the left - hidden on last slide */}
