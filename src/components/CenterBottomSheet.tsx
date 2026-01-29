@@ -12,7 +12,6 @@ import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
-import { showInterstitialAd } from '@/lib/admob';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 export function CenterBottomSheet() {
@@ -60,16 +59,7 @@ export function CenterBottomSheet() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const dragControls = useDragControls();
 
-  const handleClose = async () => {
-    // Show interstitial ad on close (with rate limiting)
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await showInterstitialAd();
-      } catch (error) {
-        console.error('Interstitial error:', error);
-      }
-    }
-    
+  const handleClose = () => {
     setSelectedCenter(null);
     setIsExpanded(false);
   };
