@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { 
   initializeAdMob, 
   showBannerAd, 
@@ -25,6 +26,16 @@ export function useAdMob() {
     }
     
     initRef.current = true;
+
+    // Keep banner alive across app lifecycle (Android can hide overlays on resume)
+    const appStateSub = CapacitorApp.addListener('appStateChange', async ({ isActive }) => {
+      if (!isActive) return;
+      try {
+        await showBannerAd();
+      } catch (e) {
+        console.error('[AdMob] resume showBanner error:', e);
+      }
+    });
     
     const init = async () => {
       if (isInitialized) return;
@@ -37,9 +48,9 @@ export function useAdMob() {
         await showBannerAd();
 
         // Refresh banner every 90 seconds (requested behavior)
+        // IMPORTANT: avoid hide->show; if show fails once, banner can remain hidden.
         const refreshId = window.setInterval(async () => {
           try {
-            await hideBannerAd();
             await showBannerAd();
           } catch (e) {
             console.error('[AdMob] banner refresh error:', e);
@@ -51,7 +62,9 @@ export function useAdMob() {
 
         return () => {
           window.clearInterval(refreshId);
-          hideBannerAd();
+          // Do NOT hide banner in React cleanup.
+          // In React 18 StrictMode, effects can mount/unmount twice in dev,
+          // and a late async cleanup can hide the native banner “a few seconds” after startup.
         };
       } catch (error) {
         console.error('AdMob hook init error:', error);
@@ -65,6 +78,11 @@ export function useAdMob() {
 
     return () => {
       if (typeof cleanup === 'function') cleanup();
+      appStateSub
+        .then((sub) => sub.remove())
+        .catch(() => {
+          /* ignore */
+        });
     };
   }, []);
 
