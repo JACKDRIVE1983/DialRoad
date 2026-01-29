@@ -10,6 +10,7 @@ import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
 import { BottomNav } from '@/components/BottomNav';
+import { AdBanner } from '@/components/AdBanner';
 import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
@@ -88,6 +89,11 @@ function AppContent() {
 
       <CenterBottomSheet />
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      
+      {/* Ad Banner - fixed at absolute bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-[env(safe-area-inset-bottom)]">
+        <AdBanner />
+      </div>
     </div>
   );
 }
