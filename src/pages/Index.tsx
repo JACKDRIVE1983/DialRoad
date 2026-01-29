@@ -10,13 +10,12 @@ import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
 import { AdBanner } from '@/components/AdBanner';
-import { BottomNav } from '@/components/BottomNav';
 import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
 const MapTabContent = memo(function MapTabContent() {
   return (
-    <div className="relative h-screen pt-16">
+    <div className="relative h-screen pt-24">
       <MapView />
     </div>
   );
@@ -28,7 +27,7 @@ const ListTabContent = memo(function ListTabContent({
   onSelectCenter: (center: any) => void 
 }) {
   return (
-    <div className="flex flex-col h-screen pt-16">
+    <div className="flex flex-col h-screen pt-24">
       <CentersList onSelectCenter={onSelectCenter} />
     </div>
   );
@@ -36,7 +35,7 @@ const ListTabContent = memo(function ListTabContent({
 
 const SettingsTabContent = memo(function SettingsTabContent() {
   return (
-    <div className="flex flex-col h-screen pt-16">
+    <div className="flex flex-col h-screen pt-14">
       <div className="pt-4 px-4">
         <h1 className="text-2xl font-display font-bold text-foreground mb-1">
           Impostazioni
@@ -73,8 +72,8 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background safe-area-top">
-      <AppHeader isSearchFocused={isSearchFocused} />
+    <div className="min-h-screen bg-background">
+      <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
       
       <AnimatePresence mode="wait">
         {activeTab === 'map' && <MapTabContent key="map" />}
@@ -85,7 +84,6 @@ function AppContent() {
       </AnimatePresence>
 
       <CenterBottomSheet />
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
       
       {/* Ad Banner - fixed at absolute bottom */}
       <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-[env(safe-area-inset-bottom)]">
