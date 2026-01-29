@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { center_id, name, address, city } = await req.json()
+    const { center_id, name, address, city, lat, lng } = await req.json()
 
     if (!center_id) {
       return new Response(
@@ -48,16 +48,20 @@ serve(async (req) => {
       console.error('Error fetching cached image:', fetchError)
     }
 
-    // If we have a cached image (even if null - meaning we already tried and found nothing)
-    if (existingImage !== null) {
-      console.log(`[${center_id}] Returning cached image:`, existingImage.image_url ? 'found' : 'null')
+    // If we have a cached image (with actual URL), return it
+    if (existingImage?.image_url) {
+      console.log(`[${center_id}] Returning cached image`)
       return new Response(
         JSON.stringify({ image_url: existingImage.image_url }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // No cached data - fetch from Google Places API
+    // If we have a record with null image_url, we already tried and found nothing
+    // But now we have Street View fallback, so let's try again
+    const hasExistingRecord = existingImage !== null
+
+    // Fetch from Google Places API
     console.log(`[${center_id}] Fetching from Google Places API...`)
 
     // Build search query
@@ -66,95 +70,107 @@ serve(async (req) => {
     // Step 1: Find place using Text Search (New)
     const searchUrl = `https://places.googleapis.com/v1/places:searchText`
     
-    const searchResponse = await fetch(searchUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': googleMapsApiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.photos'
-      },
-      body: JSON.stringify({
-        textQuery: searchQuery,
-        languageCode: 'it',
-        maxResultCount: 1
-      })
-    })
+    let placePhotoUrl: string | null = null
+    let placeId: string | null = null
 
-    if (!searchResponse.ok) {
-      const errorText = await searchResponse.text()
-      console.error('Places API search error:', errorText)
-      
-      // Cache null result to avoid repeated failed calls
-      await supabase.from('center_images').insert({
-        center_id,
-        image_url: null,
-        place_id: null
+    try {
+      const searchResponse = await fetch(searchUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': googleMapsApiKey,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.photos'
+        },
+        body: JSON.stringify({
+          textQuery: searchQuery,
+          languageCode: 'it',
+          maxResultCount: 1
+        })
       })
-      
-      return new Response(
-        JSON.stringify({ image_url: null }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json()
+        console.log(`[${center_id}] Search result:`, JSON.stringify(searchData).substring(0, 200))
+
+        if (searchData.places && searchData.places.length > 0) {
+          const place = searchData.places[0]
+          placeId = place.id
+
+          // Check if place has photos
+          if (place.photos && place.photos.length > 0) {
+            const photoName = place.photos[0].name
+            placePhotoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${googleMapsApiKey}`
+            console.log(`[${center_id}] Place Photo URL generated`)
+          }
+        }
+      } else {
+        const errorText = await searchResponse.text()
+        console.error('Places API search error:', errorText)
+      }
+    } catch (err) {
+      console.error('Error fetching from Places API:', err)
     }
 
-    const searchData = await searchResponse.json()
-    console.log(`[${center_id}] Search result:`, JSON.stringify(searchData).substring(0, 200))
+    // Step 2: If no Place Photo, try Street View as fallback
+    let finalImageUrl = placePhotoUrl
 
-    if (!searchData.places || searchData.places.length === 0) {
-      console.log(`[${center_id}] No place found`)
+    if (!finalImageUrl && lat && lng) {
+      console.log(`[${center_id}] No Place Photo, trying Street View fallback...`)
       
-      // Cache null result
-      await supabase.from('center_images').insert({
-        center_id,
-        image_url: null,
-        place_id: null
-      })
+      // Build Street View Static API URL
+      // Parameters: size=600x400, fov=90 for wide facade view
+      const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=${lat},${lng}&fov=90&key=${googleMapsApiKey}`
       
-      return new Response(
-        JSON.stringify({ image_url: null }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      // Verify Street View is available by checking metadata
+      const metadataUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${lat},${lng}&key=${googleMapsApiKey}`
+      
+      try {
+        const metadataResponse = await fetch(metadataUrl)
+        const metadata = await metadataResponse.json()
+        
+        if (metadata.status === 'OK') {
+          finalImageUrl = streetViewUrl
+          console.log(`[${center_id}] Street View available, using as fallback`)
+        } else {
+          console.log(`[${center_id}] Street View not available: ${metadata.status}`)
+        }
+      } catch (err) {
+        console.error('Error checking Street View metadata:', err)
+      }
     }
 
-    const place = searchData.places[0]
-    const placeId = place.id
+    // Step 3: Cache the result
+    if (hasExistingRecord) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('center_images')
+        .update({
+          image_url: finalImageUrl,
+          place_id: placeId,
+          fetched_at: new Date().toISOString()
+        })
+        .eq('center_id', center_id)
 
-    // Check if place has photos
-    if (!place.photos || place.photos.length === 0) {
-      console.log(`[${center_id}] Place found but no photos available`)
-      
-      // Cache null result with place_id for reference
-      await supabase.from('center_images').insert({
-        center_id,
-        image_url: null,
-        place_id: placeId
-      })
-      
-      return new Response(
-        JSON.stringify({ image_url: null }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+      if (updateError) {
+        console.error('Error updating cached image:', updateError)
+      }
+    } else {
+      // Insert new record
+      const { error: insertError } = await supabase
+        .from('center_images')
+        .insert({
+          center_id,
+          image_url: finalImageUrl,
+          place_id: placeId
+        })
 
-    // Step 2: Get photo URL using the photo name
-    const photoName = place.photos[0].name
-    const photoUrl = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=400&key=${googleMapsApiKey}`
-    
-    console.log(`[${center_id}] Photo URL generated`)
-
-    // Cache the result
-    const { error: insertError } = await supabase.from('center_images').insert({
-      center_id,
-      image_url: photoUrl,
-      place_id: placeId
-    })
-
-    if (insertError) {
-      console.error('Error caching image:', insertError)
+      if (insertError) {
+        console.error('Error caching image:', insertError)
+      }
     }
 
     return new Response(
-      JSON.stringify({ image_url: photoUrl }),
+      JSON.stringify({ image_url: finalImageUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error: unknown) {

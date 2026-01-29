@@ -9,7 +9,9 @@ export function useCenterImage(
   centerId: string,
   name: string,
   address: string,
-  city: string
+  city: string,
+  lat?: number,
+  lng?: number
 ): string {
   const [imageUrl, setImageUrl] = useState<string>(centerPlaceholder);
 
@@ -27,26 +29,26 @@ export function useCenterImage(
       }
 
       try {
-        // First, check if we have a cached URL in database
+        // First, check if we have a cached URL in database (with actual image)
         const { data: cachedData } = await supabase
           .from('center_images')
           .select('image_url')
           .eq('center_id', centerId)
           .maybeSingle();
 
-        if (cachedData !== null) {
-          // We have a record (may or may not have an image)
-          const url = cachedData.image_url;
-          imageCache.set(centerId, url);
+        // If we have a cached image URL, use it
+        if (cachedData?.image_url) {
+          imageCache.set(centerId, cachedData.image_url);
           if (isMounted) {
-            setImageUrl(url || centerPlaceholder);
+            setImageUrl(cachedData.image_url);
           }
           return;
         }
 
-        // No cached data - call edge function to fetch from Google
+        // No cached image - call edge function to fetch from Google
+        // This will try Place Photo first, then Street View as fallback
         const { data, error } = await supabase.functions.invoke('get-center-image', {
-          body: { center_id: centerId, name, address, city }
+          body: { center_id: centerId, name, address, city, lat, lng }
         });
 
         if (error) {
@@ -72,7 +74,7 @@ export function useCenterImage(
     return () => {
       isMounted = false;
     };
-  }, [centerId, name, address, city]);
+  }, [centerId, name, address, city, lat, lng]);
 
   return imageUrl;
 }

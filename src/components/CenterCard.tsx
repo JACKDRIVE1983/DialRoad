@@ -11,8 +11,15 @@ interface CenterCardProps {
 }
 
 function CenterCardComponent({ center, distance, onSelect }: CenterCardProps) {
-  // Fetch real Google Places photo with caching
-  const imageUrl = useCenterImage(center.id, center.name, center.address, center.city);
+  // Fetch real Google Places photo with caching, with Street View fallback
+  const imageUrl = useCenterImage(
+    center.id, 
+    center.name, 
+    center.address, 
+    center.city,
+    center.coordinates.lat,
+    center.coordinates.lng
+  );
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (center.phone) {
