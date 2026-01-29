@@ -10,7 +10,6 @@ import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
 import { AdBanner } from '@/components/AdBanner';
-import { AdBanner } from '@/components/AdBanner';
 import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
