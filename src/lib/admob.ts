@@ -42,7 +42,7 @@ export async function showBannerAd(): Promise<void> {
       adId: BANNER_ID,
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 140, // Positioned above bottom nav (~140px from bottom)
+      margin: 0, // Banner at the very bottom of the screen
       isTesting: false,
     };
     
