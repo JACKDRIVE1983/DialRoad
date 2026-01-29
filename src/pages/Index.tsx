@@ -85,8 +85,8 @@ function AppContent() {
 
       <CenterBottomSheet />
       
-      {/* Ad Banner - fixed at absolute bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-[env(safe-area-inset-bottom)]">
+      {/* Ad Banner - fixed at absolute bottom, always on top */}
+      <div className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-[env(safe-area-inset-bottom)]">
         <AdBanner />
       </div>
     </div>
