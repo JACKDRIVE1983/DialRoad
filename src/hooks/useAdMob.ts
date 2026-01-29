@@ -11,30 +11,12 @@ import {
 
 let isInitialized = false;
 
-// Click counter for interstitial (every 12 clicks)
-const CLICKS_FOR_INTERSTITIAL = 12;
-let clickCount = 0;
-
-// Click handler defined outside component to avoid hook issues
-async function handleScreenClick() {
-  if (!Capacitor.isNativePlatform() || !isInitialized) return;
-  
-  clickCount++;
-  console.log(`[AdMob] Click count: ${clickCount}/${CLICKS_FOR_INTERSTITIAL}`);
-  
-  if (clickCount >= CLICKS_FOR_INTERSTITIAL) {
-    clickCount = 0;
-    try {
-      console.log('[AdMob] Showing interstitial after 12 clicks...');
-      await showInterstitialAd();
-    } catch (e) {
-      console.error('[AdMob] click interstitial error:', e);
-    }
-  }
-}
+// Interstitial auto-show interval (1 minute 20 seconds = 80000ms)
+const INTERSTITIAL_INTERVAL_MS = 80_000;
 
 export function useAdMob() {
   const initRef = useRef(false);
+  const interstitialIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Only run on native platforms
@@ -69,7 +51,7 @@ export function useAdMob() {
         // Show banner as soon as AdMob is ready (native only)
         await showBannerAd();
 
-        // Refresh banner every 90 seconds (requested behavior)
+        // Refresh banner every 90 seconds
         const bannerRefreshId = window.setInterval(async () => {
           try {
             await showBannerAd();
@@ -81,16 +63,26 @@ export function useAdMob() {
         // Preload interstitial for later use
         await prepareInterstitialAd();
 
+        // Auto-show interstitial every 1 minute 20 seconds
+        interstitialIntervalRef.current = window.setInterval(async () => {
+          try {
+            console.log('[AdMob] Auto-showing interstitial...');
+            await showInterstitialAd();
+          } catch (e) {
+            console.error('[AdMob] auto interstitial error:', e);
+          }
+        }, INTERSTITIAL_INTERVAL_MS);
+
         return () => {
           window.clearInterval(bannerRefreshId);
+          if (interstitialIntervalRef.current) {
+            window.clearInterval(interstitialIntervalRef.current);
+          }
         };
       } catch (error) {
         console.error('AdMob hook init error:', error);
       }
     };
-
-    // Add global click listener for interstitial trigger
-    document.addEventListener('click', handleScreenClick, { passive: true });
 
     let cleanup: void | (() => void);
     init().then((c) => {
@@ -98,7 +90,6 @@ export function useAdMob() {
     });
 
     return () => {
-      document.removeEventListener('click', handleScreenClick);
       if (typeof cleanup === 'function') cleanup();
       appStateSub
         .then((sub) => sub.remove())
