@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import slide1 from '@/assets/onboarding-slide-1.png';
 import slide2 from '@/assets/onboarding-slide-2.png';
 import slide3 from '@/assets/onboarding-slide-3.png';
@@ -54,46 +53,24 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             />
           </motion.div>
         </AnimatePresence>
-      </div>
 
-      {/* Bottom navigation area - positioned above ad banner */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 pb-[calc(104px+env(safe-area-inset-bottom))] pt-4 safe-area-bottom bg-gradient-to-t from-black/60 to-transparent">
-        {/* Navigation buttons row */}
-        <div className="flex justify-between items-center px-4 mb-4">
-          {/* Continua button on the left - hidden on last slide */}
-          {!isLastSlide ? (
-            <button 
-              onClick={handleNext}
-              className="text-white/90 hover:text-white hover:bg-white/20 font-semibold text-base px-4 py-2 rounded-full backdrop-blur-sm bg-black/20 transition-all"
-            >
-              Continua
-            </button>
-          ) : (
-            <div />
-          )}
-          
-          {/* Inizia button on the right */}
-          <button 
+        {/* Side controls (mid-screen) */}
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-20 px-4 flex items-center justify-between pointer-events-none">
+          <button
+            type="button"
             onClick={handleComplete}
-            className="text-white/90 hover:text-white hover:bg-white/20 font-semibold text-base px-4 py-2 rounded-full backdrop-blur-sm bg-black/20 transition-all"
+            className="glass-button text-foreground font-semibold text-base pointer-events-auto"
           >
-            Inizia
+            Salta
           </button>
-        </div>
 
-        {/* Progress dots */}
-        <div className="flex justify-center space-x-3">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`transition-all duration-300 rounded-full ${
-                index === currentSlide 
-                  ? 'w-8 h-2 bg-white' 
-                  : 'w-2 h-2 bg-white/50 hover:bg-white/70'
-              }`}
-            />
-          ))}
+          <button
+            type="button"
+            onClick={handleNext}
+            className="glass-button text-foreground font-semibold text-base pointer-events-auto"
+          >
+            Continua
+          </button>
         </div>
       </div>
     </motion.div>
