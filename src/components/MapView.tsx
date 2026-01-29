@@ -281,33 +281,31 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
       </MapErrorBoundary>
 
 
-      {/* Controls row - above the ad banner */}
-      <div
-        className="absolute left-4 right-4 z-30 flex items-center justify-between"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 225px)' }}
+      {/* Center count badge - bottom left above Google logo */}
+      <motion.div
+        className="absolute left-2 z-30 glass-card px-3 py-1.5 rounded-full"
+        style={{ bottom: 24 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
       >
-        <motion.div
-          className="glass-card px-4 py-2 rounded-full"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <span className="text-sm font-medium text-foreground">
-            {filteredCenters.length} centri trovati
-          </span>
-        </motion.div>
+        <span className="text-xs font-medium text-foreground">
+          {filteredCenters.length} centri trovati
+        </span>
+      </motion.div>
 
-        <motion.button
-          className="w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-lg"
-          onClick={handleLocate}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          disabled={isLocating}
-        >
-          <Navigation 
-            className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
-          />
-        </motion.button>
-      </div>
+      {/* Locate button - bottom right */}
+      <motion.button
+        className="absolute right-4 z-30 w-11 h-11 rounded-full glass-card flex items-center justify-center shadow-lg"
+        style={{ bottom: 16 }}
+        onClick={handleLocate}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        disabled={isLocating}
+      >
+        <Navigation 
+          className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
+        />
+      </motion.button>
     </div>
   );
 }
