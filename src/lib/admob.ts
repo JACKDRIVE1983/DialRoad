@@ -10,6 +10,10 @@ const INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712'; // Google test
 const INTERSTITIAL_COOLDOWN_MS = 1.5 * 60 * 1000;
 let lastInterstitialTime = 0;
 let interstitialLoaded = false;
+let isPreloading = false;
+
+// Global ads disabled flag (for premium users)
+let adsDisabled = false;
 
 // Ensure we initialize AdMob exactly once, and that every ad call waits for it.
 let initPromise: Promise<void> | null = null;
@@ -19,6 +23,25 @@ async function ensureInitialized(): Promise<void> {
     initPromise = initializeAdMob();
   }
   await initPromise;
+}
+
+// Disable all ads (for premium users)
+export function disableAds(): void {
+  adsDisabled = true;
+  console.log('[AdMob] Ads disabled (premium user)');
+  // Hide any existing banner
+  hideBannerAd().catch(() => {});
+}
+
+// Enable ads (when premium expires or for non-premium users)
+export function enableAds(): void {
+  adsDisabled = false;
+  console.log('[AdMob] Ads enabled');
+}
+
+// Check if ads are currently disabled
+export function areAdsDisabled(): boolean {
+  return adsDisabled;
 }
 
 // Initialize AdMob
@@ -36,13 +59,19 @@ export async function initializeAdMob(): Promise<void> {
 
 // Show banner ad
 export async function showBannerAd(): Promise<void> {
+  // Skip if ads disabled (premium user)
+  if (adsDisabled) {
+    console.log('[AdMob] Banner skipped - ads disabled');
+    return;
+  }
+  
   try {
     await ensureInitialized();
     const options: BannerAdOptions = {
       adId: BANNER_ID,
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 0, // Banner at the very bottom of the screen
+      margin: 0,
       isTesting: false,
     };
     
@@ -58,13 +87,45 @@ export async function hideBannerAd(): Promise<void> {
   try {
     await ensureInitialized();
     await AdMob.hideBanner();
+    console.log('[AdMob] banner hidden');
   } catch (error) {
     console.error('[AdMob] hide banner error:', error);
   }
 }
 
-// Preload interstitial ad
-export async function prepareInterstitialAd(): Promise<void> {
+// Remove banner ad completely from DOM
+export async function removeBannerAd(): Promise<void> {
+  try {
+    await ensureInitialized();
+    await AdMob.removeBanner();
+    console.log('[AdMob] banner removed from DOM');
+  } catch (error) {
+    console.error('[AdMob] remove banner error:', error);
+  }
+}
+
+// Preload interstitial ad with retry logic
+export async function prepareInterstitialAd(): Promise<boolean> {
+  // Skip if ads disabled (premium user)
+  if (adsDisabled) {
+    console.log('[AdMob] Interstitial preload skipped - ads disabled');
+    return false;
+  }
+  
+  // Skip if already loaded
+  if (interstitialLoaded) {
+    console.log('[AdMob] Interstitial already loaded');
+    return true;
+  }
+  
+  // Skip if already preloading
+  if (isPreloading) {
+    console.log('[AdMob] Interstitial preload already in progress');
+    return false;
+  }
+  
+  isPreloading = true;
+  
   try {
     await ensureInitialized();
     const options: AdOptions = {
@@ -74,29 +135,41 @@ export async function prepareInterstitialAd(): Promise<void> {
     
     await AdMob.prepareInterstitial(options);
     interstitialLoaded = true;
-    console.log('[AdMob] interstitial prepared');
+    isPreloading = false;
+    console.log('[AdMob] interstitial prepared successfully');
+    return true;
   } catch (error) {
     console.error('[AdMob] prepare interstitial error:', error);
     interstitialLoaded = false;
+    isPreloading = false;
+    return false;
   }
 }
 
-// Show interstitial ad with rate limiting (max once every 3 minutes)
+// Show interstitial ad with rate limiting and auto-preload
 export async function showInterstitialAd(): Promise<boolean> {
+  // Skip if ads disabled (premium user)
+  if (adsDisabled) {
+    console.log('[AdMob] Interstitial skipped - ads disabled');
+    return false;
+  }
+  
   await ensureInitialized();
   const now = Date.now();
   
   // Check cooldown
   if (now - lastInterstitialTime < INTERSTITIAL_COOLDOWN_MS) {
-    console.log('[AdMob] interstitial on cooldown, skipping...');
+    const remainingMs = INTERSTITIAL_COOLDOWN_MS - (now - lastInterstitialTime);
+    console.log(`[AdMob] interstitial on cooldown, ${Math.ceil(remainingMs / 1000)}s remaining`);
     return false;
   }
   
-  // Check if ad is loaded
+  // Check if ad is loaded, try to preload if not
   if (!interstitialLoaded) {
-    console.log('[AdMob] interstitial not loaded, preparing...');
-    await prepareInterstitialAd();
-    if (!interstitialLoaded) {
+    console.log('[AdMob] interstitial not loaded, attempting preload...');
+    const preloaded = await prepareInterstitialAd();
+    if (!preloaded) {
+      console.log('[AdMob] Preload failed, will retry later');
       return false;
     }
   }
@@ -105,22 +178,38 @@ export async function showInterstitialAd(): Promise<boolean> {
     await AdMob.showInterstitial();
     lastInterstitialTime = now;
     interstitialLoaded = false;
+    console.log('[AdMob] interstitial shown successfully');
     
-    // Prepare next interstitial in background
+    // Immediately start preloading next interstitial (don't wait)
     setTimeout(() => {
-      prepareInterstitialAd();
-    }, 1000);
+      prepareInterstitialAd().catch(e => {
+        console.error('[AdMob] Post-show preload failed:', e);
+      });
+    }, 500);
     
-    console.log('[AdMob] interstitial shown');
     return true;
   } catch (error) {
     console.error('[AdMob] show interstitial error:', error);
     interstitialLoaded = false;
+    
+    // Try to preload again after failure
+    setTimeout(() => {
+      prepareInterstitialAd().catch(e => {
+        console.error('[AdMob] Post-failure preload failed:', e);
+      });
+    }, 2000);
+    
     return false;
   }
 }
 
 // Check if interstitial can be shown (not on cooldown)
 export function canShowInterstitial(): boolean {
+  if (adsDisabled) return false;
   return Date.now() - lastInterstitialTime >= INTERSTITIAL_COOLDOWN_MS;
+}
+
+// Check if interstitial is ready to show
+export function isInterstitialReady(): boolean {
+  return interstitialLoaded && !adsDisabled;
 }
