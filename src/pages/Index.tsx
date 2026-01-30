@@ -58,11 +58,12 @@ function AppContent() {
     setActiveTab,
     isSearchFocused,
     showLimitModal,
-    setShowLimitModal
+    setShowLimitModal,
+    isPremium
   } = useApp();
   
-  // Initialize AdMob on native platforms
-  useAdMob();
+  // Initialize AdMob on native platforms (pass isPremium to disable ads for premium users)
+  useAdMob(isPremium);
 
   // Show splash screen first
   if (showSplash) {
@@ -91,10 +92,12 @@ function AppContent() {
       {/* Premium Limit Modal */}
       <PremiumLimitModal open={showLimitModal} onOpenChange={setShowLimitModal} />
       
-      {/* Ad Banner - fixed at absolute bottom, always on top */}
-      <div className="fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-[env(safe-area-inset-bottom)]">
-        <AdBanner />
-      </div>
+      {/* Ad Banner - only show for non-premium users */}
+      {!isPremium && (
+        <div className="fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-[env(safe-area-inset-bottom)]">
+          <AdBanner />
+        </div>
+      )}
     </div>
   );
 }
