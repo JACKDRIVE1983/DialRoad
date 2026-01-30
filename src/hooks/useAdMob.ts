@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { 
@@ -8,13 +8,15 @@ import {
   prepareInterstitialAd, 
   showInterstitialAd,
   disableAds,
-  enableAds
+  enableAds,
+  registerTap,
+  canShowInterstitial
 } from '@/lib/admob';
 
 // Interstitial auto-show interval (1 minute 20 seconds = 80000ms)
 const INTERSTITIAL_INTERVAL_MS = 80_000;
-// Preload retry interval (30 seconds)
-const PRELOAD_RETRY_INTERVAL_MS = 30_000;
+// Preload retry interval (20 seconds - more aggressive)
+const PRELOAD_RETRY_INTERVAL_MS = 20_000;
 
 // Global initialization state - persists across hook instances
 let globalInitialized = false;
@@ -23,6 +25,7 @@ let bannerRefreshId: number | undefined;
 let interstitialIntervalId: number | undefined;
 let preloadRetryId: number | undefined;
 let appStateSubscription: { remove: () => void } | null = null;
+let tapListenerAttached = false;
 
 // Track premium ref globally so timers can check it
 let globalIsPremiumRef = false;
@@ -42,6 +45,21 @@ function clearAllTimers() {
   }
   globalTimersActive = false;
   console.log('[AdMob] All timers cleared');
+}
+
+// Global tap handler for click-based interstitials
+function handleGlobalTap() {
+  if (globalIsPremiumRef) return;
+  
+  const shouldShow = registerTap();
+  if (shouldShow && canShowInterstitial()) {
+    console.log('[AdMob] 10 taps reached - showing interstitial');
+    showInterstitialAd().then(shown => {
+      if (shown) {
+        console.log('[AdMob] Tap-triggered interstitial shown');
+      }
+    });
+  }
 }
 
 async function startAdTimers() {
@@ -72,7 +90,7 @@ async function startAdTimers() {
   // Preload first interstitial
   await prepareInterstitialAd();
 
-  // Continuous preload retry - ensures interstitial is always ready
+  // Continuous preload retry - more aggressive (20 seconds)
   preloadRetryId = window.setInterval(async () => {
     if (globalIsPremiumRef) return;
     try {
@@ -83,7 +101,7 @@ async function startAdTimers() {
     }
   }, PRELOAD_RETRY_INTERVAL_MS);
 
-  // Auto-show interstitial every 80 seconds
+  // Auto-show interstitial every 80 seconds (timer-based)
   interstitialIntervalId = window.setInterval(async () => {
     if (globalIsPremiumRef) {
       console.log('[AdMob] Premium user - skipping auto interstitial');
@@ -93,7 +111,7 @@ async function startAdTimers() {
       console.log('[AdMob] Auto-showing interstitial (80s timer)...');
       const shown = await showInterstitialAd();
       if (!shown) {
-        console.log('[AdMob] Interstitial not shown, will retry on next interval');
+        console.log('[AdMob] Interstitial not shown (cooldown or not loaded), will retry on next interval');
       } else {
         console.log('[AdMob] Interstitial shown successfully');
       }
@@ -102,7 +120,15 @@ async function startAdTimers() {
     }
   }, INTERSTITIAL_INTERVAL_MS);
   
-  console.log('[AdMob] All timers started - Banner: 90s, Interstitial: 80s, Preload: 30s');
+  // Attach global tap listener for click-based interstitials
+  if (!tapListenerAttached) {
+    document.addEventListener('click', handleGlobalTap, { passive: true });
+    document.addEventListener('touchend', handleGlobalTap, { passive: true });
+    tapListenerAttached = true;
+    console.log('[AdMob] Tap listener attached - 10 taps = interstitial');
+  }
+  
+  console.log('[AdMob] All timers started - Banner: 90s, Interstitial: 80s, Preload: 20s, Taps: 10');
 }
 
 export function useAdMob(isPremium: boolean = false) {
@@ -122,6 +148,12 @@ export function useAdMob(isPremium: boolean = false) {
       console.log('[AdMob] Premium user detected - disabling all ads');
       disableAds();
       clearAllTimers();
+      // Remove tap listeners for premium
+      if (tapListenerAttached) {
+        document.removeEventListener('click', handleGlobalTap);
+        document.removeEventListener('touchend', handleGlobalTap);
+        tapListenerAttached = false;
+      }
       return;
     } else {
       console.log('[AdMob] Non-premium user - enabling ads');
@@ -179,11 +211,18 @@ export function useAdMob(isPremium: boolean = false) {
     // No cleanup - timers are global and should persist
   }, [isPremium]);
 
+  // Manual trigger for showing interstitial (e.g., on center close)
+  const triggerInterstitial = useCallback(async () => {
+    if (globalIsPremiumRef) return false;
+    return await showInterstitialAd();
+  }, []);
+
   return {
     showBanner: showBannerAd,
     hideBanner: hideBannerAd,
     showInterstitial: showInterstitialAd,
     prepareInterstitial: prepareInterstitialAd,
+    triggerInterstitial,
     isNative: Capacitor.isNativePlatform(),
   };
 }

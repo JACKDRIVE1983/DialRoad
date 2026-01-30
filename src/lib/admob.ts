@@ -1,19 +1,26 @@
 // AdMob configuration and utilities
-import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, AdOptions, AdLoadInfo, InterstitialAdPluginEvents } from '@capacitor-community/admob';
+import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, AdOptions, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 
 // AdMob IDs - TESTING MODE (use Google universal test IDs)
 const APP_ID = 'ca-app-pub-3940256099942544~3347511713'; // Google test app ID
 const BANNER_ID = 'ca-app-pub-3940256099942544/6300978111'; // Google test banner
 const INTERSTITIAL_ID = 'ca-app-pub-3940256099942544/1033173712'; // Google test interstitial
 
-// Interstitial rate limiting (1.5 minutes = 90000ms)
-const INTERSTITIAL_COOLDOWN_MS = 1.5 * 60 * 1000;
+// Interstitial rate limiting - reduced to 60 seconds for better ad flow
+const INTERSTITIAL_COOLDOWN_MS = 60 * 1000;
 let lastInterstitialTime = 0;
 let interstitialLoaded = false;
 let isPreloading = false;
 
+// Click counter for tap-based interstitials
+let tapCount = 0;
+const TAPS_FOR_INTERSTITIAL = 10;
+
 // Global ads disabled flag (for premium users)
 let adsDisabled = false;
+
+// AdMob event listeners registered flag
+let listenersRegistered = false;
 
 // Ensure we initialize AdMob exactly once, and that every ad call waits for it.
 let initPromise: Promise<void> | null = null;
@@ -25,9 +32,60 @@ async function ensureInitialized(): Promise<void> {
   await initPromise;
 }
 
+// Register AdMob event listeners
+async function registerListeners(): Promise<void> {
+  if (listenersRegistered) return;
+  
+  try {
+    // Listen for interstitial loaded
+    await AdMob.addListener(InterstitialAdPluginEvents.Loaded, () => {
+      console.log('[AdMob] Interstitial loaded event received');
+      interstitialLoaded = true;
+      isPreloading = false;
+    });
+    
+    // Listen for interstitial failed to load
+    await AdMob.addListener(InterstitialAdPluginEvents.FailedToLoad, (error) => {
+      console.error('[AdMob] Interstitial failed to load:', error);
+      interstitialLoaded = false;
+      isPreloading = false;
+      // Retry after 5 seconds
+      setTimeout(() => {
+        if (!adsDisabled) {
+          prepareInterstitialAd();
+        }
+      }, 5000);
+    });
+    
+    // Listen for interstitial dismissed
+    await AdMob.addListener(InterstitialAdPluginEvents.Dismissed, () => {
+      console.log('[AdMob] Interstitial dismissed - preloading next');
+      interstitialLoaded = false;
+      // Immediately preload next
+      setTimeout(() => {
+        if (!adsDisabled) {
+          prepareInterstitialAd();
+        }
+      }, 500);
+    });
+    
+    // Listen for interstitial shown
+    await AdMob.addListener(InterstitialAdPluginEvents.Showed, () => {
+      console.log('[AdMob] Interstitial showed');
+      interstitialLoaded = false;
+    });
+    
+    listenersRegistered = true;
+    console.log('[AdMob] Event listeners registered');
+  } catch (e) {
+    console.error('[AdMob] Failed to register listeners:', e);
+  }
+}
+
 // Disable all ads (for premium users)
 export function disableAds(): void {
   adsDisabled = true;
+  tapCount = 0;
   console.log('[AdMob] Ads disabled (premium user)');
   // Hide any existing banner
   hideBannerAd().catch(() => {});
@@ -44,6 +102,30 @@ export function areAdsDisabled(): boolean {
   return adsDisabled;
 }
 
+// Register a tap/click - returns true if interstitial should be shown
+export function registerTap(): boolean {
+  if (adsDisabled) return false;
+  
+  tapCount++;
+  console.log(`[AdMob] Tap registered: ${tapCount}/${TAPS_FOR_INTERSTITIAL}`);
+  
+  if (tapCount >= TAPS_FOR_INTERSTITIAL) {
+    tapCount = 0; // Reset counter
+    return true;
+  }
+  return false;
+}
+
+// Reset tap counter
+export function resetTapCount(): void {
+  tapCount = 0;
+}
+
+// Get current tap count
+export function getTapCount(): number {
+  return tapCount;
+}
+
 // Initialize AdMob
 export async function initializeAdMob(): Promise<void> {
   try {
@@ -52,6 +134,9 @@ export async function initializeAdMob(): Promise<void> {
       initializeForTesting: false,
     });
     console.log('[AdMob] initialized successfully');
+    
+    // Register event listeners after init
+    await registerListeners();
   } catch (error) {
     console.error('[AdMob] initialization error:', error);
   }
@@ -114,7 +199,7 @@ export async function prepareInterstitialAd(): Promise<boolean> {
   
   // Skip if already loaded
   if (interstitialLoaded) {
-    console.log('[AdMob] Interstitial already loaded');
+    console.log('[AdMob] Interstitial already loaded, ready to show');
     return true;
   }
   
@@ -125,6 +210,7 @@ export async function prepareInterstitialAd(): Promise<boolean> {
   }
   
   isPreloading = true;
+  console.log('[AdMob] Starting interstitial preload...');
   
   try {
     await ensureInitialized();
@@ -134,9 +220,8 @@ export async function prepareInterstitialAd(): Promise<boolean> {
     };
     
     await AdMob.prepareInterstitial(options);
-    interstitialLoaded = true;
-    isPreloading = false;
-    console.log('[AdMob] interstitial prepared successfully');
+    // Note: interstitialLoaded will be set by the Loaded event listener
+    console.log('[AdMob] interstitial prepare called, waiting for load event');
     return true;
   } catch (error) {
     console.error('[AdMob] prepare interstitial error:', error);
@@ -167,26 +252,22 @@ export async function showInterstitialAd(): Promise<boolean> {
   // Check if ad is loaded, try to preload if not
   if (!interstitialLoaded) {
     console.log('[AdMob] interstitial not loaded, attempting preload...');
-    const preloaded = await prepareInterstitialAd();
-    if (!preloaded) {
-      console.log('[AdMob] Preload failed, will retry later');
+    await prepareInterstitialAd();
+    // Wait a bit for the ad to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    if (!interstitialLoaded) {
+      console.log('[AdMob] Still not loaded after wait, will retry later');
       return false;
     }
   }
   
   try {
+    console.log('[AdMob] Showing interstitial...');
     await AdMob.showInterstitial();
     lastInterstitialTime = now;
     interstitialLoaded = false;
     console.log('[AdMob] interstitial shown successfully');
-    
-    // Immediately start preloading next interstitial (don't wait)
-    setTimeout(() => {
-      prepareInterstitialAd().catch(e => {
-        console.error('[AdMob] Post-show preload failed:', e);
-      });
-    }, 500);
-    
     return true;
   } catch (error) {
     console.error('[AdMob] show interstitial error:', error);
@@ -194,9 +275,7 @@ export async function showInterstitialAd(): Promise<boolean> {
     
     // Try to preload again after failure
     setTimeout(() => {
-      prepareInterstitialAd().catch(e => {
-        console.error('[AdMob] Post-failure preload failed:', e);
-      });
+      prepareInterstitialAd();
     }, 2000);
     
     return false;
