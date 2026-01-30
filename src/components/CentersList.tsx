@@ -25,12 +25,12 @@ const EmptyState = React.memo(function EmptyState() {
 });
 
 function CentersListComponent({ onSelectCenter }: CentersListProps) {
-  const { filteredCenters, selectedRegion, setSelectedRegion, userLocation } = useApp();
+  const { filteredCenters, selectedRegion, setSelectedRegion, userLocation, trySelectCenter } = useApp();
 
-  // Memoized handler for selecting a center
+  // Memoized handler for selecting a center with limit check
   const handleSelectCenter = useCallback((center: DialysisCenter) => {
-    onSelectCenter(center);
-  }, [onSelectCenter]);
+    trySelectCenter(center);
+  }, [trySelectCenter]);
 
   const hasActiveFilters = selectedRegion !== 'Tutte le Regioni';
 

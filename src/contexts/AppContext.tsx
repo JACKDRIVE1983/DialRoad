@@ -9,6 +9,13 @@ import {
   useStatePersistence,
   PersistedAppState 
 } from '@/hooks/useAppState';
+import { 
+  canViewCenter, 
+  markCenterViewed, 
+  canSearch, 
+  incrementSearchCount,
+  isDailyLimitReached 
+} from '@/lib/deviceStorage';
 
 interface User {
   id: string;
@@ -49,6 +56,10 @@ interface AppContextType {
   togglePremium: () => void;
   isSearchFocused: boolean;
   setIsSearchFocused: (focused: boolean) => void;
+  showLimitModal: boolean;
+  setShowLimitModal: (show: boolean) => void;
+  trySelectCenter: (center: DialysisCenter | null) => boolean;
+  trySearch: (query: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -166,6 +177,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Search focus state for hiding Premium button during search
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  
+  // Premium limit modal state
+  const [showLimitModal, setShowLimitModal] = useState(false);
+
+  // Try to select a center with limit checking
+  const trySelectCenter = useCallback((center: DialysisCenter | null): boolean => {
+    if (!center) {
+      setSelectedCenter(null);
+      return true;
+    }
+    // Premium users bypass limits
+    if (isPremium) {
+      markCenterViewed(center.id);
+      setSelectedCenter(center);
+      return true;
+    }
+    // Check if allowed
+    if (!canViewCenter(center.id)) {
+      setShowLimitModal(true);
+      return false;
+    }
+    // Mark as viewed and select
+    markCenterViewed(center.id);
+    setSelectedCenter(center);
+    return true;
+  }, [isPremium]);
+
+  // Try to search with limit checking
+  const trySearch = useCallback((query: string): boolean => {
+    // Empty query always allowed
+    if (!query.trim()) {
+      setSearchQuery(query);
+      return true;
+    }
+    // Premium users bypass limits
+    if (isPremium) {
+      setSearchQuery(query);
+      return true;
+    }
+    // Check if daily limit reached
+    if (isDailyLimitReached()) {
+      setShowLimitModal(true);
+      return false;
+    }
+    // Check if can search
+    if (!canSearch()) {
+      setShowLimitModal(true);
+      return false;
+    }
+    // Increment search count and set query
+    incrementSearchCount();
+    setSearchQuery(query);
+    return true;
+  }, [isPremium]);
+
   useEffect(() => {
     markSessionInitialized();
   }, []);
@@ -316,12 +382,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPremium,
     togglePremium,
     isSearchFocused,
-    setIsSearchFocused
+    setIsSearchFocused,
+    showLimitModal,
+    setShowLimitModal,
+    trySelectCenter,
+    trySearch
   }), [
     isDarkMode, toggleDarkMode, user, centers, selectedCenter, 
     toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
     selectedRegion, selectedServices, filteredCenters, showOnboarding,
-    showSplash, activeTab, isPremium, setPremium, togglePremium, isSearchFocused
+    showSplash, activeTab, isPremium, setPremium, togglePremium, isSearchFocused,
+    showLimitModal, trySelectCenter, trySearch
   ]);
 
   return (

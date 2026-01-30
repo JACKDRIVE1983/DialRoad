@@ -93,7 +93,7 @@ class MapErrorBoundary extends Component<
 }
 
 function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () => void }) {
-  const { filteredCenters, setSelectedCenter, userLocation, setUserLocation, isDarkMode } = useApp();
+  const { filteredCenters, trySelectCenter, userLocation, setUserLocation, isDarkMode } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   
   const [showUserPopup, setShowUserPopup] = useState(false);
@@ -166,7 +166,7 @@ function GoogleMapComponent({ apiKey, onError }: { apiKey: string; onError: () =
 
   // Direct marker click opens bottom sheet
   const handleMarkerClick = (center: DialysisCenter) => {
-    setSelectedCenter(center);
+    trySelectCenter(center);
   };
 
   const mapOptions = useMemo(() => {
@@ -361,7 +361,7 @@ export function MapView() {
 }
 
 function FallbackMap() {
-  const { filteredCenters, setSelectedCenter, userLocation, setUserLocation } = useApp();
+  const { filteredCenters, trySelectCenter, userLocation, setUserLocation } = useApp();
   const [isLocating, setIsLocating] = useState(false);
   const [showUserPopup, setShowUserPopup] = useState(false);
 
@@ -426,7 +426,7 @@ function FallbackMap() {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: index * 0.02, type: 'spring' }}
-                onClick={() => setSelectedCenter(center)}
+                onClick={() => trySelectCenter(center)}
                 whileHover={{ scale: 1.2 }}
                 whileTap={{ scale: 0.95 }}
               >

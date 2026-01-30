@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Shield, HelpCircle, Crown, Mail, Map, List, Settings, Moon, Sun, Search, SlidersHorizontal, MapPin } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { regions } from '@/data/mockCenters';
 import { Button } from '@/components/ui/button';
 import logoIcon from '@/assets/dialroad-logo-new-icon.png';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type TabType = 'map' | 'list' | 'settings';
 
@@ -25,11 +26,44 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
     setSearchQuery,
     selectedRegion,
     setSelectedRegion,
-    setIsSearchFocused
+    setIsSearchFocused,
+    trySearch
   } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'help' | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  const searchTimeoutRef = useRef<number | null>(null);
+
+  // Handle search with limit checking
+  const handleSearchChange = useCallback((value: string) => {
+    setLocalSearchQuery(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      window.clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Empty value - always allow
+    if (!value.trim()) {
+      setSearchQuery('');
+      return;
+    }
+    
+    // Debounced search with limit check
+    searchTimeoutRef.current = window.setTimeout(() => {
+      // For non-premium, only count as "search" if there's meaningful input
+      if (value.trim().length >= 2) {
+        const allowed = trySearch(value);
+        if (!allowed) {
+          // Revert to previous query if blocked
+          setLocalSearchQuery(searchQuery);
+        }
+      } else {
+        setSearchQuery(value);
+      }
+    }, 300);
+  }, [setSearchQuery, trySearch, searchQuery]);
 
   const handleMenuItemClick = (modal: 'privacy' | 'help') => {
     setIsMenuOpen(false);
@@ -180,15 +214,18 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                 <input
                   type="text"
                   placeholder="Cerca centro o città..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={localSearchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
                   className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm min-w-0"
                 />
-                {searchQuery && (
+                {localSearchQuery && (
                   <button 
-                    onClick={() => setSearchQuery('')}
+                    onClick={() => {
+                      setLocalSearchQuery('');
+                      setSearchQuery('');
+                    }}
                     className="p-1 hover:bg-muted rounded-full transition-colors flex-shrink-0"
                   >
                     <X className="w-3.5 h-3.5 text-muted-foreground" />
