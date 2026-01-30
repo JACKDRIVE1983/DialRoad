@@ -122,20 +122,34 @@ export function CenterBottomSheet() {
     setBookingDialogOpen(false);
 
     if (Capacitor.isNativePlatform()) {
+      // Use Android Intent to force external browser instead of Custom Tabs
+      const platform = Capacitor.getPlatform();
+      
+      if (platform === 'android') {
+        // On Android, use intent:// scheme to force external browser
+        // This bypasses Custom Chrome Tabs which can cause freeze issues
+        try {
+          const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;action=android.intent.action.VIEW;end`;
+          window.location.href = intentUrl;
+          return;
+        } catch (e) {
+          console.error('[Booking] Intent fallback failed:', e);
+        }
+      }
+      
+      // iOS fallback - Browser plugin works fine
       try {
-        // Use Capacitor Browser plugin with windowName: '_system' to open in external browser
         await Browser.open({ 
           url, 
           windowName: '_system',
-          presentationStyle: 'popover'
+          presentationStyle: 'fullscreen'
         });
         return;
       } catch (error) {
         console.error('[Booking] Browser.open failed:', error);
-        // Fallback to window.open with _system
       }
     }
-    // Web fallback or native fallback
+    // Web fallback
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -146,12 +160,25 @@ export function CenterBottomSheet() {
     setBookingDialogOpen(false);
     
     if (Capacitor.isNativePlatform()) {
+      const platform = Capacitor.getPlatform();
+      
+      if (platform === 'android') {
+        // Use intent to try opening Booking app first, fallback to browser
+        try {
+          const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.booking;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+          window.location.href = intentUrl;
+          return;
+        } catch (e) {
+          console.error('[Booking] App intent failed:', e);
+        }
+      }
+      
+      // iOS - use universal links
       try {
-        // Try to open in system browser which may trigger app intent
         await Browser.open({ 
           url, 
           windowName: '_system',
-          presentationStyle: 'popover'
+          presentationStyle: 'fullscreen'
         });
         return;
       } catch (error) {
