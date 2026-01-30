@@ -134,8 +134,10 @@ async function startAdTimers() {
 export function useAdMob(isPremium: boolean = false) {
   const mountedRef = useRef(false);
 
-  // Update global premium ref immediately
-  globalIsPremiumRef = isPremium;
+  // Update global premium ref in an effect to avoid hook ordering issues during HMR
+  useEffect(() => {
+    globalIsPremiumRef = isPremium;
+  }, [isPremium]);
 
   useEffect(() => {
     // Only run on native platforms
