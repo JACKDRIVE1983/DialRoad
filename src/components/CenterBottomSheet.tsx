@@ -122,22 +122,22 @@ export function CenterBottomSheet() {
     setBookingDialogOpen(false);
 
     if (Capacitor.isNativePlatform()) {
-      // Use Android Intent to force external browser instead of Custom Tabs
       const platform = Capacitor.getPlatform();
-      
+
+      // Android: force system browser via native intent (prevents WebView/CustomTab freeze)
       if (platform === 'android') {
-        // On Android, use intent:// scheme to force external browser
-        // This bypasses Custom Chrome Tabs which can cause freeze issues
         try {
-          const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;action=android.intent.action.VIEW;end`;
-          window.location.href = intentUrl;
+          // In Capacitor Android, window.open with '_system' is the most reliable way to
+          // force the OS browser (and avoid in-app webviews / custom tabs issues).
+          window.open(url, '_system');
           return;
         } catch (e) {
-          console.error('[Booking] Intent fallback failed:', e);
+          console.error('[Booking] window.open(_system) failed (android):', e);
+          // continue to fallback
         }
       }
-      
-      // iOS fallback - Browser plugin works fine
+
+      // iOS fallback
       try {
         await Browser.open({ 
           url, 
@@ -163,13 +163,21 @@ export function CenterBottomSheet() {
       const platform = Capacitor.getPlatform();
       
       if (platform === 'android') {
-        // Use intent to try opening Booking app first, fallback to browser
+        // Prefer trying to open Booking app; fallback to system browser
         try {
-          const intentUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.booking;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(url)};end`;
-          window.location.href = intentUrl;
+          // Try opening Booking app via intent URL; if it doesn't resolve, fallback to browser.
+          // We avoid using window.location.href because it may be ignored in WebView contexts.
+          const intentUrl = `intent://open#Intent;scheme=booking;package=com.booking;end`;
+          window.open(intentUrl, '_system');
           return;
         } catch (e) {
-          console.error('[Booking] App intent failed:', e);
+          console.error('[Booking] Booking app open failed, fallback to browser:', e);
+          try {
+            window.open(url, '_system');
+            return;
+          } catch (e2) {
+            console.error('[Booking] window.open(_system) fallback failed (android):', e2);
+          }
         }
       }
       
