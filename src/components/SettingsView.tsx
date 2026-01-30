@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, Database } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import logo from '@/assets/dialroad-logo-new-icon.png';
 import { Capacitor } from '@capacitor/core';
+import { ImportCentersButton } from './ImportCentersButton';
 
 declare const __BUILD_ID__: string;
 declare const __BUILD_TIME__: string;
@@ -237,6 +238,14 @@ export function SettingsView() {
             </a>
           </div>
         </div>
+
+        {/* Admin: Import Centers Button (dev only) */}
+        {!Capacitor.isNativePlatform() && (
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-2">Admin (solo sviluppo):</p>
+            <ImportCentersButton />
+          </div>
+        )}
       </motion.div>
 
       {/* App logo */}
