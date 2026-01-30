@@ -4,15 +4,18 @@ import { Map, List, Settings, Moon, Sun, Search, SlidersHorizontal, X, MapPin } 
 import { useApp } from '@/contexts/AppContext';
 import { regions } from '@/data/mockCenters';
 import { Button } from '@/components/ui/button';
+import { showInterstitialAd, canShowInterstitial } from '@/lib/admob';
+import { Capacitor } from '@capacitor/core';
 
 type TabType = 'map' | 'list' | 'settings';
 
 interface BottomNavProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
+  isPremium?: boolean;
 }
 
-export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+export function BottomNav({ activeTab, onTabChange, isPremium = false }: BottomNavProps) {
   const { 
     isDarkMode, 
     toggleDarkMode,
@@ -121,7 +124,16 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
+                  onClick={() => {
+                    // Show interstitial when clicking "Lista" tab (if not premium)
+                    if (tab.id === 'list' && !isPremium && Capacitor.isNativePlatform()) {
+                      if (canShowInterstitial()) {
+                        console.log('[BottomNav] Lista clicked - showing interstitial');
+                        showInterstitialAd();
+                      }
+                    }
+                    onTabChange(tab.id);
+                  }}
                   className="relative flex items-center justify-center w-12 h-12 transition-all duration-200"
                 >
                   {isActive && (

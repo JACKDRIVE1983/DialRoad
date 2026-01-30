@@ -12,10 +12,6 @@ let lastInterstitialTime = 0;
 let interstitialLoaded = false;
 let isPreloading = false;
 
-// Click counter for tap-based interstitials
-let tapCount = 0;
-const TAPS_FOR_INTERSTITIAL = 10;
-
 // Global ads disabled flag (for premium users)
 let adsDisabled = false;
 
@@ -85,7 +81,6 @@ async function registerListeners(): Promise<void> {
 // Disable all ads (for premium users)
 export function disableAds(): void {
   adsDisabled = true;
-  tapCount = 0;
   console.log('[AdMob] Ads disabled (premium user)');
   // Hide any existing banner
   hideBannerAd().catch(() => {});
@@ -100,30 +95,6 @@ export function enableAds(): void {
 // Check if ads are currently disabled
 export function areAdsDisabled(): boolean {
   return adsDisabled;
-}
-
-// Register a tap/click - returns true if interstitial should be shown
-export function registerTap(): boolean {
-  if (adsDisabled) return false;
-  
-  tapCount++;
-  console.log(`[AdMob] Tap registered: ${tapCount}/${TAPS_FOR_INTERSTITIAL}`);
-  
-  if (tapCount >= TAPS_FOR_INTERSTITIAL) {
-    tapCount = 0; // Reset counter
-    return true;
-  }
-  return false;
-}
-
-// Reset tap counter
-export function resetTapCount(): void {
-  tapCount = 0;
-}
-
-// Get current tap count
-export function getTapCount(): number {
-  return tapCount;
 }
 
 // Initialize AdMob

@@ -9,7 +9,6 @@ import {
   showInterstitialAd,
   disableAds,
   enableAds,
-  registerTap,
   canShowInterstitial
 } from '@/lib/admob';
 
@@ -25,7 +24,6 @@ let bannerRefreshId: number | undefined;
 let interstitialIntervalId: number | undefined;
 let preloadRetryId: number | undefined;
 let appStateSubscription: { remove: () => void } | null = null;
-let tapListenerAttached = false;
 
 // Track premium ref globally so timers can check it
 let globalIsPremiumRef = false;
@@ -45,21 +43,6 @@ function clearAllTimers() {
   }
   globalTimersActive = false;
   console.log('[AdMob] All timers cleared');
-}
-
-// Global tap handler for click-based interstitials
-function handleGlobalTap() {
-  if (globalIsPremiumRef) return;
-  
-  const shouldShow = registerTap();
-  if (shouldShow && canShowInterstitial()) {
-    console.log('[AdMob] 10 taps reached - showing interstitial');
-    showInterstitialAd().then(shown => {
-      if (shown) {
-        console.log('[AdMob] Tap-triggered interstitial shown');
-      }
-    });
-  }
 }
 
 async function startAdTimers() {
@@ -120,15 +103,7 @@ async function startAdTimers() {
     }
   }, INTERSTITIAL_INTERVAL_MS);
   
-  // Attach global tap listener for click-based interstitials
-  if (!tapListenerAttached) {
-    document.addEventListener('click', handleGlobalTap, { passive: true });
-    document.addEventListener('touchend', handleGlobalTap, { passive: true });
-    tapListenerAttached = true;
-    console.log('[AdMob] Tap listener attached - 10 taps = interstitial');
-  }
-  
-  console.log('[AdMob] All timers started - Banner: 90s, Interstitial: 80s, Preload: 20s, Taps: 10');
+  console.log('[AdMob] All timers started - Banner: 90s, Interstitial: 80s, Preload: 20s');
 }
 
 export function useAdMob(isPremium: boolean = false) {
@@ -150,12 +125,6 @@ export function useAdMob(isPremium: boolean = false) {
       console.log('[AdMob] Premium user detected - disabling all ads');
       disableAds();
       clearAllTimers();
-      // Remove tap listeners for premium
-      if (tapListenerAttached) {
-        document.removeEventListener('click', handleGlobalTap);
-        document.removeEventListener('touchend', handleGlobalTap);
-        tapListenerAttached = false;
-      }
       return;
     } else {
       console.log('[AdMob] Non-premium user - enabling ads');
