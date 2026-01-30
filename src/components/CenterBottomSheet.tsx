@@ -13,9 +13,10 @@ import { CenterRatingSummary } from './CenterRatingSummary';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { showInterstitialAd } from '@/lib/admob';
 
 export function CenterBottomSheet() {
-  const { selectedCenter, setSelectedCenter, userLocation } = useApp();
+  const { selectedCenter, setSelectedCenter, userLocation, isPremium } = useApp();
   
   // Fetch real image from Google Places/Street View
   const centerImage = useCenterImage(
@@ -69,10 +70,19 @@ export function CenterBottomSheet() {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const dragControls = useDragControls();
 
-  const handleClose = () => {
+  const handleClose = useCallback(async () => {
     setSelectedCenter(null);
     setIsExpanded(false);
-  };
+    
+    // Show interstitial ad on close (non-premium only)
+    if (!isPremium && Capacitor.isNativePlatform()) {
+      try {
+        await showInterstitialAd();
+      } catch (e) {
+        console.error('[AdMob] interstitial on close error:', e);
+      }
+    }
+  }, [setSelectedCenter, isPremium]);
 
   const handleCall = () => {
     if (selectedCenter) {

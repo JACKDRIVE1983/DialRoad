@@ -10,6 +10,7 @@ import { CenterBottomSheet } from '@/components/CenterBottomSheet';
 import { CentersList } from '@/components/CentersList';
 import { SettingsView } from '@/components/SettingsView';
 import { AdBanner } from '@/components/AdBanner';
+import { PremiumLimitModal } from '@/components/PremiumLimitModal';
 import { useAdMob } from '@/hooks/useAdMob';
 
 // Memoized tab content components to prevent unnecessary re-renders
@@ -52,10 +53,12 @@ function AppContent() {
     setShowSplash, 
     showOnboarding, 
     setShowOnboarding, 
-    setSelectedCenter,
+    trySelectCenter,
     activeTab,
     setActiveTab,
-    isSearchFocused
+    isSearchFocused,
+    showLimitModal,
+    setShowLimitModal
   } = useApp();
   
   // Initialize AdMob on native platforms
@@ -78,12 +81,15 @@ function AppContent() {
       <AnimatePresence mode="wait">
         {activeTab === 'map' && <MapTabContent key="map" />}
         {activeTab === 'list' && (
-          <ListTabContent key="list" onSelectCenter={setSelectedCenter} />
+          <ListTabContent key="list" onSelectCenter={trySelectCenter} />
         )}
         {activeTab === 'settings' && <SettingsTabContent key="settings" />}
       </AnimatePresence>
 
       <CenterBottomSheet />
+      
+      {/* Premium Limit Modal */}
+      <PremiumLimitModal open={showLimitModal} onOpenChange={setShowLimitModal} />
       
       {/* Ad Banner - fixed at absolute bottom, always on top */}
       <div className="fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-[env(safe-area-inset-bottom)]">

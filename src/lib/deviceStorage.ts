@@ -3,6 +3,106 @@
 const REVIEWS_KEY = 'dialroad_reviews';
 const LIKES_KEY = 'dialroad_likes';
 const BOOKING_BROWSER_KEY = 'dialroad_booking_browser';
+const DAILY_LIMITS_KEY = 'dialroad_daily_limits';
+
+// Daily limits for free users
+const MAX_DAILY_VIEWS = 5;
+const MAX_DAILY_SEARCHES = 5;
+
+interface DailyLimits {
+  date: string; // YYYY-MM-DD format
+  viewedCenters: string[]; // IDs of viewed centers
+  searchCount: number;
+}
+
+function getTodayDate(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getDailyLimits(): DailyLimits {
+  try {
+    const stored = localStorage.getItem(DAILY_LIMITS_KEY);
+    if (stored) {
+      const limits: DailyLimits = JSON.parse(stored);
+      // Reset if it's a new day
+      if (limits.date !== getTodayDate()) {
+        return { date: getTodayDate(), viewedCenters: [], searchCount: 0 };
+      }
+      return limits;
+    }
+  } catch {
+    // Silently fail
+  }
+  return { date: getTodayDate(), viewedCenters: [], searchCount: 0 };
+}
+
+function saveDailyLimits(limits: DailyLimits): void {
+  try {
+    localStorage.setItem(DAILY_LIMITS_KEY, JSON.stringify(limits));
+  } catch {
+    // Silently fail
+  }
+}
+
+// Check if user can view a center (returns true if allowed)
+export function canViewCenter(centerId: string): boolean {
+  const limits = getDailyLimits();
+  // Already viewed this center today - allow re-viewing
+  if (limits.viewedCenters.includes(centerId)) {
+    return true;
+  }
+  // Check if under limit
+  return limits.viewedCenters.length < MAX_DAILY_VIEWS;
+}
+
+// Mark a center as viewed (returns false if limit reached)
+export function markCenterViewed(centerId: string): boolean {
+  const limits = getDailyLimits();
+  // Already viewed - no need to track again
+  if (limits.viewedCenters.includes(centerId)) {
+    return true;
+  }
+  // Check limit
+  if (limits.viewedCenters.length >= MAX_DAILY_VIEWS) {
+    return false;
+  }
+  limits.viewedCenters.push(centerId);
+  saveDailyLimits(limits);
+  return true;
+}
+
+// Get current view count
+export function getViewCount(): number {
+  return getDailyLimits().viewedCenters.length;
+}
+
+// Check if user can search
+export function canSearch(): boolean {
+  const limits = getDailyLimits();
+  return limits.searchCount < MAX_DAILY_SEARCHES;
+}
+
+// Increment search count (returns false if limit reached)
+export function incrementSearchCount(): boolean {
+  const limits = getDailyLimits();
+  if (limits.searchCount >= MAX_DAILY_SEARCHES) {
+    return false;
+  }
+  limits.searchCount++;
+  saveDailyLimits(limits);
+  return true;
+}
+
+// Get current search count
+export function getSearchCount(): number {
+  return getDailyLimits().searchCount;
+}
+
+// Check if daily limit is reached (views OR searches)
+export function isDailyLimitReached(): boolean {
+  const limits = getDailyLimits();
+  return limits.viewedCenters.length >= MAX_DAILY_VIEWS || limits.searchCount >= MAX_DAILY_SEARCHES;
+}
 
 // Booking browser preference (default: true = always open in browser for coordinate search)
 export function getBookingBrowserPreference(): boolean {
