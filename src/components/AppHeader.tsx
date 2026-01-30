@@ -6,6 +6,8 @@ import { regions } from '@/data/mockCenters';
 import { Button } from '@/components/ui/button';
 import logoIcon from '@/assets/dialroad-logo-new-icon.png';
 import { useDebounce } from '@/hooks/useDebounce';
+import { showInterstitialAd, canShowInterstitial } from '@/lib/admob';
+import { Capacitor } from '@capacitor/core';
 
 type TabType = 'map' | 'list' | 'settings';
 
@@ -147,7 +149,16 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => onTabChange?.(tab.id)}
+                    onClick={() => {
+                      // Show interstitial when clicking "Lista" tab (if not premium)
+                      if (tab.id === 'list' && !isPremium && Capacitor.isNativePlatform()) {
+                        if (canShowInterstitial()) {
+                          console.log('[AppHeader] Lista tab clicked - showing interstitial');
+                          showInterstitialAd();
+                        }
+                      }
+                      onTabChange?.(tab.id);
+                    }}
                     className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-200 ${
                       isActive 
                         ? 'bg-primary text-primary-foreground' 
