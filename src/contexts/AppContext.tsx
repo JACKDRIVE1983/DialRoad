@@ -1,6 +1,7 @@
 // App Context - Global state management for DialRoad
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { DialysisCenter, mockCenters } from '@/data/mockCenters';
+import { useDialysisCenters, useRegions } from '@/hooks/useDialysisCenters';
 import { 
   loadAppState, 
   saveAppState, 
@@ -31,6 +32,8 @@ interface AppContextType {
   toggleDarkMode: () => void;
   user: User | null;
   centers: DialysisCenter[];
+  centersLoading: boolean;
+  centersError: Error | null;
   selectedCenter: DialysisCenter | null;
   setSelectedCenter: (center: DialysisCenter | null) => void;
   toggleFavorite: (centerId: string) => void;
@@ -98,7 +101,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     likedCenters: []
   });
 
-  const [centers, setCenters] = useState<DialysisCenter[]>(mockCenters);
+  // Fetch centers from Supabase with fallback to local data
+  const { data: dbCenters, isLoading: centersLoading, error: centersError } = useDialysisCenters();
+  const { data: dbRegions } = useRegions();
+  
+  // Use DB centers if available, otherwise fallback to mockCenters
+  const centers = dbCenters && dbCenters.length > 0 ? dbCenters : mockCenters;
+  const regions = dbRegions || ['Tutte le Regioni'];
   
   // Restore selected center from persisted state
   const [selectedCenter, setSelectedCenter] = useState<DialysisCenter | null>(() => {
@@ -259,30 +268,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleLike = useCallback((centerId: string) => {
-    setCenters(prev => prev.map(center => {
-      if (center.id === centerId) {
-        return { ...center, likes: center.likes + 1 };
-      }
-      return center;
-    }));
+    // Likes are now handled via Supabase - this is a placeholder
+    console.log('Toggle like:', centerId);
   }, []);
 
   const addComment = useCallback((centerId: string, text: string) => {
-    setCenters(prev => prev.map(center => {
-      if (center.id === centerId) {
-        const newComment = {
-          id: `c-${Date.now()}`,
-          userId: user?.id || 'anonymous',
-          userName: user?.name || 'Anonimo',
-          text,
-          createdAt: new Date().toISOString().split('T')[0],
-          likes: 0
-        };
-        return { ...center, comments: [newComment, ...center.comments] };
-      }
-      return center;
-    }));
-  }, [user]);
+    // Comments are now handled via Supabase anonymous_comments table
+    console.log('Add comment:', centerId, text);
+  }, []);
 
   // Use state persistence hook
   const getStateForPersistence = useCallback((): Omit<PersistedAppState, 'timestamp'> => ({
@@ -358,6 +351,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     toggleDarkMode,
     user,
     centers,
+    centersLoading,
+    centersError: centersError as Error | null,
+    regions,
     selectedCenter,
     setSelectedCenter,
     toggleFavorite,
@@ -388,8 +384,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     trySelectCenter,
     trySearch
   }), [
-    isDarkMode, toggleDarkMode, user, centers, selectedCenter, 
-    toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
+    isDarkMode, toggleDarkMode, user, centers, centersLoading, centersError, regions,
+    selectedCenter, toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
     selectedRegion, selectedServices, filteredCenters, showOnboarding,
     showSplash, activeTab, isPremium, setPremium, togglePremium, isSearchFocused,
     showLimitModal, trySelectCenter, trySearch

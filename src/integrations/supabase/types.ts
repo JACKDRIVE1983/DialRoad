@@ -71,6 +71,66 @@ export type Database = {
         }
         Relationships: []
       }
+      dialysis_centers: {
+        Row: {
+          address: string
+          booking_url: string | null
+          city: string
+          created_at: string
+          email: string | null
+          geocode_status: string | null
+          id: string
+          is_open: boolean | null
+          lat: number
+          lng: number
+          name: string
+          opening_hours: string | null
+          phone: string | null
+          province: string | null
+          region: string
+          services: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          booking_url?: string | null
+          city: string
+          created_at?: string
+          email?: string | null
+          geocode_status?: string | null
+          id: string
+          is_open?: boolean | null
+          lat: number
+          lng: number
+          name: string
+          opening_hours?: string | null
+          phone?: string | null
+          province?: string | null
+          region: string
+          services?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          booking_url?: string | null
+          city?: string
+          created_at?: string
+          email?: string | null
+          geocode_status?: string | null
+          id?: string
+          is_open?: boolean | null
+          lat?: number
+          lng?: number
+          name?: string
+          opening_hours?: string | null
+          phone?: string | null
+          province?: string | null
+          region?: string
+          services?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           center_id: string

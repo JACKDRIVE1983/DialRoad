@@ -115,7 +115,7 @@ export function CenterBottomSheet() {
     }
   };
 
-  // Open in browser (coordinates work)
+  // Open in external browser (prevents app freeze)
   const handleOpenInBrowser = async () => {
     const url = getBookingUrl();
     if (!url) return;
@@ -123,20 +123,41 @@ export function CenterBottomSheet() {
 
     if (Capacitor.isNativePlatform()) {
       try {
-        await Browser.open({ url, presentationStyle: 'popover' });
+        // Use Capacitor Browser plugin with windowName: '_system' to open in external browser
+        await Browser.open({ 
+          url, 
+          windowName: '_system',
+          presentationStyle: 'popover'
+        });
         return;
-      } catch {
-        // fall through
+      } catch (error) {
+        console.error('[Booking] Browser.open failed:', error);
+        // Fallback to window.open with _system
       }
     }
+    // Web fallback or native fallback
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  // Open in app (let system handle, coordinates may not work)
-  const handleOpenInApp = () => {
+  // Open in app (deep link attempt)
+  const handleOpenInApp = async () => {
     const url = getBookingUrl();
     if (!url) return;
     setBookingDialogOpen(false);
+    
+    if (Capacitor.isNativePlatform()) {
+      try {
+        // Try to open in system browser which may trigger app intent
+        await Browser.open({ 
+          url, 
+          windowName: '_system',
+          presentationStyle: 'popover'
+        });
+        return;
+      } catch (error) {
+        console.error('[Booking] App open failed:', error);
+      }
+    }
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 

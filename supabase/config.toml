@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.get-center-image]
 verify_jwt = false
+
+[functions.import-centers]
+verify_jwt = false
