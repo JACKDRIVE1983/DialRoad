@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, LogIn, LogOut, User } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, LogIn, LogOut, User, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -13,7 +14,8 @@ import { toast } from 'sonner';
 import logo from '@/assets/dialroad-logo-new-icon.png';
 import { Capacitor } from '@capacitor/core';
 import { ImportCentersButton } from './ImportCentersButton';
-
+import { ProfileEditDialog } from './ProfileEditDialog';
+import { supabase } from '@/integrations/supabase/client';
 declare const __BUILD_ID__: string;
 declare const __BUILD_TIME__: string;
 
@@ -27,10 +29,43 @@ export function SettingsView() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     toast.success('Disconnesso con successo');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('delete-account', {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Errore durante l\'eliminazione');
+      }
+
+      toast.success('Account eliminato con successo');
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast.error('Errore durante l\'eliminazione dell\'account');
+    } finally {
+      setIsDeleting(false);
+      setDeleteAccountOpen(false);
+    }
   };
 
   const handleRestorePurchases = async () => {
@@ -90,29 +125,50 @@ export function SettingsView() {
         animate={{ opacity: 1, y: 0 }}
       >
         {user ? (
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full object-cover" />
-              ) : (
-                <User className="w-7 h-7 text-primary" />
-              )}
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full object-cover" />
+                ) : (
+                  <User className="w-7 h-7 text-primary" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground truncate">
+                  {profile?.first_name && profile?.last_name 
+                    ? `${profile.first_name} ${profile.last_name}`
+                    : profile?.display_name || user.email?.split('@')[0]}
+                </h3>
+                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                {isPremium && (
+                  <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-medium">
+                    <Crown className="w-3 h-3" />
+                    Premium
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-foreground">
-                {profile?.display_name || user.email?.split('@')[0]}
-              </h3>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-              {isPremium && (
-                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-medium">
-                  <Crown className="w-3 h-3" />
-                  Premium
-                </span>
-              )}
+            <div className="flex gap-2 pt-2 border-t border-border">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 gap-2"
+                onClick={() => setProfileEditOpen(true)}
+              >
+                <Edit className="w-4 h-4" />
+                Modifica Profilo
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleSignOut}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Esci
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
-              <LogOut className="w-5 h-5 text-muted-foreground" />
-            </Button>
           </div>
         ) : (
           <button
@@ -295,6 +351,29 @@ export function SettingsView() {
         )}
       </motion.div>
 
+      {/* Delete Account - only show if logged in */}
+      {user && (
+        <motion.div
+          className="glass-card rounded-xl p-4 mt-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <button
+            onClick={() => setDeleteAccountOpen(true)}
+            className="flex items-center gap-4 w-full text-left"
+          >
+            <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <Trash2 className="w-5 h-5 text-destructive" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium text-foreground">Elimina Account</h3>
+              <p className="text-sm text-muted-foreground">Rimuovi permanentemente i tuoi dati</p>
+            </div>
+          </button>
+        </motion.div>
+      )}
+
       {/* App logo */}
       <motion.div
         className="mt-8 flex flex-col items-center"
@@ -356,6 +435,43 @@ export function SettingsView() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Profile Edit Dialog */}
+      <ProfileEditDialog 
+        open={profileEditOpen} 
+        onOpenChange={setProfileEditOpen} 
+      />
+
+      {/* Delete Account Confirmation */}
+      <AlertDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
+        <AlertDialogContent className="mx-4 max-w-[calc(100vw-2rem)] sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Elimina Account
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa azione è irreversibile. Verranno eliminati permanentemente:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Il tuo profilo e le impostazioni</li>
+                <li>I centri salvati nei preferiti</li>
+                <li>Le tue recensioni</li>
+                <li>La tua foto profilo</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Eliminazione...' : 'Elimina Account'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

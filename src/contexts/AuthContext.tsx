@@ -10,6 +10,8 @@ interface UserProfile {
   avatar_url: string | null;
   bio: string | null;
   is_premium: boolean;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 interface AuthContextType {
