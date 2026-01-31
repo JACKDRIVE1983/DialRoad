@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, HelpCircle, Crown, Mail, Map, List, Settings, Moon, Sun, Search, SlidersHorizontal, MapPin } from 'lucide-react';
+import { Menu, X, Shield, HelpCircle, Crown, Mail, Map, List, Settings, Moon, Sun, Search, SlidersHorizontal, MapPin, User, LogIn } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { regions } from '@/data/mockCenters';
 import { Button } from '@/components/ui/button';
 import logoIcon from '@/assets/dialroad-logo-new-icon.png';
@@ -19,9 +21,9 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
+  const navigate = useNavigate();
   const { 
     isPremium, 
-    togglePremium,
     isDarkMode,
     toggleDarkMode,
     searchQuery,
@@ -31,6 +33,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
     setIsSearchFocused,
     trySearch
   } = useApp();
+  const { user, profile } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<'privacy' | 'help' | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -172,7 +175,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               })}
             </div>
 
-            {/* Right: Theme + PRO */}
+            {/* Right: Theme + Profile/Login */}
             <div className="flex items-center gap-2">
               {/* Theme toggle */}
               <button
@@ -192,20 +195,34 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                 </motion.div>
               </button>
 
-              {/* PRO button */}
-              <button
-                onClick={togglePremium}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all duration-200 ${
-                  isPremium
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25'
-                    : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Crown className={`w-3.5 h-3.5 ${isPremium ? 'text-white' : 'text-amber-500'}`} />
-                <span className={`font-semibold text-xs ${isPremium ? 'text-white' : 'text-amber-600 dark:text-amber-400'}`}>
-                  {isPremium ? 'Premium' : 'PRO'}
-                </span>
-              </button>
+              {/* Profile/Login button */}
+              {user ? (
+                <button
+                  onClick={() => onTabChange?.('settings')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all duration-200 ${
+                    isPremium
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25'
+                      : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-5 h-5 rounded-full" />
+                  ) : (
+                    <User className={`w-3.5 h-3.5 ${isPremium ? 'text-white' : 'text-primary'}`} />
+                  )}
+                  {isPremium && (
+                    <Crown className="w-3 h-3 text-white" />
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all duration-200 bg-primary/10 hover:bg-primary/20 text-primary"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span className="font-semibold text-xs">Accedi</span>
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

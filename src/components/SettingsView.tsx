@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, Database } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, LogIn, LogOut, User } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,40 +20,35 @@ declare const __BUILD_TIME__: string;
 type ThemeOption = 'light' | 'dark' | 'system';
 
 export function SettingsView() {
-  const { centers, isPremium, togglePremium, setPremium } = useApp();
+  const navigate = useNavigate();
+  const { centers, isPremium } = useApp();
+  const { user, profile, signOut, isLoading: authLoading } = useAuth();
   const { theme, setTheme } = useTheme();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
 
-  const handleSimulatePremium = () => {
-    togglePremium();
-    toast.success(
-      isPremium 
-        ? 'Stato Premium disattivato' 
-        : '🎉 Acquisto Premium simulato con successo!'
-    );
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success('Disconnesso con successo');
   };
 
   const handleRestorePurchases = async () => {
+    if (!user) {
+      toast.info('Accedi per ripristinare gli acquisti');
+      navigate('/auth');
+      return;
+    }
+    
     setIsRestoring(true);
     
     try {
       // TODO: Integrate with RevenueCat or Capacitor-InAppPurchase
-      // For now, simulate the restore check
-      // In production, this will call the actual IAP plugin:
-      // const purchases = await Purchases.restorePurchases();
-      // const hasPremium = purchases.entitlements.active['premium'] !== undefined;
-      
-      // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Check localStorage for previous purchase (placeholder logic)
-      const hasPreviousPurchase = localStorage.getItem('dialroad_premium_purchased') === 'true';
-      
-      if (hasPreviousPurchase) {
-        setPremium(true);
-        toast.success('Acquisto ripristinato con successo!');
+      // In production, this will verify with the IAP backend
+      if (isPremium) {
+        toast.success('Stato Premium già attivo!');
       } else {
         toast.info('Nessun acquisto precedente trovato per questo account');
       }
@@ -86,7 +83,54 @@ export function SettingsView() {
 
   return (
     <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 scrollbar-hide">
-      {/* Premium Card - Top Position */}
+      {/* User Profile Card */}
+      <motion.div
+        className="glass-card rounded-xl p-4 mb-4"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {user ? (
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full object-cover" />
+              ) : (
+                <User className="w-7 h-7 text-primary" />
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">
+                {profile?.display_name || user.email?.split('@')[0]}
+              </h3>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+              {isPremium && (
+                <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-medium">
+                  <Crown className="w-3 h-3" />
+                  Premium
+                </span>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+              <LogOut className="w-5 h-5 text-muted-foreground" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate('/auth')}
+            className="flex items-center gap-4 w-full text-left"
+          >
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <LogIn className="w-7 h-7 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">Accedi al tuo account</h3>
+              <p className="text-sm text-muted-foreground">Gestisci il tuo profilo e lo stato Premium</p>
+            </div>
+          </button>
+        )}
+      </motion.div>
+
+      {/* Premium Card */}
       <motion.div
         className={`rounded-xl p-4 mb-4 ${
           isPremium 
@@ -95,6 +139,7 @@ export function SettingsView() {
         }`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
       >
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -111,17 +156,24 @@ export function SettingsView() {
             </p>
           </div>
         </div>
-        <button
-          onClick={handleSimulatePremium}
-          className={`w-full mt-4 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-            isPremium
-              ? 'bg-muted/50 text-muted-foreground hover:bg-muted'
-              : 'bg-white text-amber-600 hover:bg-white/90 shadow-lg'
-          }`}
-        >
-          <Crown className="w-4 h-4" />
-          {isPremium ? 'Disattiva Premium (Test)' : 'Attiva Premium'}
-        </button>
+        
+        {!isPremium && (
+          <button
+            onClick={() => {
+              if (!user) {
+                toast.info('Accedi per acquistare Premium');
+                navigate('/auth');
+                return;
+              }
+              // TODO: Trigger in-app purchase
+              toast.info('Acquisto in-app disponibile a breve');
+            }}
+            className="w-full mt-4 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 bg-white text-amber-600 hover:bg-white/90 shadow-lg"
+          >
+            <Crown className="w-4 h-4" />
+            Attiva Premium
+          </button>
+        )}
         
         {/* Restore Purchases Button */}
         <button
@@ -136,10 +188,6 @@ export function SettingsView() {
           <RotateCcw className={`w-3 h-3 ${isRestoring ? 'animate-spin' : ''}`} />
           {isRestoring ? 'Ripristino in corso...' : 'Ripristina Acquisti'}
         </button>
-        
-        <p className="text-[10px] text-center mt-2 opacity-60 text-white">
-          Pulsante test - v1.4
-        </p>
       </motion.div>
 
       {/* Theme Selector */}
@@ -147,7 +195,7 @@ export function SettingsView() {
         className="glass-card rounded-xl p-4 mb-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
+        transition={{ delay: 0.1 }}
       >
         <div className="flex items-center gap-4 mb-4">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -176,13 +224,12 @@ export function SettingsView() {
         </div>
       </motion.div>
 
-
       {/* Send Feedback */}
       <motion.div
         className="glass-card rounded-xl p-4 mb-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
+        transition={{ delay: 0.15 }}
       >
         <button
           onClick={() => setFeedbackOpen(true)}
@@ -203,7 +250,7 @@ export function SettingsView() {
         className="glass-card rounded-xl p-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.2 }}
       >
         <div className="flex items-center gap-4 mb-4">
           <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
@@ -217,7 +264,7 @@ export function SettingsView() {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Versione</span>
-            <span className="text-foreground font-medium">1.4.0</span>
+            <span className="text-foreground font-medium">1.5.0</span>
           </div>
           <div className="flex justify-between py-2 border-b border-border">
             <span className="text-muted-foreground">Build ID</span>
@@ -253,14 +300,13 @@ export function SettingsView() {
         className="mt-8 flex flex-col items-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.25 }}
       >
         <img src={logo} alt="DialRoad" className="w-24 h-24 object-contain mb-3" />
         <p className="text-sm font-display font-semibold gradient-text">DialRoad</p>
-        <p className="text-xs text-muted-foreground mt-1">Versione 1.4.0</p>
+        <p className="text-xs text-muted-foreground mt-1">Versione 1.5.0</p>
         <p className="text-[11px] text-muted-foreground mt-1 font-mono">build {__BUILD_ID__}</p>
         <p className="text-[11px] text-muted-foreground mt-1 font-mono">{__BUILD_TIME__}</p>
-        
       </motion.div>
 
       {/* Feedback Dialog */}
