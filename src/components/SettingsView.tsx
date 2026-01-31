@@ -149,24 +149,35 @@ export function SettingsView() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2 pt-2 border-t border-border">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 gap-2"
-                onClick={() => setProfileEditOpen(true)}
-              >
-                <Edit className="w-4 h-4" />
-                Modifica Profilo
-              </Button>
+            <div className="flex flex-col gap-2 pt-2 border-t border-border">
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 gap-2"
+                  onClick={() => setProfileEditOpen(true)}
+                >
+                  <Edit className="w-4 h-4" />
+                  Modifica Profilo
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Esci
+                </Button>
+              </div>
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={handleSignOut}
-                className="gap-2"
+                onClick={() => setDeleteAccountOpen(true)}
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
               >
-                <LogOut className="w-4 h-4" />
-                Esci
+                <Trash2 className="w-4 h-4" />
+                Elimina Account
               </Button>
             </div>
           </div>
@@ -351,28 +362,6 @@ export function SettingsView() {
         )}
       </motion.div>
 
-      {/* Delete Account - only show if logged in */}
-      {user && (
-        <motion.div
-          className="glass-card rounded-xl p-4 mt-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          <button
-            onClick={() => setDeleteAccountOpen(true)}
-            className="flex items-center gap-4 w-full text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <Trash2 className="w-5 h-5 text-destructive" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-foreground">Elimina Account</h3>
-              <p className="text-sm text-muted-foreground">Rimuovi permanentemente i tuoi dati</p>
-            </div>
-          </button>
-        </motion.div>
-      )}
 
       {/* App logo */}
       <motion.div
