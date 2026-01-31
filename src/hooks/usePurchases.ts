@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { supabase } from '@/integrations/supabase/client';
 
 // RevenueCat types
 interface CustomerInfo {
@@ -33,9 +34,9 @@ const loadPurchases = async () => {
   return Purchases;
 };
 
-// RevenueCat API Key - Replace with your actual key from RevenueCat dashboard
-const REVENUECAT_API_KEY_ANDROID = 'YOUR_REVENUECAT_ANDROID_API_KEY';
-const REVENUECAT_API_KEY_IOS = 'YOUR_REVENUECAT_IOS_API_KEY';
+// RevenueCat API Keys
+const REVENUECAT_API_KEY_ANDROID = 'test_gQALiNRvyVpDkWFIjhOeIPMCKbq';
+const REVENUECAT_API_KEY_IOS = 'YOUR_REVENUECAT_IOS_API_KEY'; // Da configurare quando disponibile
 
 // Premium entitlement identifier (configure in RevenueCat dashboard)
 const PREMIUM_ENTITLEMENT_ID = 'premium';
@@ -83,6 +84,30 @@ export function usePurchases() {
     initPurchases();
   }, []);
 
+  // Sync premium status to Supabase
+  const syncPremiumToSupabase = useCallback(async (hasPremium: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No authenticated user, skipping Supabase sync');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_premium: hasPremium, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Failed to sync premium status to Supabase:', error);
+      } else {
+        console.log('Premium status synced to Supabase:', hasPremium);
+      }
+    } catch (err) {
+      console.error('Error syncing premium to Supabase:', err);
+    }
+  }, []);
+
   // Check if user has premium entitlement
   const checkPremiumStatus = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return false;
@@ -94,12 +119,16 @@ export function usePurchases() {
       const { customerInfo } = await PurchasesModule.getCustomerInfo();
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
       setIsPremium(hasPremium);
+      
+      // Sync to Supabase
+      await syncPremiumToSupabase(hasPremium);
+      
       return hasPremium;
     } catch (err) {
       console.error('Failed to check premium status:', err);
       return false;
     }
-  }, []);
+  }, [syncPremiumToSupabase]);
 
   // Load available offerings/packages
   const loadOfferings = useCallback(async () => {
@@ -142,6 +171,11 @@ export function usePurchases() {
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
       setIsPremium(hasPremium);
       
+      // Sync to Supabase after successful purchase
+      if (hasPremium) {
+        await syncPremiumToSupabase(true);
+      }
+      
       return hasPremium;
     } catch (err: any) {
       // User cancelled is not an error
@@ -155,7 +189,7 @@ export function usePurchases() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [syncPremiumToSupabase]);
 
   // Restore purchases
   const restorePurchases = useCallback(async () => {
@@ -178,6 +212,9 @@ export function usePurchases() {
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
       setIsPremium(hasPremium);
       
+      // Sync to Supabase after restore
+      await syncPremiumToSupabase(hasPremium);
+      
       return hasPremium;
     } catch (err: any) {
       console.error('Restore failed:', err);
@@ -186,7 +223,7 @@ export function usePurchases() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [syncPremiumToSupabase]);
 
   // Identify user (link RevenueCat with your user system)
   const identifyUser = useCallback(async (userId: string) => {
