@@ -103,8 +103,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     likedCenters: []
   });
   
-  // Premium state: use auth state if logged in, otherwise fallback to localStorage
+  // Premium state: check dev override first, then auth state, then localStorage fallback
   const isPremium = useMemo(() => {
+    // Dev override takes precedence (for testing)
+    if (typeof window !== 'undefined') {
+      const devOverride = localStorage.getItem('dialroad-premium-override');
+      if (devOverride !== null) {
+        return devOverride === 'true';
+      }
+    }
+    // Use auth state if logged in
     if (authUser) {
       return authIsPremium;
     }

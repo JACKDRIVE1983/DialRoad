@@ -199,7 +199,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               <button
                 onClick={() => {
                   const newValue = !isPremium;
-                  localStorage.setItem('dialroad-premium', newValue ? 'true' : 'false');
+                  localStorage.setItem('dialroad-premium-override', newValue ? 'true' : 'false');
                   window.location.reload();
                 }}
                 className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all duration-200 ${
