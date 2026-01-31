@@ -17,11 +17,11 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const mapillaryToken = Deno.env.get('MAPILLARY_ACCESS_TOKEN')
+    const mapillaryToken = Deno.env.get('mapillary')
 
     if (!mapillaryToken) {
       return new Response(
-        JSON.stringify({ error: 'MAPILLARY_ACCESS_TOKEN not configured' }),
+        JSON.stringify({ error: 'mapillary secret not configured' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -124,11 +124,22 @@ serve(async (req) => {
           }
         }
 
-        // No Mapillary image found - generate static OSM map as fallback
-        const osmStaticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${center.lat},${center.lng}&zoom=17&size=400x300&maptype=mapnik&markers=${center.lat},${center.lng},red-pushpin`
+        // No Mapillary image found - use OpenStreetMap tile as fallback
+        // Calculate tile coordinates for zoom level 16
+        const zoom = 16
+        const n = Math.pow(2, zoom)
+        const tileX = Math.floor((center.lng + 180) / 360 * n)
+        const tileY = Math.floor((1 - Math.log(Math.tan(center.lat * Math.PI / 180) + 1 / Math.cos(center.lat * Math.PI / 180)) / Math.PI) / 2 * n)
+        
+        // Use OSM tile server directly
+        const osmTileUrl = `https://tile.openstreetmap.org/${zoom}/${tileX}/${tileY}.png`
         
         try {
-          const osmResponse = await fetch(osmStaticUrl)
+          const osmResponse = await fetch(osmTileUrl, {
+            headers: {
+              'User-Agent': 'DialRoad-App/1.0 (dialysis center finder)'
+            }
+          })
           
           if (osmResponse.ok) {
             const osmBlob = await osmResponse.blob()
@@ -155,18 +166,18 @@ serve(async (req) => {
                 .upsert({
                   center_id: center.id,
                   image_url: finalUrl,
-                  place_id: 'osm_static',
+                  place_id: 'osm_tile',
                   fetched_at: new Date().toISOString()
                 }, { onConflict: 'center_id' })
 
-              console.log(`[${processed}/${centers?.length}] ${center.id} - ✓ OSM map saved`)
-              results.push({ centerId: center.id, status: 'osm_map', imageUrl: finalUrl })
+              console.log(`[${processed}/${centers?.length}] ${center.id} - ✓ OSM tile saved`)
+              results.push({ centerId: center.id, status: 'osm_tile', imageUrl: finalUrl })
               found++
               continue
             }
           }
         } catch (osmErr) {
-          console.error(`[${processed}/${centers?.length}] ${center.id} - OSM fallback error:`, osmErr)
+          console.error(`[${processed}/${centers?.length}] ${center.id} - OSM tile error:`, osmErr)
         }
 
         console.log(`[${processed}/${centers?.length}] ${center.id} - no image found`)
