@@ -158,8 +158,10 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          first_name: string | null
           id: string
           is_premium: boolean
+          last_name: string | null
           updated_at: string
           user_id: string
         }
@@ -168,8 +170,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          first_name?: string | null
           id?: string
           is_premium?: boolean
+          last_name?: string | null
           updated_at?: string
           user_id: string
         }
@@ -178,8 +182,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          first_name?: string | null
           id?: string
           is_premium?: boolean
+          last_name?: string | null
           updated_at?: string
           user_id?: string
         }
