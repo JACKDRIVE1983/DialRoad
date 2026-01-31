@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Crown, Lock, Sparkles } from 'lucide-react';
-import { useApp } from '@/contexts/AppContext';
+import { Crown, Lock, Sparkles, LogIn } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PremiumLimitModalProps {
   open: boolean;
@@ -8,11 +9,17 @@ interface PremiumLimitModalProps {
 }
 
 export function PremiumLimitModal({ open, onOpenChange }: PremiumLimitModalProps) {
-  const { setPremium } = useApp();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleUpgrade = () => {
-    // TODO: Implement actual in-app purchase
-    setPremium(true);
+    if (!user) {
+      // Not logged in - redirect to auth page
+      onOpenChange(false);
+      navigate('/auth');
+      return;
+    }
+    // TODO: Implement actual in-app purchase for logged in users
     onOpenChange(false);
   };
 
@@ -27,7 +34,10 @@ export function PremiumLimitModal({ open, onOpenChange }: PremiumLimitModalProps
             Limite Giornaliero Raggiunto
           </DialogTitle>
           <DialogDescription className="text-base text-muted-foreground pt-2">
-            Hai raggiunto il limite giornaliero. Passa alla versione Premium per sbloccare tutti i <span className="font-bold text-foreground">967 centri</span> e navigare senza limiti!
+            {user 
+              ? 'Passa alla versione Premium per sbloccare tutti i 967 centri e navigare senza limiti!'
+              : 'Accedi o registrati per sbloccare tutte le funzionalità e rimuovere i limiti giornalieri.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -58,13 +68,22 @@ export function PremiumLimitModal({ open, onOpenChange }: PremiumLimitModalProps
             </ul>
           </div>
 
-          {/* Upgrade button */}
+          {/* Upgrade/Login button */}
           <button
             onClick={handleUpgrade}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-base shadow-lg shadow-amber-500/30 hover:shadow-xl hover:from-amber-400 hover:to-orange-400 transition-all duration-200 active:scale-[0.98]"
           >
-            <Crown className="w-5 h-5" />
-            <span>Passa a Premium</span>
+            {user ? (
+              <>
+                <Crown className="w-5 h-5" />
+                <span>Passa a Premium</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-5 h-5" />
+                <span>Accedi o Registrati</span>
+              </>
+            )}
           </button>
 
           {/* Later button */}

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { DialysisCenter, mockCenters } from '@/data/mockCenters';
 import { useDialysisCenters, useRegions } from '@/hooks/useDialysisCenters';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   loadAppState, 
   saveAppState, 
@@ -55,8 +56,6 @@ interface AppContextType {
   activeTab: 'map' | 'list' | 'settings';
   setActiveTab: (tab: 'map' | 'list' | 'settings') => void;
   isPremium: boolean;
-  setPremium: (value: boolean) => void;
-  togglePremium: () => void;
   isSearchFocused: boolean;
   setIsSearchFocused: (focused: boolean) => void;
   showLimitModal: boolean;
@@ -81,6 +80,9 @@ function getInitialState() {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  // Get auth state (isPremium now comes from database)
+  const { isPremium: authIsPremium, user: authUser } = useAuth();
+  
   // Get initial state once
   const [initialState] = useState(getInitialState);
   
@@ -100,6 +102,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     favorites: [],
     likedCenters: []
   });
+  
+  // Premium state: use auth state if logged in, otherwise fallback to localStorage
+  const isPremium = useMemo(() => {
+    if (authUser) {
+      return authIsPremium;
+    }
+    // Fallback for non-logged users (localStorage legacy)
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dialroad-premium') === 'true';
+    }
+    return false;
+  }, [authUser, authIsPremium]);
 
   // Fetch centers from Supabase with fallback to local data
   const { data: dbCenters, isLoading: centersLoading, error: centersError } = useDialysisCenters();
@@ -156,33 +170,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<'map' | 'list' | 'settings'>(
     () => initialState.persistedState?.activeTab || 'map'
   );
-
-  // Premium state with localStorage persistence
-  const [isPremium, setIsPremium] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('dialroad-premium') === 'true';
-    }
-    return false;
-  });
-
-  const setPremium = useCallback((value: boolean) => {
-    setIsPremium(value);
-    localStorage.setItem('dialroad-premium', String(value));
-    if (value) {
-      localStorage.setItem('dialroad_premium_purchased', 'true');
-    }
-  }, []);
-
-  const togglePremium = useCallback(() => {
-    setIsPremium(prev => {
-      const newValue = !prev;
-      localStorage.setItem('dialroad-premium', String(newValue));
-      if (newValue) {
-        localStorage.setItem('dialroad_premium_purchased', 'true');
-      }
-      return newValue;
-    });
-  }, []);
 
   // Search focus state for hiding Premium button during search
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -375,8 +362,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeTab,
     setActiveTab,
     isPremium,
-    setPremium,
-    togglePremium,
     isSearchFocused,
     setIsSearchFocused,
     showLimitModal,
@@ -387,7 +372,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isDarkMode, toggleDarkMode, user, centers, centersLoading, centersError, regions,
     selectedCenter, toggleFavorite, toggleLike, addComment, userLocation, searchQuery,
     selectedRegion, selectedServices, filteredCenters, showOnboarding,
-    showSplash, activeTab, isPremium, setPremium, togglePremium, isSearchFocused,
+    showSplash, activeTab, isPremium, isSearchFocused,
     showLimitModal, trySelectCenter, trySearch
   ]);
 
