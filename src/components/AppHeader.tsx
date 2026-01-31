@@ -202,14 +202,17 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                   localStorage.setItem('dialroad-premium', newValue ? 'true' : 'false');
                   window.location.reload();
                 }}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all duration-200 ${
                   isPremium 
-                    ? 'bg-amber-500/20 text-amber-500' 
-                    : 'hover:bg-muted text-muted-foreground'
+                    ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30' 
+                    : 'bg-muted/50 hover:bg-muted border border-border'
                 }`}
                 title={isPremium ? 'Premium attivo (clicca per disattivare)' : 'Attiva Premium'}
               >
-                <Crown className="w-4 h-4" />
+                <Crown className="w-4 h-4 text-orange-500" />
+                <span className={`text-xs font-semibold ${isPremium ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                  {isPremium ? 'Premium' : 'Pro'}
+                </span>
               </button>
 
               {/* Profile/Login button */}
