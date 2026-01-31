@@ -175,8 +175,8 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               })}
             </div>
 
-            {/* Right: Theme + Profile/Login */}
-            <div className="flex items-center gap-2">
+            {/* Right: Theme + Premium Toggle + Profile/Login */}
+            <div className="flex items-center gap-1">
               {/* Theme toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -193,6 +193,23 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                     <Moon className="w-4 h-4 text-muted-foreground" />
                   )}
                 </motion.div>
+              </button>
+
+              {/* Premium toggle (dev) */}
+              <button
+                onClick={() => {
+                  const newValue = !isPremium;
+                  localStorage.setItem('dialroad-premium', newValue ? 'true' : 'false');
+                  window.location.reload();
+                }}
+                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                  isPremium 
+                    ? 'bg-amber-500/20 text-amber-500' 
+                    : 'hover:bg-muted text-muted-foreground'
+                }`}
+                title={isPremium ? 'Premium attivo (clicca per disattivare)' : 'Attiva Premium'}
+              >
+                <Crown className="w-4 h-4" />
               </button>
 
               {/* Profile/Login button */}

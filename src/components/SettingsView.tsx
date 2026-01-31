@@ -268,25 +268,10 @@ export function SettingsView() {
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Sun className="w-5 h-5 text-primary" />
           </div>
-          <div className="flex-1">
+          <div>
             <h3 className="font-medium text-foreground">Tema</h3>
             <p className="text-sm text-muted-foreground">Personalizza l'aspetto dell'app</p>
           </div>
-          <button
-            onClick={() => {
-              const newValue = !isPremium;
-              localStorage.setItem('dialroad-premium', newValue ? 'true' : 'false');
-              window.location.reload();
-            }}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              isPremium 
-                ? 'bg-amber-500/20 text-amber-500' 
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-            }`}
-            title={isPremium ? 'Premium attivo' : 'Attiva Premium'}
-          >
-            <Crown className="w-5 h-5" />
-          </button>
         </div>
         <div className="flex gap-2">
           {themeOptions.map((option) => (
