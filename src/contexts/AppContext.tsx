@@ -1,4 +1,5 @@
 // App Context - Global state management for DialRoad
+// HMR rebuild trigger: v2
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { DialysisCenter, mockCenters } from '@/data/mockCenters';
 import { useDialysisCenters, useRegions } from '@/hooks/useDialysisCenters';
