@@ -101,11 +101,11 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
         >
           <div className="flex items-center justify-between px-4 py-2">
             {/* Left: Logo + Menu */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <img
                 src={logoIcon}
                 alt="DialRoad"
-                className="w-10 h-10 object-cover rounded-lg"
+                className="w-10 h-10 object-cover rounded-lg flex-shrink-0"
               />
               <span className="font-display font-bold text-sm text-foreground hidden sm:inline">
                 DialRoad
@@ -114,7 +114,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               {/* Menu button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-muted"
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-muted ml-1 flex-shrink-0"
                 aria-label="Menu"
               >
                 <AnimatePresence mode="wait">
