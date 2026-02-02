@@ -9,6 +9,7 @@ import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
 import { useCenterImage } from '@/hooks/useCenterImage';
+import { useAIResponses } from '@/hooks/useAIResponses';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { AIChatSimulator } from './AIChatSimulator';
@@ -19,6 +20,9 @@ import { showInterstitialAd } from '@/lib/admob';
 
 export function CenterBottomSheet() {
   const { selectedCenter, setSelectedCenter, userLocation, isPremium } = useApp();
+  
+  // Fetch AI responses from JSON file
+  const aiResponses = useAIResponses(selectedCenter?.id ?? '');
   
   // Fetch real image from Google Places/Street View
   const centerImage = useCenterImage(
@@ -463,7 +467,7 @@ export function CenterBottomSheet() {
             isOpen={aiChatOpen}
             onClose={() => setAiChatOpen(false)}
             centerName={selectedCenter.name}
-            aiResponses={selectedCenter.aiResponses || []}
+            aiResponses={aiResponses}
           />
         </>
       )}
