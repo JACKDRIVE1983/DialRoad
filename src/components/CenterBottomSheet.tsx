@@ -241,15 +241,16 @@ export function CenterBottomSheet() {
 
             {/* Content */}
             <div className={`overflow-y-auto ${isExpanded ? 'max-h-[85vh]' : 'max-h-[65vh]'} scrollbar-hide transition-all duration-300`}>
-              {/* Header with image */}
-              <div className="relative h-48 overflow-hidden mx-4 rounded-2xl">
-                <img 
-                  src={centerImage} 
-                  alt={selectedCenter.name}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
+            {/* Header with image */}
+            <div className="relative h-32 overflow-hidden mx-4 rounded-2xl bg-muted">
+              <img 
+                src={centerImage} 
+                alt={selectedCenter.name}
+                className="w-full h-full object-cover"
+                style={{ objectPosition: 'center 40%' }}
+                loading="lazy"
+                decoding="async"
+              />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                 
                 {/* Close button */}
