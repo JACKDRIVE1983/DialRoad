@@ -116,14 +116,14 @@ export function CenterBottomSheet() {
     }
   };
 
-  // Open Google search for area analysis (external browser)
+  // Open Gemini with pre-filled prompt for area analysis
   const handleAreaAnalysis = useCallback(async () => {
     if (!selectedCenter) return;
     
-    // Use encodeURIComponent for special chars, then replace %20 with + for Google
-    const rawQuery = `descrizione zona servizi e alloggi vicino a ${selectedCenter.name} ${selectedCenter.city} per pazienti dializzati`;
-    const query = encodeURIComponent(rawQuery).replace(/%20/g, '+');
-    const url = `https://www.google.com/search?q=${query}`;
+    // Build Gemini prompt
+    const rawPrompt = `Agisci come un assistente per pazienti dializzati. Descrivimi la zona vicino a ${selectedCenter.name} a ${selectedCenter.city}. Dimmi com'è il quartiere, se ci sono servizi essenziali e che tipo di hotel o alloggi consigli nelle vicinanze.`;
+    const prompt = encodeURIComponent(rawPrompt).replace(/%20/g, '+');
+    const url = `https://gemini.google.com/app?prompt=${prompt}`;
     
     // Use Capacitor Browser plugin for guaranteed external browser
     if (Capacitor.isNativePlatform()) {
