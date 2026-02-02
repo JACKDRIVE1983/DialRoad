@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Clock, 
-  MapPin, ChevronUp, Share2, Hotel, Globe, Smartphone, Search, Sparkles
+  MapPin, ChevronUp, Share2, Hotel, Sparkles
 } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -15,7 +15,7 @@ import { CenterRatingSummary } from './CenterRatingSummary';
 import { AIChatSimulator } from './AIChatSimulator';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
 import { showInterstitialAd } from '@/lib/admob';
 
 export function CenterBottomSheet() {
@@ -44,13 +44,6 @@ export function CenterBottomSheet() {
     return `https://www.booking.com/searchresults.it.html?latitude=${lat}&longitude=${lng}&radius=5`;
   };
 
-  const getBookingInstallUrl = () => {
-    // Fallback install (Android)
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-      return 'market://details?id=com.booking';
-    }
-    return 'https://play.google.com/store/apps/details?id=com.booking';
-  };
   
   // Rating state from comments
   const [averageRating, setAverageRating] = useState(0);
@@ -73,7 +66,6 @@ export function CenterBottomSheet() {
   }, [userLocation, selectedCenter]);
   
   const [isExpanded, setIsExpanded] = useState(false);
-  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const dragControls = useDragControls();
 
@@ -122,69 +114,19 @@ export function CenterBottomSheet() {
     }
   };
 
-  // Open Gemini with pre-filled prompt for area analysis
-  const handleAreaAnalysis = useCallback(async () => {
-    if (!selectedCenter) return;
-    
-    // Build Gemini prompt
-    const rawPrompt = `Agisci come un assistente per pazienti dializzati. Descrivimi la zona vicino a ${selectedCenter.name} a ${selectedCenter.city}. Dimmi com'è il quartiere, se ci sono servizi essenziali e che tipo di hotel o alloggi consigli nelle vicinanze.`;
-    const prompt = encodeURIComponent(rawPrompt).replace(/%20/g, '+');
-    const url = `https://gemini.google.com/app?prompt=${prompt}`;
-    
-    // Use Capacitor Browser plugin for guaranteed external browser
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await Browser.open({ url, windowName: '_system' });
-      } catch (e) {
-        // Fallback
-        window.open(url, '_system');
-      }
-    } else {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
-  }, [selectedCenter]);
-
-  // Open in external browser (prevents app freeze)
-  const handleOpenInBrowser = useCallback(() => {
+  // Open Booking directly in external browser (no dialog)
+  const handleOpenBooking = useCallback(() => {
     const url = getBookingUrl();
     if (!url) return;
-    
-    // Close dialog immediately
-    setBookingDialogOpen(false);
 
-    // Use requestAnimationFrame to ensure dialog is closed before opening browser
-    // This prevents UI freeze on low-end devices
+    // Use requestAnimationFrame to prevent UI freeze on low-end devices
     requestAnimationFrame(() => {
       setTimeout(() => {
         if (Capacitor.isNativePlatform()) {
           // Force system browser on all native platforms
-          window.open(url, '_system');
-        } else {
-          // Web fallback
-          window.open(url, '_blank', 'noopener,noreferrer');
-        }
-      }, 50); // Small delay for Dialog animation to complete
-    });
-  }, [selectedCenter]);
-
-  // Open in app (deep link attempt)
-  const handleOpenInApp = useCallback(() => {
-    const url = getBookingUrl();
-    if (!url) return;
-    
-    // Close dialog immediately
-    setBookingDialogOpen(false);
-
-    // Use requestAnimationFrame to ensure dialog is closed before opening
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-          // Try opening Booking app via intent URL
-          const intentUrl = `intent://open#Intent;scheme=booking;package=com.booking;end`;
-          window.open(intentUrl, '_system');
-        } else if (Capacitor.isNativePlatform()) {
-          // iOS - use system browser (universal links will handle if app is installed)
-          window.open(url, '_system');
+          Browser.open({ url, windowName: '_system' }).catch(() => {
+            window.open(url, '_system');
+          });
         } else {
           // Web fallback
           window.open(url, '_blank', 'noopener,noreferrer');
@@ -192,6 +134,7 @@ export function CenterBottomSheet() {
       }, 50);
     });
   }, [selectedCenter]);
+
 
   if (typeof document === 'undefined') {
     return null;
@@ -320,23 +263,14 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Booking.com Hotel Search */}
+                {/* Booking.com Hotel Search - Opens directly in external browser */}
                 <button
-                  onClick={() => setBookingDialogOpen(true)}
+                  onClick={handleOpenBooking}
                   className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                 >
                   <Hotel className="w-5 h-5" />
                   <span>Cerca Hotel Vicini</span>
                 </button>
-
-                <a
-                  href={getBookingInstallUrl()}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block text-center text-xs text-muted-foreground hover:text-foreground transition-colors mb-5 -mt-3"
-                >
-                  Non hai Booking? Installa l'app
-                </a>
 
                 {/* AI Assistant Section */}
                 <div className="mb-5 p-4 rounded-2xl bg-gradient-to-br from-teal-500/10 to-indigo-500/10 border border-teal-500/20">
@@ -355,60 +289,6 @@ export function CenterBottomSheet() {
                   </button>
                 </div>
 
-                {/* Area Analysis Google Search (fallback) */}
-                <button
-                  onClick={handleAreaAnalysis}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-teal-600/20 text-teal-600 dark:text-teal-400 font-semibold text-sm border border-teal-600/30 hover:bg-teal-600/30 transition-all duration-200 active:scale-[0.98]"
-                >
-                  <Search className="w-5 h-5" />
-                  <span>Analisi Zona (IA Gemini)</span>
-                </button>
-
-                {/* Booking Choice Dialog */}
-                <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
-                  <DialogContent className="mx-4 max-w-[calc(100vw-2rem)] sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <Hotel className="w-5 h-5 text-[#003580]" />
-                        Cerca Hotel Vicini
-                      </DialogTitle>
-                      <DialogDescription className="text-left">
-                        Scegli come aprire Booking.com
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-3 pt-2">
-                      <button
-                        onClick={handleOpenInBrowser}
-                        className="w-full flex items-start gap-3 p-4 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                          <Globe className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">Apri nel Browser</p>
-                          <p className="text-sm text-muted-foreground">
-                            Consigliato: mostra hotel vicini alle coordinate esatte dell'ospedale
-                          </p>
-                        </div>
-                      </button>
-                      
-                      <button
-                        onClick={handleOpenInApp}
-                        className="w-full flex items-start gap-3 p-4 rounded-xl bg-muted/50 border border-border/50 hover:bg-muted transition-colors text-left"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                          <Smartphone className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">Apri nell'App Booking</p>
-                          <p className="text-sm text-muted-foreground">
-                            L'app potrebbe ignorare le coordinate e mostrare risultati generici
-                          </p>
-                        </div>
-                      </button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
 
                 {/* Action buttons - Premium Pill Style */}
                 <div className="flex gap-3 mb-6">
