@@ -1,24 +1,36 @@
-import { memo } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { memo, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
-import { MapView } from '@/components/MapView';
 import { AppErrorBoundary } from '@/components/AppErrorBoundary';
-
 import { AppHeader } from '@/components/AppHeader';
-import { CenterBottomSheet } from '@/components/CenterBottomSheet';
-import { CentersList } from '@/components/CentersList';
-import { SettingsView } from '@/components/SettingsView';
 import { AdBanner } from '@/components/AdBanner';
 import { PremiumLimitModal } from '@/components/PremiumLimitModal';
 import { useAdMob } from '@/hooks/useAdMob';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load heavy components
+const MapView = lazy(() => import('@/components/MapView').then(m => ({ default: m.MapView })));
+const CenterBottomSheet = lazy(() => import('@/components/CenterBottomSheet').then(m => ({ default: m.CenterBottomSheet })));
+const CentersList = lazy(() => import('@/components/CentersList').then(m => ({ default: m.CentersList })));
+const SettingsView = lazy(() => import('@/components/SettingsView').then(m => ({ default: m.SettingsView })));
+
+// Minimal loading fallback
+const LoadingFallback = memo(function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+    </div>
+  );
+});
 
 // Memoized tab content components to prevent unnecessary re-renders
 const MapTabContent = memo(function MapTabContent() {
   return (
     <div className="relative pt-24 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
-      <MapView />
+      <Suspense fallback={<LoadingFallback />}>
+        <MapView />
+      </Suspense>
     </div>
   );
 });
@@ -30,7 +42,9 @@ const ListTabContent = memo(function ListTabContent({
 }) {
   return (
     <div className="flex flex-col pt-24 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
-      <CentersList onSelectCenter={onSelectCenter} />
+      <Suspense fallback={<LoadingFallback />}>
+        <CentersList onSelectCenter={onSelectCenter} />
+      </Suspense>
     </div>
   );
 });
@@ -43,7 +57,9 @@ const SettingsTabContent = memo(function SettingsTabContent() {
           Impostazioni
         </h1>
       </div>
-      <SettingsView />
+      <Suspense fallback={<LoadingFallback />}>
+        <SettingsView />
+      </Suspense>
     </div>
   );
 });
@@ -57,7 +73,6 @@ function AppContent() {
     trySelectCenter,
     activeTab,
     setActiveTab,
-    isSearchFocused,
     showLimitModal,
     setShowLimitModal,
     isPremium
@@ -80,15 +95,14 @@ function AppContent() {
     <div className="min-h-screen bg-background">
       <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
       
-      <AnimatePresence mode="wait">
-        {activeTab === 'map' && <MapTabContent key="map" />}
-        {activeTab === 'list' && (
-          <ListTabContent key="list" onSelectCenter={trySelectCenter} />
-        )}
-        {activeTab === 'settings' && <SettingsTabContent key="settings" />}
-      </AnimatePresence>
+      {/* Removed AnimatePresence for better performance on low-end devices */}
+      {activeTab === 'map' && <MapTabContent />}
+      {activeTab === 'list' && <ListTabContent onSelectCenter={trySelectCenter} />}
+      {activeTab === 'settings' && <SettingsTabContent />}
 
-      <CenterBottomSheet />
+      <Suspense fallback={null}>
+        <CenterBottomSheet />
+      </Suspense>
       
       {/* Premium Limit Modal */}
       <PremiumLimitModal open={showLimitModal} onOpenChange={setShowLimitModal} />

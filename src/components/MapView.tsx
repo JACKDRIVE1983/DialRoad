@@ -1,5 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useCallback, useRef, useState, useMemo, memo } from "react";
 import { Navigation, Loader2 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -20,53 +19,84 @@ L.Icon.Default.mergeOptions({
 
 const defaultCenter: [number, number] = [41.9028, 12.4964]; // Rome, Italy
 
-const createRegionIcon = (color: string) => {
-  const svgIcon = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-      <defs>
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      <circle cx="20" cy="20" r="18" fill="${color}" stroke="white" stroke-width="3" filter="url(#shadow)"/>
-      <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
-    </svg>
-  `;
+// Cache for region icons to avoid recreating SVG on every render
+const iconCache = new Map<string, L.DivIcon>();
 
-  return L.divIcon({
+const createRegionIcon = (color: string): L.DivIcon => {
+  if (iconCache.has(color)) {
+    return iconCache.get(color)!;
+  }
+  
+  // Simplified SVG without filter for better performance
+  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32"><circle cx="20" cy="20" r="16" fill="${color}" stroke="white" stroke-width="2"/><path d="M20 13 L20 27 M13 20 L27 20" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+
+  const icon = L.divIcon({
     html: svgIcon,
     className: "custom-marker-icon",
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -20],
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
   });
+  
+  iconCache.set(color, icon);
+  return icon;
 };
 
+// Simplified user location icon (no animation for performance)
 const userLocationIcon = L.divIcon({
-  html: `
-    <div class="user-marker-container" style="animation: bounce-slow 2s ease-in-out infinite;">
-      <svg viewBox="0 0 40 60" width="40" height="60">
-        <defs>
-          <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
-          </linearGradient>
-          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
-          </filter>
-        </defs>
-        <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z"
-              fill="url(#pinGrad)" stroke="white" stroke-width="2" filter="url(#shadow)"/>
-        <circle cx="20" cy="20" r="8" fill="white"/>
-      </svg>
-    </div>
-  `,
+  html: `<svg viewBox="0 0 32 48" width="32" height="48"><path d="M16 44 C16 44 30 28 30 16 C30 8 24 2 16 2 C8 2 2 8 2 16 C2 28 16 44 16 44 Z" fill="#f59e0b" stroke="white" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="white"/></svg>`,
   className: "user-location-icon",
-  iconSize: [40, 60],
-  iconAnchor: [20, 60],
+  iconSize: [32, 48],
+  iconAnchor: [16, 48],
 });
 
-export function MapView() {
+// Memoized loading component
+const MapLoading = memo(function MapLoading() {
+  return (
+    <div className="relative w-full h-full bg-secondary flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <span className="text-muted-foreground">Caricamento mappa...</span>
+      </div>
+    </div>
+  );
+});
+
+// Memoized center count badge
+const CenterCountBadge = memo(function CenterCountBadge({ count }: { count: number }) {
+  return (
+    <div
+      className="absolute left-2 z-[1000] glass-card px-3 py-1.5 rounded-full"
+      style={{ bottom: 24 }}
+    >
+      <span className="text-xs font-medium text-foreground">
+        {count} centri trovati
+      </span>
+    </div>
+  );
+});
+
+// Memoized locate button
+const LocateButton = memo(function LocateButton({ 
+  onClick, 
+  isLocating 
+}: { 
+  onClick: () => void; 
+  isLocating: boolean 
+}) {
+  return (
+    <button
+      className="absolute right-4 z-[1000] w-11 h-11 rounded-full glass-card flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+      style={{ bottom: 16 }}
+      onClick={onClick}
+      disabled={isLocating}
+    >
+      <Navigation className={`w-5 h-5 text-primary ${isLocating ? "animate-spin" : ""}`} />
+    </button>
+  );
+});
+
+function MapViewComponent() {
   const { filteredCenters, trySelectCenter, selectedCenter, userLocation, setUserLocation, isDarkMode } =
     useApp();
 
@@ -78,6 +108,7 @@ export function MapView() {
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const centersLayerRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const markersRef = useRef<Map<string, L.Marker>>(new Map());
 
   const handleLocate = useCallback(() => {
     setIsLocating(true);
@@ -94,7 +125,8 @@ export function MapView() {
           console.error("Geolocation error:", error);
           setUserLocation({ lat: defaultCenter[0], lng: defaultCenter[1] });
           setIsLocating(false);
-        }
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
       );
     } else {
       setUserLocation({ lat: defaultCenter[0], lng: defaultCenter[1] });
@@ -106,15 +138,21 @@ export function MapView() {
     handleLocate();
   }, [handleLocate]);
 
-  const tileUrl = isDarkMode
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const tileUrl = useMemo(() => 
+    isDarkMode
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    [isDarkMode]
+  );
 
-  const tileAttribution = isDarkMode
-    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+  const tileAttribution = useMemo(() =>
+    isDarkMode
+      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    [isDarkMode]
+  );
 
-  // Initialize map once
+  // Initialize map once with performance optimizations
   useEffect(() => {
     if (!mapDivRef.current) return;
     if (mapRef.current) return;
@@ -122,11 +160,18 @@ export function MapView() {
     const map = L.map(mapDivRef.current, {
       zoomControl: false,
       attributionControl: true,
+      // Performance optimizations
+      fadeAnimation: false,
+      zoomAnimation: false,
+      markerZoomAnimation: false,
+      preferCanvas: true, // Use Canvas renderer instead of SVG
     }).setView(defaultCenter, 6);
 
     tileLayerRef.current = L.tileLayer(tileUrl, {
       attribution: tileAttribution,
       maxZoom: 19,
+      updateWhenIdle: true, // Only update tiles when map stops moving
+      updateWhenZooming: false,
     }).addTo(map);
 
     centersLayerRef.current = L.layerGroup().addTo(map);
@@ -140,35 +185,54 @@ export function MapView() {
       tileLayerRef.current = null;
       centersLayerRef.current = null;
       userMarkerRef.current = null;
+      markersRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update tile layer on theme change
   useEffect(() => {
-    if (!mapRef.current) return;
-    if (!tileLayerRef.current) return;
+    if (!mapRef.current || !tileLayerRef.current) return;
 
     tileLayerRef.current.setUrl(tileUrl);
     tileLayerRef.current.options.attribution = tileAttribution;
-    // Force attribution refresh
     mapRef.current.attributionControl?.setPrefix(false);
   }, [tileUrl, tileAttribution]);
 
-  // Update center markers
+  // Stable click handler ref
+  const selectCenterRef = useRef(trySelectCenter);
+  selectCenterRef.current = trySelectCenter;
+
+  // Update center markers with diffing (only add/remove changed markers)
   useEffect(() => {
     const layer = centersLayerRef.current;
     if (!layer) return;
 
-    layer.clearLayers();
+    const currentIds = new Set(filteredCenters.map(c => c.id));
+    const existingIds = new Set(markersRef.current.keys());
 
-    for (const center of filteredCenters) {
-      const icon = createRegionIcon(getRegionColor(center.region));
-      const marker = L.marker([center.coordinates.lat, center.coordinates.lng], { icon });
-      marker.on("click", () => trySelectCenter(center));
-      marker.addTo(layer);
+    // Remove markers that are no longer in filteredCenters
+    for (const id of existingIds) {
+      if (!currentIds.has(id)) {
+        const marker = markersRef.current.get(id);
+        if (marker) {
+          layer.removeLayer(marker);
+          markersRef.current.delete(id);
+        }
+      }
     }
-  }, [filteredCenters, trySelectCenter]);
+
+    // Add new markers
+    for (const center of filteredCenters) {
+      if (!markersRef.current.has(center.id)) {
+        const icon = createRegionIcon(getRegionColor(center.region));
+        const marker = L.marker([center.coordinates.lat, center.coordinates.lng], { icon });
+        marker.on("click", () => selectCenterRef.current(center));
+        marker.addTo(layer);
+        markersRef.current.set(center.id, marker);
+      }
+    }
+  }, [filteredCenters]);
 
   // Update user marker (don't recenter - keep initial Italy view)
   useEffect(() => {
@@ -194,10 +258,9 @@ export function MapView() {
     } else {
       userMarkerRef.current.setLatLng(pos);
     }
-    // Don't recenter on initial load - keep the full Italy view (zoom 6)
   }, [userLocation]);
 
-  // Center map on selected center (offset in pixels to keep pin visible above bottom sheet)
+  // Center map on selected center (minimal animation)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedCenter) return;
@@ -207,117 +270,55 @@ export function MapView() {
       selectedCenter.coordinates.lng,
     ];
 
-    // First, center on the pin
-    map.setView(centerPos, 14, { animate: true });
+    // Disable animation for faster response
+    map.setView(centerPos, 14, { animate: false });
 
-    // Then, nudge the map upward so the pin appears in the visible area (above the sheet)
-    // Use pixel offset (stable across zoom/latitudes)
+    // Nudge map upward
     const containerHeight = map.getContainer().clientHeight;
-    const yOffset = Math.round(containerHeight * 0.22); // ~top visible area
-
-    // Wait a frame to ensure Leaflet has applied the setView before panning
-    requestAnimationFrame(() => {
-      map.panBy([0, -yOffset], { animate: true });
-    });
+    const yOffset = Math.round(containerHeight * 0.22);
+    map.panBy([0, -yOffset], { animate: false });
   }, [selectedCenter]);
 
-  if (!mapReady && filteredCenters.length === 0) {
-    return (
-      <div className="relative w-full h-full bg-secondary flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
-          <span className="text-muted-foreground">Caricamento mappa...</span>
-        </motion.div>
-      </div>
-    );
+  const centerCount = filteredCenters.length;
+
+  if (!mapReady && centerCount === 0) {
+    return <MapLoading />;
   }
 
   return (
     <div className="relative w-full h-full">
       <div ref={mapDivRef} className="absolute inset-0" />
 
-      {/* Center count badge - bottom left */}
-      <motion.div
-        className="absolute left-2 z-[1000] glass-card px-3 py-1.5 rounded-full"
-        style={{ bottom: 24 }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <span className="text-xs font-medium text-foreground">
-          {filteredCenters.length} centri trovati
-        </span>
-      </motion.div>
+      <CenterCountBadge count={centerCount} />
+      <LocateButton onClick={handleLocate} isLocating={isLocating} />
 
-      {/* Locate button - bottom right */}
-      <motion.button
-        className="absolute right-4 z-[1000] w-11 h-11 rounded-full glass-card flex items-center justify-center shadow-lg"
-        style={{ bottom: 16 }}
-        onClick={handleLocate}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        disabled={isLocating}
-      >
-        <Navigation className={`w-5 h-5 text-primary ${isLocating ? "animate-spin" : ""}`} />
-      </motion.button>
-
-      {/* Custom styles for Leaflet */}
+      {/* Minimal styles for Leaflet */}
       <style>{`
-        .custom-marker-icon {
-          background: transparent !important;
-          border: none !important;
-        }
-
+        .custom-marker-icon,
         .user-location-icon {
           background: transparent !important;
           border: none !important;
         }
-
-        .user-marker-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-
         .leaflet-popup-content-wrapper {
           background: hsl(var(--card));
           color: hsl(var(--card-foreground));
           border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
-
         .leaflet-popup-tip {
           background: hsl(var(--card));
         }
-
-        .leaflet-container {
-          font-family: inherit;
-        }
-
         .leaflet-control-attribution {
           background: hsl(var(--background) / 0.8) !important;
           color: hsl(var(--muted-foreground)) !important;
           font-size: 10px;
           padding: 2px 6px;
         }
-
         .leaflet-control-attribution a {
           color: hsl(var(--primary)) !important;
-        }
-
-        @keyframes bounce-slow {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-8px);
-          }
         }
       `}</style>
     </div>
   );
 }
+
+export const MapView = memo(MapViewComponent);
