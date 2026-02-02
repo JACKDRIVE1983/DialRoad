@@ -198,12 +198,21 @@ export function MapView() {
     map.setView(pos, 10, { animate: true });
   }, [userLocation]);
 
-  // Center map on selected center
+  // Center map on selected center (offset to show pin above bottom sheet)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedCenter) return;
 
-    const pos: [number, number] = [selectedCenter.coordinates.lat, selectedCenter.coordinates.lng];
+    // Get the map container height to calculate offset
+    const containerHeight = map.getContainer().clientHeight;
+    // Bottom sheet takes ~65% of the screen, so we need to offset the center point
+    // to show the pin in the visible 35% above the sheet
+    const offsetLat = 0.015; // Offset northward to show pin above bottom sheet
+
+    const pos: [number, number] = [
+      selectedCenter.coordinates.lat + offsetLat,
+      selectedCenter.coordinates.lng
+    ];
     map.setView(pos, 14, { animate: true });
   }, [selectedCenter]);
 
