@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Clock, 
-  MapPin, ChevronUp, Share2, Hotel, Globe, Smartphone, Search
+  MapPin, ChevronUp, Share2, Hotel, Globe, Smartphone, Search, Sparkles
 } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -11,6 +11,7 @@ import { calculateDistance, formatDistance } from '@/lib/distance';
 import { useCenterImage } from '@/hooks/useCenterImage';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
+import { AIChatSimulator } from './AIChatSimulator';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -69,6 +70,7 @@ export function CenterBottomSheet() {
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
   const dragControls = useDragControls();
 
   const handleClose = useCallback(async () => {
@@ -332,13 +334,30 @@ export function CenterBottomSheet() {
                   Non hai Booking? Installa l'app
                 </a>
 
-                {/* Area Analysis Google Search */}
+                {/* AI Assistant Section */}
+                <div className="mb-5 p-4 rounded-2xl bg-gradient-to-br from-teal-500/10 to-indigo-500/10 border border-teal-500/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-indigo-500 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground">Assistente Virtuale</h3>
+                  </div>
+                  <button
+                    onClick={() => setAiChatOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-gradient-to-r from-teal-600 to-indigo-600 text-white font-semibold text-sm shadow-lg shadow-teal-600/25 hover:shadow-xl hover:from-teal-500 hover:to-indigo-500 transition-all duration-200 active:scale-[0.98]"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    <span>Genera analisi zona e consigli</span>
+                  </button>
+                </div>
+
+                {/* Area Analysis Google Search (fallback) */}
                 <button
                   onClick={handleAreaAnalysis}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-teal-600 text-white font-semibold text-sm shadow-lg shadow-teal-600/25 hover:shadow-xl hover:bg-teal-700 transition-all duration-200 active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-teal-600/20 text-teal-600 dark:text-teal-400 font-semibold text-sm border border-teal-600/30 hover:bg-teal-600/30 transition-all duration-200 active:scale-[0.98]"
                 >
                   <Search className="w-5 h-5" />
-                  <span>Analisi Zona & Hotel</span>
+                  <span>Analisi Zona (IA Gemini)</span>
                 </button>
 
                 {/* Booking Choice Dialog */}
@@ -438,6 +457,14 @@ export function CenterBottomSheet() {
               </div>
             </div>
           </motion.div>
+
+          {/* AI Chat Simulator */}
+          <AIChatSimulator
+            isOpen={aiChatOpen}
+            onClose={() => setAiChatOpen(false)}
+            centerName={selectedCenter.name}
+            aiResponses={selectedCenter.aiResponses || []}
+          />
         </>
       )}
     </AnimatePresence>,
