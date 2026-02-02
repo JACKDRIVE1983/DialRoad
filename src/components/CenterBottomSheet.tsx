@@ -4,6 +4,7 @@ import {
   MapPin, ChevronUp, Share2, Hotel, Globe, Smartphone
 } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
@@ -196,13 +197,17 @@ export function CenterBottomSheet() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  return (
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {selectedCenter && (
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[10000] bg-black/40 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -211,9 +216,9 @@ export function CenterBottomSheet() {
 
           {/* Bottom Sheet */}
           <motion.div
-            className="fixed bottom-0 left-0 right-0 z-[2001] bg-background/95 dark:bg-card/95 backdrop-blur-2xl rounded-t-[2rem] max-h-[90vh] overflow-hidden border-t border-x border-white/20 dark:border-white/10"
+            className="fixed bottom-0 left-0 right-0 z-[10001] bg-background/95 dark:bg-card/95 backdrop-blur-2xl rounded-t-[2rem] max-h-[90vh] overflow-hidden border-t border-x border-white/20 dark:border-white/10"
             style={{
-              boxShadow: '0 -10px 60px rgba(0, 0, 0, 0.2), 0 -2px 20px rgba(0, 0, 0, 0.08)'
+              boxShadow: '0 -10px 60px rgba(0, 0, 0, 0.2), 0 -2px 20px rgba(0, 0, 0, 0.08)',
             }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -232,7 +237,7 @@ export function CenterBottomSheet() {
             }}
           >
             {/* Handle - Premium Style */}
-            <div 
+            <div
               className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
               onPointerDown={(e) => dragControls.start(e)}
             >
@@ -240,17 +245,19 @@ export function CenterBottomSheet() {
             </div>
 
             {/* Content */}
-            <div className={`overflow-y-auto ${isExpanded ? 'max-h-[85vh]' : 'max-h-[65vh]'} scrollbar-hide transition-all duration-300`}>
-            {/* Header with image */}
-            <div className="relative h-32 overflow-hidden mx-4 rounded-2xl bg-muted">
-              <img 
-                src={centerImage} 
-                alt={selectedCenter.name}
-                className="w-full h-full object-cover"
-                style={{ objectPosition: 'center 40%' }}
-                loading="lazy"
-                decoding="async"
-              />
+            <div
+              className={`overflow-y-auto ${isExpanded ? 'max-h-[85vh]' : 'max-h-[65vh]'} scrollbar-hide transition-all duration-300`}
+            >
+              {/* Header with image */}
+              <div className="relative h-32 overflow-hidden mx-4 rounded-2xl bg-muted">
+                <img
+                  src={centerImage}
+                  alt={selectedCenter.name}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: 'center 40%' }}
+                  loading="lazy"
+                  decoding="async"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                 
                 {/* Close button */}
@@ -434,6 +441,7 @@ export function CenterBottomSheet() {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
