@@ -207,7 +207,7 @@ export function CenterBottomSheet() {
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-[10000] bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[2147483646] bg-black/40 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -216,7 +216,7 @@ export function CenterBottomSheet() {
 
           {/* Bottom Sheet */}
           <motion.div
-            className="fixed bottom-0 left-0 right-0 z-[10001] bg-background/95 dark:bg-card/95 backdrop-blur-2xl rounded-t-[2rem] max-h-[90vh] overflow-hidden border-t border-x border-white/20 dark:border-white/10"
+            className="fixed bottom-0 left-0 right-0 z-[2147483647] bg-background/95 dark:bg-card/95 backdrop-blur-2xl rounded-t-[2rem] max-h-[90vh] overflow-hidden border-t border-x border-white/20 dark:border-white/10"
             style={{
               boxShadow: '0 -10px 60px rgba(0, 0, 0, 0.2), 0 -2px 20px rgba(0, 0, 0, 0.08)',
             }}
