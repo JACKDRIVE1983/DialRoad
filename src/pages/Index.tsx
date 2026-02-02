@@ -4,6 +4,7 @@ import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { MapView } from '@/components/MapView';
+import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 
 import { AppHeader } from '@/components/AppHeader';
 import { CenterBottomSheet } from '@/components/CenterBottomSheet';
@@ -105,7 +106,9 @@ function AppContent() {
 function Index() {
   return (
     <AppProvider>
-      <AppContent />
+      <AppErrorBoundary>
+        <AppContent />
+      </AppErrorBoundary>
     </AppProvider>
   );
 }
