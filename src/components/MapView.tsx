@@ -2,11 +2,9 @@ import { useEffect, useCallback, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Navigation, Loader2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useApp } from '@/contexts/AppContext';
-import { DialysisCenter } from '@/data/mockCenters';
 import { getRegionColor } from '@/lib/regionColors';
 
 // Fix for default marker icons in Leaflet
@@ -66,45 +64,6 @@ const userLocationIcon = L.divIcon({
   iconSize: [40, 60],
   iconAnchor: [20, 60],
 });
-
-// Cluster icon creator
-const createClusterCustomIcon = (cluster: any) => {
-  const count = cluster.getChildCount();
-  let size = 'small';
-  let dimension = 40;
-  
-  if (count >= 100) {
-    size = 'large';
-    dimension = 50;
-  } else if (count >= 10) {
-    size = 'medium';
-    dimension = 45;
-  }
-  
-  return L.divIcon({
-    html: `
-      <div class="cluster-marker cluster-${size}" style="
-        width: ${dimension}px;
-        height: ${dimension}px;
-        background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: ${count >= 100 ? '14px' : '13px'};
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      ">
-        ${count}
-      </div>
-    `,
-    className: 'custom-cluster-icon',
-    iconSize: [dimension, dimension],
-    iconAnchor: [dimension / 2, dimension / 2],
-  });
-};
 
 // Component to handle map centering on user location
 function MapController({ userLocation }: { userLocation: { lat: number; lng: number } | null }) {
@@ -211,18 +170,8 @@ export function MapView() {
         
         <MapController userLocation={userLocation} />
         
-        {/* Clustered center markers */}
-        <MarkerClusterGroup
-          chunkedLoading
-          iconCreateFunction={createClusterCustomIcon}
-          maxClusterRadius={60}
-          spiderfyOnMaxZoom={true}
-          showCoverageOnHover={false}
-          zoomToBoundsOnClick={true}
-        >
-          {centerMarkers}
-        </MarkerClusterGroup>
-
+        {/* Center markers */}
+        {centerMarkers}
         {/* User location marker */}
         {userLocation && (
           <Marker
