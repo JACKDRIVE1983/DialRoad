@@ -12,6 +12,7 @@ export interface RawCenter {
   lat: number;
   lng: number;
   geocode_status: string;
+  ai_responses?: string[];
 }
 
 export interface Comment {
@@ -44,6 +45,7 @@ export interface DialysisCenter {
   imageUrl?: string;
   openingHours: string;
   isOpen: boolean;
+  aiResponses?: string[];
 }
 
 // Helper function to capitalize region name safely
@@ -83,7 +85,8 @@ export const mockCenters: DialysisCenter[] = rawCenters
     likes: 0, // Real favorites come from database
     comments: [],
     openingHours: 'Lun-Sab: 6:00-20:00',
-    isOpen: true
+    isOpen: true,
+    aiResponses: center.ai_responses || []
   }));
 
 // Extract unique regions from the data (filtering out null values)
