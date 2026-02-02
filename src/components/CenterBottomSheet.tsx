@@ -117,85 +117,53 @@ export function CenterBottomSheet() {
   };
 
   // Open in external browser (prevents app freeze)
-  const handleOpenInBrowser = async () => {
+  const handleOpenInBrowser = useCallback(() => {
     const url = getBookingUrl();
     if (!url) return;
+    
+    // Close dialog immediately
     setBookingDialogOpen(false);
 
-    if (Capacitor.isNativePlatform()) {
-      const platform = Capacitor.getPlatform();
-
-      // Android: force system browser via native intent (prevents WebView/CustomTab freeze)
-      if (platform === 'android') {
-        try {
-          // In Capacitor Android, window.open with '_system' is the most reliable way to
-          // force the OS browser (and avoid in-app webviews / custom tabs issues).
+    // Use requestAnimationFrame to ensure dialog is closed before opening browser
+    // This prevents UI freeze on low-end devices
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (Capacitor.isNativePlatform()) {
+          // Force system browser on all native platforms
           window.open(url, '_system');
-          return;
-        } catch (e) {
-          console.error('[Booking] window.open(_system) failed (android):', e);
-          // continue to fallback
+        } else {
+          // Web fallback
+          window.open(url, '_blank', 'noopener,noreferrer');
         }
-      }
-
-      // iOS fallback
-      try {
-        await Browser.open({ 
-          url, 
-          windowName: '_system',
-          presentationStyle: 'fullscreen'
-        });
-        return;
-      } catch (error) {
-        console.error('[Booking] Browser.open failed:', error);
-      }
-    }
-    // Web fallback
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
+      }, 50); // Small delay for Dialog animation to complete
+    });
+  }, [selectedCenter]);
 
   // Open in app (deep link attempt)
-  const handleOpenInApp = async () => {
+  const handleOpenInApp = useCallback(() => {
     const url = getBookingUrl();
     if (!url) return;
-    setBookingDialogOpen(false);
     
-    if (Capacitor.isNativePlatform()) {
-      const platform = Capacitor.getPlatform();
-      
-      if (platform === 'android') {
-        // Prefer trying to open Booking app; fallback to system browser
-        try {
-          // Try opening Booking app via intent URL; if it doesn't resolve, fallback to browser.
-          // We avoid using window.location.href because it may be ignored in WebView contexts.
+    // Close dialog immediately
+    setBookingDialogOpen(false);
+
+    // Use requestAnimationFrame to ensure dialog is closed before opening
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+          // Try opening Booking app via intent URL
           const intentUrl = `intent://open#Intent;scheme=booking;package=com.booking;end`;
           window.open(intentUrl, '_system');
-          return;
-        } catch (e) {
-          console.error('[Booking] Booking app open failed, fallback to browser:', e);
-          try {
-            window.open(url, '_system');
-            return;
-          } catch (e2) {
-            console.error('[Booking] window.open(_system) fallback failed (android):', e2);
-          }
+        } else if (Capacitor.isNativePlatform()) {
+          // iOS - use system browser (universal links will handle if app is installed)
+          window.open(url, '_system');
+        } else {
+          // Web fallback
+          window.open(url, '_blank', 'noopener,noreferrer');
         }
-      }
-      
-      // iOS - use universal links
-      try {
-        await Browser.open({ 
-          url, 
-          windowName: '_system',
-          presentationStyle: 'fullscreen'
-        });
-        return;
-      } catch (error) {
-        console.error('[Booking] App open failed:', error);
-      }
-    }
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
+      }, 50);
+    });
+  }, [selectedCenter]);
 
   if (typeof document === 'undefined') {
     return null;
