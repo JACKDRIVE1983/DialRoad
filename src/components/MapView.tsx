@@ -198,22 +198,28 @@ export function MapView() {
     map.setView(pos, 10, { animate: true });
   }, [userLocation]);
 
-  // Center map on selected center (offset to show pin above bottom sheet)
+  // Center map on selected center (offset in pixels to keep pin visible above bottom sheet)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedCenter) return;
 
-    // Get the map container height to calculate offset
-    const containerHeight = map.getContainer().clientHeight;
-    // Bottom sheet takes ~65% of the screen, so we need to offset the center point
-    // to show the pin in the visible 35% above the sheet
-    const offsetLat = 0.015; // Offset northward to show pin above bottom sheet
-
-    const pos: [number, number] = [
-      selectedCenter.coordinates.lat + offsetLat,
-      selectedCenter.coordinates.lng
+    const centerPos: [number, number] = [
+      selectedCenter.coordinates.lat,
+      selectedCenter.coordinates.lng,
     ];
-    map.setView(pos, 14, { animate: true });
+
+    // First, center on the pin
+    map.setView(centerPos, 14, { animate: true });
+
+    // Then, nudge the map upward so the pin appears in the visible area (above the sheet)
+    // Use pixel offset (stable across zoom/latitudes)
+    const containerHeight = map.getContainer().clientHeight;
+    const yOffset = Math.round(containerHeight * 0.22); // ~top visible area
+
+    // Wait a frame to ensure Leaflet has applied the setView before panning
+    requestAnimationFrame(() => {
+      map.panBy([0, -yOffset], { animate: true });
+    });
   }, [selectedCenter]);
 
   if (!mapReady && filteredCenters.length === 0) {
