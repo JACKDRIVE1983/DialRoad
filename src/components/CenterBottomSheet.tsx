@@ -15,6 +15,15 @@ import { CenterRatingSummary } from './CenterRatingSummary';
 import { AIChatSimulator } from './AIChatSimulator';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 import { showInterstitialAd } from '@/lib/admob';
 
@@ -67,6 +76,7 @@ export function CenterBottomSheet() {
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const dragControls = useDragControls();
 
   const handleClose = useCallback(async () => {
@@ -114,31 +124,48 @@ export function CenterBottomSheet() {
     }
   };
 
-  // Open Booking directly in EXTERNAL system browser (not in-app WebView)
+  // Booking popup (as before) – ensures we always open in the system browser when user chooses it.
   const handleOpenBooking = useCallback(() => {
     const url = getBookingUrl();
     if (!url) return;
+    setBookingDialogOpen(true);
+  }, [selectedCenter]);
 
-    // Use requestAnimationFrame to prevent UI freeze on low-end devices
+  const openBookingExternal = useCallback(() => {
+    const url = getBookingUrl();
+    if (!url) return;
+
+    // Close popup first, then open external browser (prevents freeze on low-end devices)
+    setBookingDialogOpen(false);
+
     requestAnimationFrame(() => {
       setTimeout(async () => {
-        if (Capacitor.isNativePlatform()) {
-          try {
-            // presentationStyle: 'popover' forces external browser on iOS
-            // On Android, Browser.open without specific options opens system browser
-            await Browser.open({ 
-              url,
-              presentationStyle: 'popover' as any, // Forces external browser
-            });
-          } catch (e) {
-            console.error('[Browser] Failed to open external:', e);
-            // Ultimate fallback: use Android intent-style URL
-            window.location.href = url;
+        try {
+          if (Capacitor.isNativePlatform()) {
+            // This opens the OS browser / custom tab outside the app WebView
+            await Browser.open({ url });
+          } else {
+            window.open(url, '_blank', 'noopener,noreferrer');
           }
-        } else {
-          // Web fallback
+        } catch (e) {
+          console.error('[Booking] open external failed:', e);
+          // Fallback (web): try regular open; on native this might still be internal.
           window.open(url, '_blank', 'noopener,noreferrer');
         }
+      }, 50);
+    });
+  }, [selectedCenter]);
+
+  // Optional internal open (kept only to match the old popup structure)
+  const openBookingInternal = useCallback(() => {
+    const url = getBookingUrl();
+    if (!url) return;
+    setBookingDialogOpen(false);
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        // NOTE: this may open inside the app WebView.
+        window.location.href = url;
       }, 50);
     });
   }, [selectedCenter]);
@@ -357,6 +384,30 @@ export function CenterBottomSheet() {
             centerName={selectedCenter.name}
             aiResponses={aiResponses}
           />
+
+           {/* Booking open popup (restored) */}
+           <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
+             <DialogContent className="max-w-[92vw] sm:max-w-md">
+               <DialogHeader>
+                 <DialogTitle>Aprire Booking</DialogTitle>
+                 <DialogDescription>
+                   Per mantenere la ricerca basata sulle coordinate reali centro→hotel, apri nel browser di sistema.
+                 </DialogDescription>
+               </DialogHeader>
+
+               <DialogFooter>
+                 <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+                   <Button variant="outline" onClick={() => setBookingDialogOpen(false)}>
+                     Annulla
+                   </Button>
+                   <Button variant="secondary" onClick={openBookingInternal}>
+                     Apri nell’app
+                   </Button>
+                   <Button onClick={openBookingExternal}>Apri nel browser</Button>
+                 </div>
+               </DialogFooter>
+             </DialogContent>
+           </Dialog>
         </>
       )}
     </AnimatePresence>,
