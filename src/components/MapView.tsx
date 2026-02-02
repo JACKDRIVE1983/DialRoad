@@ -67,7 +67,7 @@ const userLocationIcon = L.divIcon({
 });
 
 export function MapView() {
-  const { filteredCenters, trySelectCenter, userLocation, setUserLocation, isDarkMode } =
+  const { filteredCenters, trySelectCenter, selectedCenter, userLocation, setUserLocation, isDarkMode } =
     useApp();
 
   const [isLocating, setIsLocating] = useState(false);
@@ -197,6 +197,15 @@ export function MapView() {
 
     map.setView(pos, 10, { animate: true });
   }, [userLocation]);
+
+  // Center map on selected center
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedCenter) return;
+
+    const pos: [number, number] = [selectedCenter.coordinates.lat, selectedCenter.coordinates.lng];
+    map.setView(pos, 14, { animate: true });
+  }, [selectedCenter]);
 
   if (!mapReady && filteredCenters.length === 0) {
     return (
