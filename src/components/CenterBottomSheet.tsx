@@ -116,8 +116,8 @@ export function CenterBottomSheet() {
     }
   };
 
-  // Open Google search for area analysis
-  const handleAreaAnalysis = useCallback(() => {
+  // Open Google search for area analysis (external browser)
+  const handleAreaAnalysis = useCallback(async () => {
     if (!selectedCenter) return;
     
     const query = encodeURIComponent(
@@ -125,16 +125,17 @@ export function CenterBottomSheet() {
     );
     const url = `https://www.google.com/search?q=${query}`;
     
-    // Same optimized pattern to prevent UI freeze
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (Capacitor.isNativePlatform()) {
-          window.open(url, '_system');
-        } else {
-          window.open(url, '_blank', 'noopener,noreferrer');
-        }
-      }, 50);
-    });
+    // Use Capacitor Browser plugin for guaranteed external browser
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Browser.open({ url, windowName: '_system' });
+      } catch (e) {
+        // Fallback
+        window.open(url, '_system');
+      }
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   }, [selectedCenter]);
 
   // Open in external browser (prevents app freeze)
