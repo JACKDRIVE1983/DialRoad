@@ -1,23 +1,25 @@
-import { useEffect, useCallback, useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Navigation, Loader2 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { useApp } from '@/contexts/AppContext';
-import { getRegionColor } from '@/lib/regionColors';
+import { useEffect, useCallback, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { Navigation, Loader2 } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+import { useApp } from "@/contexts/AppContext";
+import { getRegionColor } from "@/lib/regionColors";
 
 // Fix for default marker icons in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
 const defaultCenter: [number, number] = [41.9028, 12.4964]; // Rome, Italy
 
-// Create custom marker icon with region color
 const createRegionIcon = (color: string) => {
   const svgIcon = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
@@ -30,17 +32,16 @@ const createRegionIcon = (color: string) => {
       <path d="M20 12 L20 28 M12 20 L28 20" stroke="white" stroke-width="3" stroke-linecap="round"/>
     </svg>
   `;
-  
+
   return L.divIcon({
     html: svgIcon,
-    className: 'custom-marker-icon',
+    className: "custom-marker-icon",
     iconSize: [40, 40],
     iconAnchor: [20, 20],
     popupAnchor: [0, -20],
   });
 };
 
-// User location marker icon
 const userLocationIcon = L.divIcon({
   html: `
     <div class="user-marker-container" style="animation: bounce-slow 2s ease-in-out infinite;">
@@ -54,34 +55,29 @@ const userLocationIcon = L.divIcon({
             <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
           </filter>
         </defs>
-        <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z" 
+        <path d="M20 55 C20 55 38 35 38 20 C38 10 30 2 20 2 C10 2 2 10 2 20 C2 35 20 55 20 55 Z"
               fill="url(#pinGrad)" stroke="white" stroke-width="2" filter="url(#shadow)"/>
         <circle cx="20" cy="20" r="8" fill="white"/>
       </svg>
     </div>
   `,
-  className: 'user-location-icon',
+  className: "user-location-icon",
   iconSize: [40, 60],
   iconAnchor: [20, 60],
 });
 
-// Component to handle map centering on user location
-function MapController({ userLocation }: { userLocation: { lat: number; lng: number } | null }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (userLocation) {
-      map.setView([userLocation.lat, userLocation.lng], 10, { animate: true });
-    }
-  }, [map, userLocation]);
-  
-  return null;
-}
-
 export function MapView() {
-  const { filteredCenters, trySelectCenter, userLocation, setUserLocation, isDarkMode } = useApp();
+  const { filteredCenters, trySelectCenter, userLocation, setUserLocation, isDarkMode } =
+    useApp();
+
   const [isLocating, setIsLocating] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+
+  const mapDivRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const centersLayerRef = useRef<L.LayerGroup | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
 
   const handleLocate = useCallback(() => {
     setIsLocating(true);
@@ -90,12 +86,12 @@ export function MapView() {
         (position) => {
           setUserLocation({
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           });
           setIsLocating(false);
         },
         (error) => {
-          console.error('Geolocation error:', error);
+          console.error("Geolocation error:", error);
           setUserLocation({ lat: defaultCenter[0], lng: defaultCenter[1] });
           setIsLocating(false);
         }
@@ -110,33 +106,97 @@ export function MapView() {
     handleLocate();
   }, [handleLocate]);
 
-  // Memoize markers to avoid unnecessary re-renders
-  const centerMarkers = useMemo(() => {
-    return filteredCenters.map((center) => {
-      const regionColor = getRegionColor(center.region);
-      const icon = createRegionIcon(regionColor);
-      
-      return (
-        <Marker
-          key={center.id}
-          position={[center.coordinates.lat, center.coordinates.lng]}
-          icon={icon}
-          eventHandlers={{
-            click: () => trySelectCenter(center),
-          }}
-        />
-      );
-    });
-  }, [filteredCenters, trySelectCenter]);
-
-  // Tile layer URL based on theme
   const tileUrl = isDarkMode
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   const tileAttribution = isDarkMode
     ? '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
     : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+  // Initialize map once
+  useEffect(() => {
+    if (!mapDivRef.current) return;
+    if (mapRef.current) return;
+
+    const map = L.map(mapDivRef.current, {
+      zoomControl: false,
+      attributionControl: true,
+    }).setView(defaultCenter, 6);
+
+    tileLayerRef.current = L.tileLayer(tileUrl, {
+      attribution: tileAttribution,
+      maxZoom: 19,
+    }).addTo(map);
+
+    centersLayerRef.current = L.layerGroup().addTo(map);
+
+    mapRef.current = map;
+    setMapReady(true);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      tileLayerRef.current = null;
+      centersLayerRef.current = null;
+      userMarkerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update tile layer on theme change
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (!tileLayerRef.current) return;
+
+    tileLayerRef.current.setUrl(tileUrl);
+    tileLayerRef.current.options.attribution = tileAttribution;
+    // Force attribution refresh
+    mapRef.current.attributionControl?.setPrefix(false);
+  }, [tileUrl, tileAttribution]);
+
+  // Update center markers
+  useEffect(() => {
+    const layer = centersLayerRef.current;
+    if (!layer) return;
+
+    layer.clearLayers();
+
+    for (const center of filteredCenters) {
+      const icon = createRegionIcon(getRegionColor(center.region));
+      const marker = L.marker([center.coordinates.lat, center.coordinates.lng], { icon });
+      marker.on("click", () => trySelectCenter(center));
+      marker.addTo(layer);
+    }
+  }, [filteredCenters, trySelectCenter]);
+
+  // Update user marker and recenter
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!userLocation) {
+      if (userMarkerRef.current) {
+        map.removeLayer(userMarkerRef.current);
+        userMarkerRef.current = null;
+      }
+      return;
+    }
+
+    const pos: [number, number] = [userLocation.lat, userLocation.lng];
+
+    if (!userMarkerRef.current) {
+      userMarkerRef.current = L.marker(pos, {
+        icon: userLocationIcon,
+        zIndexOffset: 1000,
+      }).addTo(map);
+      userMarkerRef.current.bindPopup("La tua posizione");
+    } else {
+      userMarkerRef.current.setLatLng(pos);
+    }
+
+    map.setView(pos, 10, { animate: true });
+  }, [userLocation]);
 
   if (!mapReady && filteredCenters.length === 0) {
     return (
@@ -155,36 +215,7 @@ export function MapView() {
 
   return (
     <div className="relative w-full h-full">
-      <MapContainer
-        center={defaultCenter}
-        zoom={6}
-        style={{ width: '100%', height: '100%' }}
-        zoomControl={false}
-        attributionControl={true}
-        whenReady={() => setMapReady(true)}
-      >
-        <TileLayer
-          url={tileUrl}
-          attribution={tileAttribution}
-        />
-        
-        <MapController userLocation={userLocation} />
-        
-        {/* Center markers */}
-        {centerMarkers}
-        {/* User location marker */}
-        {userLocation && (
-          <Marker
-            position={[userLocation.lat, userLocation.lng]}
-            icon={userLocationIcon}
-            zIndexOffset={1000}
-          >
-            <Popup className="user-location-popup">
-              <span className="font-semibold text-amber-600">La tua posizione</span>
-            </Popup>
-          </Marker>
-        )}
-      </MapContainer>
+      <div ref={mapDivRef} className="absolute inset-0" />
 
       {/* Center count badge - bottom left */}
       <motion.div
@@ -207,9 +238,7 @@ export function MapView() {
         whileTap={{ scale: 0.95 }}
         disabled={isLocating}
       >
-        <Navigation 
-          className={`w-5 h-5 text-primary ${isLocating ? 'animate-spin' : ''}`} 
-        />
+        <Navigation className={`w-5 h-5 text-primary ${isLocating ? "animate-spin" : ""}`} />
       </motion.button>
 
       {/* Custom styles for Leaflet */}
@@ -218,52 +247,52 @@ export function MapView() {
           background: transparent !important;
           border: none !important;
         }
-        
+
         .user-location-icon {
           background: transparent !important;
           border: none !important;
         }
-        
+
         .user-marker-container {
           display: flex;
           flex-direction: column;
           align-items: center;
         }
-        
-        .custom-cluster-icon {
-          background: transparent !important;
-          border: none !important;
-        }
-        
+
         .leaflet-popup-content-wrapper {
           background: hsl(var(--card));
           color: hsl(var(--card-foreground));
           border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
-        
+
         .leaflet-popup-tip {
           background: hsl(var(--card));
         }
-        
+
         .leaflet-container {
           font-family: inherit;
         }
-        
+
         .leaflet-control-attribution {
           background: hsl(var(--background) / 0.8) !important;
           color: hsl(var(--muted-foreground)) !important;
           font-size: 10px;
           padding: 2px 6px;
         }
-        
+
         .leaflet-control-attribution a {
           color: hsl(var(--primary)) !important;
         }
-        
+
         @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
         }
       `}</style>
     </div>
