@@ -120,9 +120,9 @@ export function CenterBottomSheet() {
   const handleAreaAnalysis = useCallback(async () => {
     if (!selectedCenter) return;
     
-    const query = encodeURIComponent(
-      `descrizione zona servizi e hotel vicino a ${selectedCenter.name} ${selectedCenter.city}`
-    );
+    // Build query with + instead of %20 for Google search compatibility
+    const query = `descrizione zona servizi e hotel vicino a ${selectedCenter.name} ${selectedCenter.city}`
+      .replace(/\s+/g, '+');
     const url = `https://www.google.com/search?q=${query}`;
     
     // Use Capacitor Browser plugin for guaranteed external browser
