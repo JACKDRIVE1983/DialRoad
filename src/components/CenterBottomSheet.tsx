@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Clock, 
-  MapPin, ChevronUp, Share2, Hotel, Globe, Smartphone
+  MapPin, ChevronUp, Share2, Hotel, Globe, Smartphone, Search
 } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -115,6 +115,27 @@ export function CenterBottomSheet() {
       toast.success('Copiato negli appunti');
     }
   };
+
+  // Open Google search for area analysis
+  const handleAreaAnalysis = useCallback(() => {
+    if (!selectedCenter) return;
+    
+    const query = encodeURIComponent(
+      `descrizione zona servizi e hotel vicino a ${selectedCenter.name} ${selectedCenter.city}`
+    );
+    const url = `https://www.google.com/search?q=${query}`;
+    
+    // Same optimized pattern to prevent UI freeze
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (Capacitor.isNativePlatform()) {
+          window.open(url, '_system');
+        } else {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      }, 50);
+    });
+  }, [selectedCenter]);
 
   // Open in external browser (prevents app freeze)
   const handleOpenInBrowser = useCallback(() => {
@@ -309,6 +330,15 @@ export function CenterBottomSheet() {
                 >
                   Non hai Booking? Installa l'app
                 </a>
+
+                {/* Area Analysis Google Search */}
+                <button
+                  onClick={handleAreaAnalysis}
+                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-teal-600 text-white font-semibold text-sm shadow-lg shadow-teal-600/25 hover:shadow-xl hover:bg-teal-700 transition-all duration-200 active:scale-[0.98]"
+                >
+                  <Search className="w-5 h-5" />
+                  <span>Analisi Zona & Hotel</span>
+                </button>
 
                 {/* Booking Choice Dialog */}
                 <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
