@@ -114,19 +114,27 @@ export function CenterBottomSheet() {
     }
   };
 
-  // Open Booking directly in external browser (no dialog)
+  // Open Booking directly in EXTERNAL system browser (not in-app WebView)
   const handleOpenBooking = useCallback(() => {
     const url = getBookingUrl();
     if (!url) return;
 
     // Use requestAnimationFrame to prevent UI freeze on low-end devices
     requestAnimationFrame(() => {
-      setTimeout(() => {
+      setTimeout(async () => {
         if (Capacitor.isNativePlatform()) {
-          // Force system browser on all native platforms
-          Browser.open({ url, windowName: '_system' }).catch(() => {
-            window.open(url, '_system');
-          });
+          try {
+            // presentationStyle: 'popover' forces external browser on iOS
+            // On Android, Browser.open without specific options opens system browser
+            await Browser.open({ 
+              url,
+              presentationStyle: 'popover' as any, // Forces external browser
+            });
+          } catch (e) {
+            console.error('[Browser] Failed to open external:', e);
+            // Ultimate fallback: use Android intent-style URL
+            window.location.href = url;
+          }
         } else {
           // Web fallback
           window.open(url, '_blank', 'noopener,noreferrer');
