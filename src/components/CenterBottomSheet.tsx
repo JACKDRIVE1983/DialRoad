@@ -120,9 +120,9 @@ export function CenterBottomSheet() {
   const handleAreaAnalysis = useCallback(async () => {
     if (!selectedCenter) return;
     
-    // Build query with + instead of %20 for Google search compatibility
-    const query = `descrizione zona servizi e hotel vicino a ${selectedCenter.name} ${selectedCenter.city}`
-      .replace(/\s+/g, '+');
+    // Use encodeURIComponent for special chars, then replace %20 with + for Google
+    const rawQuery = `descrizione zona servizi e alloggi vicino a ${selectedCenter.name} ${selectedCenter.city} per pazienti dializzati`;
+    const query = encodeURIComponent(rawQuery).replace(/%20/g, '+');
     const url = `https://www.google.com/search?q=${query}`;
     
     // Use Capacitor Browser plugin for guaranteed external browser
