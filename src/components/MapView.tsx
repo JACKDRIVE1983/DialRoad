@@ -170,7 +170,7 @@ export function MapView() {
     }
   }, [filteredCenters, trySelectCenter]);
 
-  // Update user marker and recenter
+  // Update user marker (don't recenter - keep initial Italy view)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -194,8 +194,7 @@ export function MapView() {
     } else {
       userMarkerRef.current.setLatLng(pos);
     }
-
-    map.setView(pos, 10, { animate: true });
+    // Don't recenter on initial load - keep the full Italy view (zoom 6)
   }, [userLocation]);
 
   // Center map on selected center (offset in pixels to keep pin visible above bottom sheet)
