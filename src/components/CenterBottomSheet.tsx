@@ -254,7 +254,7 @@ export function CenterBottomSheet() {
                   src={centerImage}
                   alt={selectedCenter.name}
                   className="w-full h-full object-cover"
-                  style={{ objectPosition: 'center 40%' }}
+                  style={{ objectPosition: 'center center' }}
                   loading="lazy"
                   decoding="async"
                 />
