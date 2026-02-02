@@ -91,7 +91,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
   return (
     <>
       {/* Fixed Top Header */}
-      <div className="fixed top-0 left-0 right-0 z-40 safe-area-top">
+      <div className="fixed top-0 left-0 right-0 z-[1000] safe-area-top">
         {/* Primary Bar */}
         <motion.div
           className="bg-white/95 dark:bg-card/95 backdrop-blur-xl border-b border-border/50"
