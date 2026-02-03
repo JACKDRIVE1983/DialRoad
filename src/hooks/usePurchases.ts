@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Purchases } from '@revenuecat/purchases-capacitor';
 import { supabase } from '@/integrations/supabase/client';
 
 // RevenueCat types
@@ -23,17 +24,6 @@ interface Offering {
   availablePackages: Package[];
 }
 
-// Lazy load RevenueCat only on native platforms
-let Purchases: any = null;
-
-const loadPurchases = async () => {
-  if (Capacitor.isNativePlatform() && !Purchases) {
-    const module = await import('@revenuecat/purchases-capacitor');
-    Purchases = module.Purchases;
-  }
-  return Purchases;
-};
-
 // RevenueCat API Keys
 const REVENUECAT_API_KEY_ANDROID = 'test_gQALiNRvyVpDkWFIjhOeIPMCKbq';
 const REVENUECAT_API_KEY_IOS = 'YOUR_REVENUECAT_IOS_API_KEY'; // Da configurare quando disponibile
@@ -47,57 +37,6 @@ export function usePurchases() {
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Initialize RevenueCat
-  useEffect(() => {
-    const initPurchases = async () => {
-      console.log('🛒 Purchases: Starting initialization...');
-      console.log('🛒 Is native platform:', Capacitor.isNativePlatform());
-      console.log('🛒 Platform:', Capacitor.getPlatform());
-      
-      if (!Capacitor.isNativePlatform()) {
-        console.log('🛒 Purchases: Not running on native platform, skipping initialization');
-        return;
-      }
-
-      try {
-        console.log('🛒 Loading RevenueCat module...');
-        const PurchasesModule = await loadPurchases();
-        console.log('🛒 RevenueCat module loaded:', !!PurchasesModule);
-        
-        if (!PurchasesModule) {
-          console.error('🛒 RevenueCat module is null!');
-          return;
-        }
-
-        const platform = Capacitor.getPlatform();
-        const apiKey = platform === 'android' ? REVENUECAT_API_KEY_ANDROID : REVENUECAT_API_KEY_IOS;
-        console.log('🛒 Using API key for platform:', platform);
-
-        console.log('🛒 Configuring RevenueCat...');
-        await PurchasesModule.configure({
-          apiKey,
-        });
-
-        setIsInitialized(true);
-        console.log('🛒 RevenueCat initialized successfully!');
-
-        // Check initial premium status
-        console.log('🛒 Checking premium status...');
-        await checkPremiumStatus();
-        
-        // Load offerings
-        console.log('🛒 Loading offerings...');
-        await loadOfferings();
-        console.log('🛒 Initialization complete!');
-      } catch (err) {
-        console.error('🛒 Failed to initialize RevenueCat:', err);
-        setError('Failed to initialize purchases');
-      }
-    };
-
-    initPurchases();
-  }, []);
 
   // Sync premium status to Supabase
   const syncPremiumToSupabase = useCallback(async (hasPremium: boolean) => {
@@ -128,10 +67,7 @@ export function usePurchases() {
     if (!Capacitor.isNativePlatform()) return false;
 
     try {
-      const PurchasesModule = await loadPurchases();
-      if (!PurchasesModule) return false;
-
-      const { customerInfo } = await PurchasesModule.getCustomerInfo();
+      const { customerInfo } = await Purchases.getCustomerInfo();
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
       setIsPremium(hasPremium);
       
@@ -154,15 +90,13 @@ export function usePurchases() {
     }
 
     try {
-      const PurchasesModule = await loadPurchases();
-      if (!PurchasesModule) {
-        console.error('🛒 No PurchasesModule for offerings');
-        return;
-      }
-
       console.log('🛒 Fetching offerings from RevenueCat...');
-      const { offerings: offeringsData } = await PurchasesModule.getOfferings();
-      console.log('🛒 Raw offerings response:', JSON.stringify(offeringsData, null, 2));
+      const result: any = await Purchases.getOfferings();
+      console.log('🛒 Raw offerings result:', JSON.stringify(result, null, 2));
+      
+      // RevenueCat returns { offerings: PurchasesOfferings } or just PurchasesOfferings
+      const offeringsData = result?.offerings || result;
+      console.log('🛒 offeringsData:', JSON.stringify(offeringsData, null, 2));
       console.log('🛒 offeringsData.all:', offeringsData?.all);
       console.log('🛒 offeringsData.current:', JSON.stringify(offeringsData?.current, null, 2));
       
@@ -180,8 +114,50 @@ export function usePurchases() {
     }
   }, []);
 
+  // Initialize RevenueCat
+  useEffect(() => {
+    const initPurchases = async () => {
+      console.log('🛒 Purchases: Starting initialization...');
+      console.log('🛒 Is native platform:', Capacitor.isNativePlatform());
+      console.log('🛒 Platform:', Capacitor.getPlatform());
+      
+      if (!Capacitor.isNativePlatform()) {
+        console.log('🛒 Purchases: Not running on native platform, skipping initialization');
+        return;
+      }
+
+      try {
+        const platform = Capacitor.getPlatform();
+        const apiKey = platform === 'android' ? REVENUECAT_API_KEY_ANDROID : REVENUECAT_API_KEY_IOS;
+        console.log('🛒 Using API key for platform:', platform);
+
+        console.log('🛒 Configuring RevenueCat...');
+        await Purchases.configure({
+          apiKey,
+        });
+
+        setIsInitialized(true);
+        console.log('🛒 RevenueCat initialized successfully!');
+
+        // Check initial premium status
+        console.log('🛒 Checking premium status...');
+        await checkPremiumStatus();
+        
+        // Load offerings
+        console.log('🛒 Loading offerings...');
+        await loadOfferings();
+        console.log('🛒 Initialization complete!');
+      } catch (err) {
+        console.error('🛒 Failed to initialize RevenueCat:', err);
+        setError('Failed to initialize purchases');
+      }
+    };
+
+    initPurchases();
+  }, [checkPremiumStatus, loadOfferings]);
+
   // Purchase a package
-  const purchasePackage = useCallback(async (packageToPurchase: Package) => {
+  const purchasePackage = useCallback(async (packageToPurchase: any) => {
     console.log('🛒 purchasePackage called with:', JSON.stringify(packageToPurchase, null, 2));
     
     if (!Capacitor.isNativePlatform()) {
@@ -194,17 +170,8 @@ export function usePurchases() {
     setError(null);
 
     try {
-      const PurchasesModule = await loadPurchases();
-      console.log('🛒 PurchasesModule for purchase:', !!PurchasesModule);
-      
-      if (!PurchasesModule) {
-        console.error('🛒 Purchases not initialized!');
-        setError('Purchases not initialized');
-        return false;
-      }
-
       console.log('🛒 Calling purchasePackage on RevenueCat...');
-      const { customerInfo } = await PurchasesModule.purchasePackage({
+      const { customerInfo }: any = await Purchases.purchasePackage({
         aPackage: packageToPurchase,
       });
       
@@ -247,13 +214,7 @@ export function usePurchases() {
     setError(null);
 
     try {
-      const PurchasesModule = await loadPurchases();
-      if (!PurchasesModule) {
-        setError('Purchases not initialized');
-        return false;
-      }
-
-      const { customerInfo } = await PurchasesModule.restorePurchases();
+      const { customerInfo } = await Purchases.restorePurchases();
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
       setIsPremium(hasPremium);
       
@@ -275,10 +236,7 @@ export function usePurchases() {
     if (!Capacitor.isNativePlatform()) return;
 
     try {
-      const PurchasesModule = await loadPurchases();
-      if (!PurchasesModule) return;
-
-      await PurchasesModule.logIn({ appUserID: userId });
+      await Purchases.logIn({ appUserID: userId });
       await checkPremiumStatus();
     } catch (err) {
       console.error('Failed to identify user:', err);
@@ -290,10 +248,7 @@ export function usePurchases() {
     if (!Capacitor.isNativePlatform()) return;
 
     try {
-      const PurchasesModule = await loadPurchases();
-      if (!PurchasesModule) return;
-
-      await PurchasesModule.logOut();
+      await Purchases.logOut();
       setIsPremium(false);
     } catch (err) {
       console.error('Failed to logout user:', err);
