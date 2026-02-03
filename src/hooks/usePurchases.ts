@@ -162,14 +162,18 @@ export function usePurchases() {
 
       console.log('🛒 Fetching offerings from RevenueCat...');
       const { offerings: offeringsData } = await PurchasesModule.getOfferings();
-      console.log('🛒 Raw offerings data:', JSON.stringify(offeringsData, null, 2));
+      console.log('🛒 Raw offerings response:', JSON.stringify(offeringsData, null, 2));
+      console.log('🛒 offeringsData.all:', offeringsData?.all);
+      console.log('🛒 offeringsData.current:', JSON.stringify(offeringsData?.current, null, 2));
       
-      if (offeringsData?.all) {
+      if (offeringsData?.all && Object.keys(offeringsData.all).length > 0) {
         const allOfferings = Object.values(offeringsData.all) as Offering[];
+        console.log('🛒 Parsed offerings count:', allOfferings.length);
         console.log('🛒 Parsed offerings:', JSON.stringify(allOfferings, null, 2));
         setOfferings(allOfferings);
       } else {
-        console.warn('🛒 No offerings found in response!');
+        console.warn('🛒 No offerings found! Make sure you have created an Offering in RevenueCat dashboard');
+        console.warn('🛒 Go to RevenueCat > Offerings > Create a "default" offering and attach your product');
       }
     } catch (err) {
       console.error('🛒 Failed to load offerings:', err);
