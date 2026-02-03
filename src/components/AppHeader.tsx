@@ -10,6 +10,7 @@ import logoIcon from '@/assets/dialroad-logo-new-icon.png';
 import { useDebounce } from '@/hooks/useDebounce';
 import { showInterstitialAd, canShowInterstitial } from '@/lib/admob';
 import { Capacitor } from '@capacitor/core';
+import { REGION_COLORS } from '@/lib/regionColors';
 
 type TabType = 'map' | 'list' | 'settings';
 
@@ -176,11 +177,11 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
             </div>
 
             {/* Right: Theme + Premium Toggle + Profile/Login */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 ml-auto">
               {/* Theme toggle */}
               <button
                 onClick={toggleDarkMode}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-muted"
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-muted"
               >
                 <motion.div
                   initial={false}
@@ -188,9 +189,9 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                   transition={{ duration: 0.3 }}
                 >
                   {isDarkMode ? (
-                    <Sun className="w-4 h-4 text-muted-foreground" />
+                    <Sun className="w-3.5 h-3.5 text-muted-foreground" />
                   ) : (
-                    <Moon className="w-4 h-4 text-muted-foreground" />
+                    <Moon className="w-3.5 h-3.5 text-muted-foreground" />
                   )}
                 </motion.div>
               </button>
@@ -202,16 +203,16 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                   localStorage.setItem('dialroad-premium-override', newValue ? 'true' : 'false');
                   window.location.reload();
                 }}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-1 px-1.5 py-1 rounded-lg transition-all duration-200 ${
                   isPremium 
                     ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30' 
                     : 'bg-muted/50 hover:bg-muted border border-border'
                 }`}
                 title={isPremium ? 'Premium attivo (clicca per disattivare)' : 'Attiva Premium'}
               >
-                <Crown className="w-4 h-4 text-orange-500" />
-                <span className={`text-xs font-semibold ${isPremium ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
-                  {isPremium ? 'Premium' : 'Pro'}
+                <Crown className="w-3.5 h-3.5 text-orange-500" />
+                <span className={`text-[10px] font-semibold ${isPremium ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                  {isPremium ? 'Pro' : 'Pro'}
                 </span>
               </button>
 
@@ -219,28 +220,28 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               {user ? (
                 <button
                   onClick={() => onTabChange?.('settings')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all duration-200 ${
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full transition-all duration-200 ${
                     isPremium
                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25'
                       : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="w-5 h-5 rounded-full" />
+                    <img src={profile.avatar_url} alt="" className="w-4 h-4 rounded-full" />
                   ) : (
-                    <User className={`w-3.5 h-3.5 ${isPremium ? 'text-white' : 'text-primary'}`} />
+                    <User className={`w-3 h-3 ${isPremium ? 'text-white' : 'text-primary'}`} />
                   )}
                   {isPremium && (
-                    <Crown className="w-3 h-3 text-white" />
+                    <Crown className="w-2.5 h-2.5 text-white" />
                   )}
                 </button>
               ) : (
                 <button
                   onClick={() => navigate('/auth')}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all duration-200 bg-primary/10 hover:bg-primary/20 text-primary"
+                  className="flex items-center gap-1 px-2 py-1 rounded-full transition-all duration-200 bg-primary/10 hover:bg-primary/20 text-primary"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span className="font-semibold text-xs">Accedi</span>
+                  <LogIn className="w-3 h-3" />
+                  <span className="font-semibold text-[10px]">Accedi</span>
                 </button>
               )}
             </div>
@@ -348,7 +349,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+              className="fixed inset-0 z-[1000] bg-black/30 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -357,7 +358,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
 
             {/* Filter panel */}
             <motion.div
-              className="fixed top-28 left-4 right-4 z-50 bg-background dark:bg-card backdrop-blur-2xl rounded-2xl p-4 max-h-[50vh] overflow-y-auto border border-border"
+              className="fixed top-28 left-4 right-4 z-[1001] bg-background dark:bg-card backdrop-blur-2xl rounded-2xl p-4 max-h-[70vh] overflow-y-auto border border-border"
               style={{
                 boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)'
               }}
@@ -387,19 +388,50 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                   Seleziona Regione
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {regions.map((region) => (
-                    <button
-                      key={region}
-                      onClick={() => setSelectedRegion(region)}
-                      className={`px-2.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                        selectedRegion === region
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                      }`}
-                    >
-                      {region}
-                    </button>
-                  ))}
+                  {regions.map((region) => {
+                    const regionColor = region !== 'Tutte le Regioni' ? REGION_COLORS[region] : undefined;
+                    return (
+                      <button
+                        key={region}
+                        onClick={() => setSelectedRegion(region)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                          selectedRegion === region
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        {regionColor && (
+                          <span 
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: regionColor }}
+                          />
+                        )}
+                        {region}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Region Legend */}
+              <div className="mb-4 pt-3 border-t border-border">
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                  Legenda Colori Regioni
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {Object.entries(REGION_COLORS)
+                    .filter(([key]) => !key.includes('-') || key === key.charAt(0).toUpperCase() + key.slice(1))
+                    .filter(([key], idx, arr) => arr.findIndex(([k]) => k.toLowerCase() === key.toLowerCase()) === idx)
+                    .slice(0, 20)
+                    .map(([region, color]) => (
+                      <div key={region} className="flex items-center gap-1.5">
+                        <span 
+                          className="w-3 h-3 rounded-full flex-shrink-0" 
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="text-[10px] text-muted-foreground truncate">{region}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
 
