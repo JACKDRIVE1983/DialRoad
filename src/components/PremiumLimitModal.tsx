@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Crown, Lock, Sparkles, LogIn } from 'lucide-react';
+import { Crown, Lock, Sparkles, LogIn, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePurchases } from '@/hooks/usePurchases';
+import { toast } from 'sonner';
+import { Capacitor } from '@capacitor/core';
 
 interface PremiumLimitModalProps {
   open: boolean;
@@ -11,17 +15,55 @@ interface PremiumLimitModalProps {
 export function PremiumLimitModal({ open, onOpenChange }: PremiumLimitModalProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { offerings, purchasePackage, isLoading } = usePurchases();
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     if (!user) {
       // Not logged in - redirect to auth page
       onOpenChange(false);
       navigate('/auth');
       return;
     }
-    // TODO: Implement actual in-app purchase for logged in users
-    onOpenChange(false);
+
+    // Check if we're on a native platform
+    if (!Capacitor.isNativePlatform()) {
+      toast.info('Acquisti disponibili solo sull\'app mobile');
+      onOpenChange(false);
+      return;
+    }
+
+    // Find the default offering and annual package
+    const defaultOffering = offerings.find(o => o.identifier === 'default');
+    const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
+
+    if (!annualPackage) {
+      toast.error('Pacchetto non disponibile. Riprova più tardi.');
+      console.error('Annual package not found in offerings:', offerings);
+      return;
+    }
+
+    setIsPurchasing(true);
+    try {
+      const success = await purchasePackage(annualPackage);
+      if (success) {
+        toast.success('🎉 Benvenuto in Premium! Tutti i banner sono stati rimossi.');
+        onOpenChange(false);
+        // Reload to apply premium status everywhere
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error('Errore durante l\'acquisto. Riprova.');
+    } finally {
+      setIsPurchasing(false);
+    }
   };
+
+  // Get price from offerings if available
+  const defaultOffering = offerings.find(o => o.identifier === 'default');
+  const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
+  const priceString = annualPackage?.product?.priceString || '€9,99/anno';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,12 +110,26 @@ export function PremiumLimitModal({ open, onOpenChange }: PremiumLimitModalProps
             </ul>
           </div>
 
+          {/* Price badge */}
+          {user && Capacitor.isNativePlatform() && (
+            <div className="text-center py-2">
+              <span className="text-2xl font-bold text-foreground">{priceString}</span>
+              <p className="text-xs text-muted-foreground mt-1">Abbonamento annuale</p>
+            </div>
+          )}
+
           {/* Upgrade/Login button */}
           <button
             onClick={handleUpgrade}
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-base shadow-lg shadow-amber-500/30 hover:shadow-xl hover:from-amber-400 hover:to-orange-400 transition-all duration-200 active:scale-[0.98]"
+            disabled={isPurchasing || isLoading}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-base shadow-lg shadow-amber-500/30 hover:shadow-xl hover:from-amber-400 hover:to-orange-400 transition-all duration-200 active:scale-[0.98] disabled:opacity-70"
           >
-            {user ? (
+            {isPurchasing || isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Elaborazione...</span>
+              </>
+            ) : user ? (
               <>
                 <Crown className="w-5 h-5" />
                 <span>Passa a Premium</span>
