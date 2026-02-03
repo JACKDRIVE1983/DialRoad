@@ -31,9 +31,27 @@ const REVENUECAT_API_KEY_IOS = 'YOUR_REVENUECAT_IOS_API_KEY'; // Da configurare 
 // Premium entitlement identifier (configure in RevenueCat dashboard)
 const PREMIUM_ENTITLEMENT_ID = 'premium';
 
+// LocalStorage key for persisting premium status
+const PREMIUM_STATUS_KEY = 'dialroad-premium-status';
+
+// Helper to get initial premium status from localStorage
+const getInitialPremiumStatus = (): boolean => {
+  try {
+    const stored = localStorage.getItem(PREMIUM_STATUS_KEY);
+    if (stored === 'true') return true;
+    // Also check the override key for dev purposes
+    const override = localStorage.getItem('dialroad-premium-override');
+    if (override === 'true') return true;
+  } catch {
+    // localStorage not available
+  }
+  return false;
+};
+
 export function usePurchases() {
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
+  // Initialize from localStorage to prevent flash of ads
+  const [isPremium, setIsPremium] = useState(getInitialPremiumStatus);
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +98,14 @@ export function usePurchases() {
       console.log('🛒 Looking for entitlement:', PREMIUM_ENTITLEMENT_ID);
       console.log('🛒 Has any active entitlement:', hasAnyEntitlement);
       console.log('🛒 Has premium:', hasPremium);
+      
+      // Persist to localStorage BEFORE setting state
+      try {
+        localStorage.setItem(PREMIUM_STATUS_KEY, hasPremium ? 'true' : 'false');
+        console.log('🛒 Premium status persisted to localStorage:', hasPremium);
+      } catch {
+        // localStorage not available
+      }
       
       setIsPremium(hasPremium);
       
@@ -191,6 +217,12 @@ export function usePurchases() {
 
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
       console.log('🛒 Has premium after purchase:', hasPremium);
+      
+      // Persist to localStorage
+      try {
+        localStorage.setItem(PREMIUM_STATUS_KEY, hasPremium ? 'true' : 'false');
+      } catch {}
+      
       setIsPremium(hasPremium);
       
       // Sync to Supabase after successful purchase
@@ -228,6 +260,12 @@ export function usePurchases() {
     try {
       const { customerInfo } = await Purchases.restorePurchases();
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
+      
+      // Persist to localStorage
+      try {
+        localStorage.setItem(PREMIUM_STATUS_KEY, hasPremium ? 'true' : 'false');
+      } catch {}
+      
       setIsPremium(hasPremium);
       
       // Sync to Supabase after restore
@@ -261,6 +299,9 @@ export function usePurchases() {
 
     try {
       await Purchases.logOut();
+      try {
+        localStorage.setItem(PREMIUM_STATUS_KEY, 'false');
+      } catch {}
       setIsPremium(false);
     } catch (err) {
       console.error('Failed to logout user:', err);
