@@ -35,13 +35,21 @@ const PREMIUM_ENTITLEMENT_ID = 'premium';
 const PREMIUM_STATUS_KEY = 'dialroad-premium-status';
 
 // Helper to get initial premium status from localStorage
+// PRIORITY: override > stored status
 const getInitialPremiumStatus = (): boolean => {
   try {
-    const stored = localStorage.getItem(PREMIUM_STATUS_KEY);
-    if (stored === 'true') return true;
-    // Also check the override key for dev purposes
+    // Check override FIRST (highest priority)
     const override = localStorage.getItem('dialroad-premium-override');
-    if (override === 'true') return true;
+    if (override === 'true') {
+      console.log('🛒 Initial premium: override active');
+      return true;
+    }
+    // Then check stored status
+    const stored = localStorage.getItem(PREMIUM_STATUS_KEY);
+    if (stored === 'true') {
+      console.log('🛒 Initial premium: stored status active');
+      return true;
+    }
   } catch {
     // localStorage not available
   }
@@ -82,6 +90,16 @@ export function usePurchases() {
 
   // Check if user has premium entitlement
   const checkPremiumStatus = useCallback(async () => {
+    // ALWAYS check override first - never reset if override is active
+    try {
+      const override = localStorage.getItem('dialroad-premium-override');
+      if (override === 'true') {
+        console.log('🛒 Premium override active, skipping RevenueCat check');
+        setIsPremium(true);
+        return true;
+      }
+    } catch {}
+    
     if (!Capacitor.isNativePlatform()) return false;
 
     try {
@@ -115,9 +133,10 @@ export function usePurchases() {
       return hasPremium;
     } catch (err) {
       console.error('Failed to check premium status:', err);
-      return false;
+      // On error, keep current premium status from localStorage
+      return isPremium;
     }
-  }, [syncPremiumToSupabase]);
+  }, [syncPremiumToSupabase, isPremium]);
 
   // Load available offerings/packages
   const loadOfferings = useCallback(async () => {

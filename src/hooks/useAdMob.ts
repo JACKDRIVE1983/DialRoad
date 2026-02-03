@@ -27,12 +27,15 @@ let appStateSubscription: { remove: () => void } | null = null;
 
 // Track premium ref globally so timers can check it
 // Initialize from localStorage to prevent ad flash on startup
+// PRIORITY: override (highest) > stored status
 let globalIsPremiumRef = (() => {
   try {
-    const stored = localStorage.getItem('dialroad-premium-status');
-    if (stored === 'true') return true;
+    // Check override FIRST (highest priority - never gets reset by RevenueCat)
     const override = localStorage.getItem('dialroad-premium-override');
     if (override === 'true') return true;
+    // Then check stored status
+    const stored = localStorage.getItem('dialroad-premium-status');
+    if (stored === 'true') return true;
   } catch {}
   return false;
 })();

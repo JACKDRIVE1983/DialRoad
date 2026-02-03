@@ -32,12 +32,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const PREMIUM_STATUS_KEY = 'dialroad-premium-status';
 
 // Get initial premium status from localStorage
+// PRIORITY: override (highest) > stored status
 const getInitialPremiumFromStorage = (): boolean => {
   try {
-    const stored = localStorage.getItem(PREMIUM_STATUS_KEY);
-    if (stored === 'true') return true;
+    // Check override FIRST (highest priority - never gets reset)
     const override = localStorage.getItem('dialroad-premium-override');
     if (override === 'true') return true;
+    // Then check stored status
+    const stored = localStorage.getItem(PREMIUM_STATUS_KEY);
+    if (stored === 'true') return true;
   } catch {}
   return false;
 };
