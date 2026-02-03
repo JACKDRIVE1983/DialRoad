@@ -13,6 +13,7 @@ import { useAIResponses } from '@/hooks/useAIResponses';
 import { CenterComments } from './CenterComments';
 import { CenterRatingSummary } from './CenterRatingSummary';
 import { AIChatSimulator } from './AIChatSimulator';
+import { FavoriteButton } from './FavoriteButton';
 import { Capacitor } from '@capacitor/core';
 
 import { showInterstitialAd } from '@/lib/admob';
@@ -196,6 +197,15 @@ export function CenterBottomSheet() {
                 >
                   <X className="w-4 h-4 text-foreground" />
                 </button>
+
+                {/* Favorite button */}
+                <div className="absolute top-3 right-14">
+                  <FavoriteButton 
+                    centerId={selectedCenter.id} 
+                    size="md" 
+                    className="bg-white/90 dark:bg-black/50 backdrop-blur-md border border-white/50 dark:border-white/20"
+                  />
+                </div>
 
                 {/* Expand indicator */}
                 <button

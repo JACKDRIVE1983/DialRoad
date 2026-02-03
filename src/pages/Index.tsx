@@ -1,4 +1,4 @@
-import { memo, lazy, Suspense } from 'react';
+import { memo, lazy, Suspense, useState } from 'react';
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import { SplashScreen } from '@/components/SplashScreen';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
@@ -6,6 +6,7 @@ import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { AppHeader } from '@/components/AppHeader';
 import { AdBanner } from '@/components/AdBanner';
 import { PremiumLimitModal } from '@/components/PremiumLimitModal';
+import { FavoritesView } from '@/components/FavoritesView';
 import { useAdMob } from '@/hooks/useAdMob';
 import { Loader2 } from 'lucide-react';
 
@@ -49,7 +50,11 @@ const ListTabContent = memo(function ListTabContent({
   );
 });
 
-const SettingsTabContent = memo(function SettingsTabContent() {
+const SettingsTabContent = memo(function SettingsTabContent({ 
+  onShowFavorites 
+}: { 
+  onShowFavorites: () => void 
+}) {
   return (
     <div className="flex flex-col pt-14 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
       <div className="pt-4 px-4">
@@ -58,7 +63,7 @@ const SettingsTabContent = memo(function SettingsTabContent() {
         </h1>
       </div>
       <Suspense fallback={<LoadingFallback />}>
-        <SettingsView />
+        <SettingsView onShowFavorites={onShowFavorites} />
       </Suspense>
     </div>
   );
@@ -78,6 +83,8 @@ function AppContent() {
     isPremium
   } = useApp();
   
+  const [showFavorites, setShowFavorites] = useState(false);
+  
   // Initialize AdMob on native platforms (pass isPremium to disable ads for premium users)
   useAdMob(isPremium);
 
@@ -91,6 +98,28 @@ function AppContent() {
     return <OnboardingScreen onComplete={() => setShowOnboarding(false)} />;
   }
 
+  // Show favorites view
+  if (showFavorites) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex flex-col pt-14 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
+          <FavoritesView onBack={() => setShowFavorites(false)} />
+        </div>
+        
+        <Suspense fallback={null}>
+          <CenterBottomSheet />
+        </Suspense>
+        
+        {/* Ad Banner - only show for non-premium users */}
+        {!isPremium && (
+          <div className="fixed bottom-0 left-0 right-0 z-[9999] px-4 pb-[env(safe-area-inset-bottom)]">
+            <AdBanner />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
@@ -98,7 +127,7 @@ function AppContent() {
       {/* Removed AnimatePresence for better performance on low-end devices */}
       {activeTab === 'map' && <MapTabContent />}
       {activeTab === 'list' && <ListTabContent onSelectCenter={trySelectCenter} />}
-      {activeTab === 'settings' && <SettingsTabContent />}
+      {activeTab === 'settings' && <SettingsTabContent onShowFavorites={() => setShowFavorites(true)} />}
 
       <Suspense fallback={null}>
         <CenterBottomSheet />
