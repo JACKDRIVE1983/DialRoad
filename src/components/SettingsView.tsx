@@ -130,7 +130,8 @@ export function SettingsView() {
     const defaultOffering = offerings.find(o => o.identifier === 'default');
     console.log('🛍️ Default offering:', JSON.stringify(defaultOffering, null, 2));
     
-    const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
+    // Package identifier from RevenueCat: $rc_annual
+    const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$rc_annual');
     console.log('🛍️ Annual package:', JSON.stringify(annualPackage, null, 2));
 
     if (!annualPackage) {
@@ -168,7 +169,7 @@ export function SettingsView() {
 
   // Get price from offerings if available
   const defaultOffering = offerings.find(o => o.identifier === 'default');
-  const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
+  const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$rc_annual');
   const priceString = annualPackage?.product?.priceString || '€12,99/anno';
 
   const themeOptions: { value: ThemeOption; label: string; icon: React.ReactNode }[] = [
