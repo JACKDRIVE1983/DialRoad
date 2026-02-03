@@ -25,7 +25,7 @@ interface Offering {
 }
 
 // RevenueCat API Keys
-const REVENUECAT_API_KEY_ANDROID = 'test_gQALiNRvyVpDkWFIjhOeIPMCKbq';
+const REVENUECAT_API_KEY_ANDROID = 'goog_NbbhUoXjXBlgPazVIsUOgpITUNX';
 const REVENUECAT_API_KEY_IOS = 'YOUR_REVENUECAT_IOS_API_KEY'; // Da configurare quando disponibile
 
 // Premium entitlement identifier (configure in RevenueCat dashboard)
