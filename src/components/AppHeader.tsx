@@ -454,7 +454,7 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4"
           >
             <div 
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -480,108 +480,89 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               </div>
 
               <div className="p-6 space-y-6 text-sm">
+                <p className="text-muted-foreground font-medium">Aggiornata 2026</p>
+
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">1) Titolare del trattamento</h3>
+                  <h3 className="font-bold text-foreground mb-2">1. Titolare del Trattamento</h3>
                   <p className="text-muted-foreground">
+                    Contatto: Giacomo<br />
                     Email: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>
                   </p>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">2) Scopo dell'app</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    DialRoad permette di individuare su mappa i centri dialisi in Italia, consultare informazioni utili (indirizzo, contatti e dettagli della struttura) e lasciare recensioni anonime per aiutare le persone in dialisi a organizzare spostamenti e vacanze.
+                  <h3 className="font-bold text-foreground mb-2">2. Tipologia di Dati Raccolti</h3>
+                  <p className="text-muted-foreground leading-relaxed mb-3">
+                    Con l'introduzione delle nuove funzionalità, DialRoad raccoglie le seguenti categorie di dati:
                   </p>
-                </section>
-
-                <section>
-                  <h3 className="font-bold text-foreground mb-2">3) Uso senza registrazione</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    L'app è completamente utilizzabile senza registrazione o login. Tutte le funzionalità, incluse la mappa, la consultazione dei centri e la possibilità di lasciare recensioni, sono disponibili a tutti senza creare un account.
-                  </p>
-                </section>
-
-                <section>
-                  <h3 className="font-bold text-foreground mb-2">4) Dati raccolti</h3>
                   <div className="space-y-3 text-muted-foreground">
                     <div>
-                      <p className="font-medium text-foreground">A) Posizione GPS (facoltativa)</p>
-                      <p className="leading-relaxed">Se l'utente concede il permesso, la posizione viene usata esclusivamente per mostrare i centri più vicini. La posizione non viene salvata sui nostri server. In alternativa la ricerca resta manuale.</p>
+                      <p className="font-medium text-foreground">Dati Identificativi (Account)</p>
+                      <p className="leading-relaxed">Email e nome utente forniti in fase di registrazione/login. Questi dati sono necessari per gestire il tuo profilo, i tuoi preferiti e il tuo abbonamento.</p>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">B) Recensioni e commenti</p>
-                      <p className="leading-relaxed">Per lasciare una recensione è sufficiente inserire un nome (a scelta dell'utente), un commento e una valutazione. Questi dati sono pubblici e visibili agli altri utenti. Non raccogliamo email, password o altri dati personali.</p>
+                      <p className="font-medium text-foreground">Dati di Posizione (GPS)</p>
+                      <p className="leading-relaxed">Utilizzati (previo consenso) esclusivamente per mostrare i centri dialisi vicini a te. Non vengono memorizzati sui nostri server.</p>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">C) Dati tecnici minimi</p>
-                      <p className="leading-relaxed">Utilizziamo localStorage del dispositivo per ricordare preferenze locali (es. centri già recensiti). Questi dati restano solo sul dispositivo e non vengono trasmessi.</p>
+                      <p className="font-medium text-foreground">Dati di Utilizzo e Preferenze</p>
+                      <p className="leading-relaxed">Informazioni sui centri salvati nei "Preferiti" e impostazioni dell'app.</p>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">D) Dati sanitari</p>
-                      <p className="leading-relaxed">DialRoad non raccoglie dati sanitari o clinici. Ti invitiamo a non condividere informazioni mediche sensibili nelle recensioni.</p>
+                      <p className="font-medium text-foreground">Dati su Acquisti e Abbonamenti</p>
+                      <p className="leading-relaxed">Per la gestione della versione Premium, utilizziamo il servizio RevenueCat. Non trattiamo direttamente i dati della tua carta di credito, che sono gestiti in modo sicuro da Google Play Store.</p>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">E) Cookie e Identificatori di Pubblicità (Terze Parti)</p>
-                      <p className="leading-relaxed">L'app utilizza identificatori univoci del dispositivo per personalizzare gli annunci pubblicitari tramite il servizio Google AdMob. Questi dati possono includere il tuo ID pubblicitario (IDFA su iOS o AAID su Android) per mostrare inserzioni pertinenti.</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">F) Link di Affiliazione</p>
-                      <p className="leading-relaxed">L'app partecipa al programma di affiliazione di Booking.com. Cliccando sul tasto "Hotel nelle vicinanze", verrai reindirizzato al sito di Booking.com. Questo servizio può utilizzare cookie per tracciare la provenienza della prenotazione e attribuire una commissione al titolare dell'app.</p>
+                      <p className="font-medium text-foreground">Recensioni e Commenti</p>
+                      <p className="leading-relaxed">Testi e valutazioni che decidi di rendere pubblici nell'app.</p>
                     </div>
                   </div>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">5) Finalità del trattamento</h3>
+                  <h3 className="font-bold text-foreground mb-2">3. Finalità del Trattamento</h3>
+                  <p className="text-muted-foreground leading-relaxed mb-2">I dati vengono trattati per:</p>
                   <ul className="text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Visualizzazione mappa e ricerca centri dialisi</li>
-                    <li>Geolocalizzazione per trovare centri vicini (solo se autorizzata)</li>
-                    <li>Pubblicazione di recensioni anonime</li>
-                    <li>Sicurezza e prevenzione abusi/spam</li>
+                    <li>Fornire l'accesso alle funzionalità dell'app (Mappa, Ricerca).</li>
+                    <li>Gestire l'account utente e la sincronizzazione dei Preferiti.</li>
+                    <li>Elaborare e mantenere attivo l'abbonamento Premium (rimozione pubblicità).</li>
+                    <li>Consentire la pubblicazione di recensioni per la community.</li>
                   </ul>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">6) Base giuridica</h3>
+                  <h3 className="font-bold text-foreground mb-2">4. Base Giuridica</h3>
                   <ul className="text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Consenso esplicito per la geolocalizzazione</li>
-                    <li>Esecuzione del servizio per la pubblicazione di recensioni</li>
-                    <li>Legittimo interesse per sicurezza e moderazione</li>
+                    <li><strong>Esecuzione di un contratto:</strong> Per la gestione dell'account e dell'abbonamento Premium.</li>
+                    <li><strong>Consenso:</strong> Per l'accesso alla posizione GPS e per l'invio di eventuali notifiche.</li>
+                    <li><strong>Legittimo interesse:</strong> Per la sicurezza dell'app e la moderazione dei contenuti.</li>
                   </ul>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">7) Condivisione dei dati</h3>
-                  <p className="text-muted-foreground leading-relaxed mb-3">
-                    I dati delle recensioni sono pubblici nell'app. I servizi tecnici (es. mappe, hosting) possono trattare dati necessari al funzionamento. DialRoad non vende dati a terzi.
-                  </p>
-                  <p className="text-muted-foreground leading-relaxed">
-                    <span className="font-medium text-foreground">Partner pubblicitari e di affiliazione:</span> I dati tecnici e pubblicitari possono essere condivisi con:
-                  </p>
-                  <ul className="text-muted-foreground list-disc list-inside space-y-1 mt-2">
-                    <li><strong>Google AdMob:</strong> Per l'erogazione di banner e annunci pubblicitari (si rimanda alla Privacy Policy di Google).</li>
-                    <li><strong>Booking.com:</strong> Per la gestione delle ricerche hotel e dell'affiliazione.</li>
+                  <h3 className="font-bold text-foreground mb-2">5. Servizi di Terze Parti</h3>
+                  <p className="text-muted-foreground leading-relaxed mb-2">Per il corretto funzionamento, DialRoad interagisce con:</p>
+                  <ul className="text-muted-foreground list-disc list-inside space-y-1">
+                    <li><strong>Supabase:</strong> Per il database protetto e l'autenticazione degli utenti.</li>
+                    <li><strong>RevenueCat:</strong> Per la gestione tecnica dello stato dell'abbonamento.</li>
+                    <li><strong>Google Play Store:</strong> Per l'elaborazione dei pagamenti.</li>
+                    <li><strong>Google Maps:</strong> Per la visualizzazione cartografica.</li>
                   </ul>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">8) Diritti dell'utente</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Per richiedere la rimozione di una recensione o esercitare altri diritti ai sensi del GDPR, contatta: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>
-                  </p>
+                  <h3 className="font-bold text-foreground mb-2">6. Conservazione dei Dati</h3>
+                  <ul className="text-muted-foreground list-disc list-inside space-y-1">
+                    <li>I dati dell'account rimangono attivi fino alla richiesta di cancellazione da parte dell'utente.</li>
+                    <li>I dati delle recensioni rimangono pubblici finché l'app è attiva o finché l'utente ne richiede la rimozione.</li>
+                    <li>Puoi richiedere la cancellazione totale del tuo account e dei dati associati inviando una mail a <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a> o tramite l'apposita funzione "Elimina Account" se presente.</li>
+                  </ul>
                 </section>
 
                 <section>
-                  <h3 className="font-bold text-foreground mb-2">9) Modifiche</h3>
+                  <h3 className="font-bold text-foreground mb-2">7. Diritti dell'Interessato (GDPR)</h3>
                   <p className="text-muted-foreground leading-relaxed">
-                    La presente informativa può essere aggiornata. La data di aggiornamento è indicata in alto.
-                  </p>
-                </section>
-
-                <section>
-                  <h3 className="font-bold text-foreground mb-2">10) Gestione del consenso pubblicitario</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Gli utenti possono limitare il tracciamento pubblicitario direttamente dalle impostazioni del proprio sistema operativo (Android o iOS) resettando o disattivando l'ID pubblicitario. Per gli utenti Premium, la raccolta di dati a fini pubblicitari viene interrotta in quanto la pubblicità viene rimossa.
+                    Hai il diritto di accedere ai tuoi dati, rettificarli, cancellarli o limitarne il trattamento. Per qualsiasi richiesta relativa alla tua privacy, scrivi a: <a href="mailto:giacomo748@gmail.com" className="text-primary hover:underline">giacomo748@gmail.com</a>
                   </p>
                 </section>
               </div>
