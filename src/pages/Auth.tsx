@@ -129,14 +129,14 @@ export default function Auth() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      const { data, error } = await supabase.functions.invoke('send-temp-password', {
+        body: { email }
       });
 
       if (error) {
         toast({
           title: 'Errore',
-          description: 'Impossibile inviare l\'email di recupero',
+          description: 'Impossibile inviare le credenziali',
           variant: 'destructive'
         });
         return;
@@ -144,7 +144,7 @@ export default function Auth() {
 
       toast({
         title: 'Email inviata!',
-        description: 'Controlla la tua casella email per reimpostare la password'
+        description: 'Controlla la tua email per le credenziali di accesso'
       });
       setMode('login');
     } finally {
