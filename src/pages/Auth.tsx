@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import logoIcon from '@/assets/dialroad-logo-new-icon.png';
 import { z } from 'zod';
 
@@ -19,7 +20,7 @@ const displayNameSchema = z.string()
   .max(50, 'Nome troppo lungo')
   .optional();
 
-type AuthMode = 'login' | 'signup';
+type AuthMode = 'login' | 'signup' | 'forgot-password';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -49,9 +50,11 @@ export default function Auth() {
       newErrors.email = emailResult.error.errors[0].message;
     }
     
-    const passwordResult = passwordSchema.safeParse(password);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
+    if (mode !== 'forgot-password') {
+      const passwordResult = passwordSchema.safeParse(password);
+      if (!passwordResult.success) {
+        newErrors.password = passwordResult.error.errors[0].message;
+      }
     }
     
     if (mode === 'signup' && displayName) {
@@ -65,8 +68,45 @@ export default function Auth() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleForgotPassword = async () => {
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      setErrors({ email: emailResult.error.errors[0].message });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      });
+
+      if (error) {
+        toast({
+          title: 'Errore',
+          description: 'Impossibile inviare l\'email di recupero',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: 'Email inviata!',
+        description: 'Controlla la tua casella email per reimpostare la password'
+      });
+      setMode('login');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (mode === 'forgot-password') {
+      await handleForgotPassword();
+      return;
+    }
     
     if (!validateForm()) return;
     
@@ -115,9 +155,10 @@ export default function Auth() {
         }
         
         toast({
-          title: 'Registrazione completata!',
-          description: 'Controlla la tua email per confermare l\'account'
+          title: 'Benvenuto!',
+          description: 'Account creato con successo'
         });
+        navigate('/');
       }
     } finally {
       setIsSubmitting(false);
@@ -125,7 +166,11 @@ export default function Auth() {
   };
 
   const switchMode = () => {
-    setMode(mode === 'login' ? 'signup' : 'login');
+    if (mode === 'forgot-password') {
+      setMode('login');
+    } else {
+      setMode(mode === 'login' ? 'signup' : 'login');
+    }
     setErrors({});
   };
 
@@ -136,6 +181,22 @@ export default function Auth() {
       </div>
     );
   }
+
+  const getTitle = () => {
+    switch (mode) {
+      case 'login': return 'Bentornato!';
+      case 'signup': return 'Crea un account';
+      case 'forgot-password': return 'Recupera password';
+    }
+  };
+
+  const getSubtitle = () => {
+    switch (mode) {
+      case 'login': return 'Accedi per gestire il tuo profilo Premium';
+      case 'signup': return 'Registrati per sbloccare tutte le funzionalità';
+      case 'forgot-password': return 'Inserisci la tua email per ricevere il link di recupero';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex flex-col">
@@ -170,12 +231,10 @@ export default function Auth() {
           className="text-center mb-8"
         >
           <h1 className="text-2xl font-display font-bold text-foreground mb-2">
-            {mode === 'login' ? 'Bentornato!' : 'Crea un account'}
+            {getTitle()}
           </h1>
           <p className="text-muted-foreground text-sm">
-            {mode === 'login' 
-              ? 'Accedi per gestire il tuo profilo Premium' 
-              : 'Registrati per sbloccare tutte le funzionalità'}
+            {getSubtitle()}
           </p>
         </motion.div>
 
@@ -229,29 +288,46 @@ export default function Auth() {
             )}
           </div>
 
-          <div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-11 pr-11 h-12 rounded-xl bg-muted/50 border-border"
-                required
-              />
+          {mode !== 'forgot-password' && (
+            <div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-11 pr-11 h-12 rounded-xl bg-muted/50 border-border"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-destructive text-xs mt-1">{errors.password}</p>
+              )}
+            </div>
+          )}
+
+          {mode === 'login' && (
+            <div className="text-right">
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => {
+                  setMode('forgot-password');
+                  setErrors({});
+                }}
+                className="text-sm text-primary hover:underline"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                Password dimenticata?
               </button>
             </div>
-            {errors.password && (
-              <p className="text-destructive text-xs mt-1">{errors.password}</p>
-            )}
-          </div>
+          )}
 
           <Button
             type="submit"
@@ -262,8 +338,10 @@ export default function Auth() {
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : mode === 'login' ? (
               'Accedi'
-            ) : (
+            ) : mode === 'signup' ? (
               'Registrati'
+            ) : (
+              'Invia email di recupero'
             )}
           </Button>
         </motion.form>
@@ -281,8 +359,10 @@ export default function Auth() {
           >
             {mode === 'login' ? (
               <>Non hai un account? <span className="text-primary font-medium">Registrati</span></>
-            ) : (
+            ) : mode === 'signup' ? (
               <>Hai già un account? <span className="text-primary font-medium">Accedi</span></>
+            ) : (
+              <>Torna al <span className="text-primary font-medium">Login</span></>
             )}
           </button>
         </motion.div>
