@@ -260,7 +260,6 @@ export type Database = {
           rating: number | null
           text: string | null
           updated_at: string | null
-          user_id: string | null
         }
         Relationships: []
       }
