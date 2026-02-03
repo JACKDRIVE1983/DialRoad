@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, Clock, Navigation, Phone, Star } from 'lucide-react';
 import { DialysisCenter } from '@/data/mockCenters';
 import { formatDistance } from '@/lib/distance';
+import { isCurrentlyOpen } from '@/lib/openingHours';
 import { useCenterImage } from '@/hooks/useCenterImage';
 import { useCenterRating } from '@/hooks/useCenterRatings';
 import { FavoriteButton } from './FavoriteButton';
@@ -26,6 +27,9 @@ function CenterCardComponent({ center, distance, onSelect, showFavorite = true }
   
   // Get rating stats for this center
   const { averageRating, totalReviews } = useCenterRating(center.id);
+  
+  // Calculate real-time open status
+  const { isOpen } = isCurrentlyOpen(center.openingHours);
 
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -67,11 +71,11 @@ function CenterCardComponent({ center, distance, onSelect, showFavorite = true }
                   {center.name}
                 </h3>
                 <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                  center.isOpen 
+                  isOpen 
                     ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
                     : 'bg-red-500/20 text-red-600 dark:text-red-400'
                 }`}>
-                  {center.isOpen ? 'Aperto' : 'Chiuso'}
+                  {isOpen ? 'Aperto' : 'Chiuso'}
                 </span>
               </div>
 
@@ -134,10 +138,11 @@ function CenterCardComponent({ center, distance, onSelect, showFavorite = true }
 // Memoize the component to prevent re-renders when parent state changes
 export const CenterCard = React.memo(CenterCardComponent, (prevProps, nextProps) => {
   // Custom comparison: only re-render if the center ID or distance changes
+  // Note: isOpen is now calculated in real-time based on openingHours
   return (
     prevProps.center.id === nextProps.center.id &&
     prevProps.distance === nextProps.distance &&
-    prevProps.center.isOpen === nextProps.center.isOpen &&
+    prevProps.center.openingHours === nextProps.center.openingHours &&
     prevProps.showFavorite === nextProps.showFavorite
   );
 });
