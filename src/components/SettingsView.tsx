@@ -144,7 +144,7 @@ export function SettingsView() {
   // Get price from offerings if available
   const defaultOffering = offerings.find(o => o.identifier === 'default');
   const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
-  const priceString = annualPackage?.product?.priceString || '€9,99/anno';
+  const priceString = annualPackage?.product?.priceString || '€12,99/anno';
 
   const themeOptions: { value: ThemeOption; label: string; icon: React.ReactNode }[] = [
     { value: 'light', label: 'Chiaro', icon: <Sun className="w-4 h-4" /> },
