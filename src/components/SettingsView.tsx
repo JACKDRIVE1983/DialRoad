@@ -86,11 +86,16 @@ export function SettingsView() {
     setIsRestoring(true);
     
     try {
-      const success = await restorePurchases();
+      console.log('Starting restore purchases...');
+      const success = await Promise.race([
+        restorePurchases(),
+        new Promise<false>((resolve) => setTimeout(() => resolve(false), 30000)) // 30s timeout
+      ]);
+      
+      console.log('Restore result:', success);
       
       if (success) {
         toast.success('🎉 Acquisti ripristinati! Stato Premium attivo.');
-        // Reload to apply premium status
         window.location.reload();
       } else {
         toast.info('Nessun acquisto precedente trovato per questo account');
@@ -99,6 +104,7 @@ export function SettingsView() {
       console.error('Error restoring purchases:', error);
       toast.error('Errore durante il ripristino. Riprova più tardi.');
     } finally {
+      console.log('Restore complete, resetting state');
       setIsRestoring(false);
     }
   };
@@ -126,17 +132,28 @@ export function SettingsView() {
     }
 
     setIsPurchasing(true);
+    console.log('Starting purchase...', annualPackage);
+    
     try {
-      const success = await purchasePackage(annualPackage);
+      const success = await Promise.race([
+        purchasePackage(annualPackage),
+        new Promise<false>((resolve) => setTimeout(() => resolve(false), 60000)) // 60s timeout
+      ]);
+      
+      console.log('Purchase result:', success);
+      
       if (success) {
         toast.success('🎉 Benvenuto in Premium! Tutti i banner sono stati rimossi.');
-        // Reload to apply premium status everywhere
         window.location.reload();
+      } else if (!success) {
+        // User cancelled or timeout - don't show error
+        console.log('Purchase not completed');
       }
     } catch (error) {
       console.error('Purchase error:', error);
       toast.error('Errore durante l\'acquisto. Riprova.');
     } finally {
+      console.log('Purchase flow complete, resetting state');
       setIsPurchasing(false);
     }
   };
