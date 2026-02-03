@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { Capacitor } from '@capacitor/core';
+import { Purchases } from '@revenuecat/purchases-capacitor';
 
 interface UserProfile {
   id: string;
@@ -30,6 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Key for persisting premium status
 const PREMIUM_STATUS_KEY = 'dialroad-premium-status';
+const PREMIUM_ENTITLEMENT_ID = 'premium';
 
 // Get initial premium status from localStorage
 // PRIORITY: override (highest) > stored status
@@ -43,6 +46,46 @@ const getInitialPremiumFromStorage = (): boolean => {
     if (stored === 'true') return true;
   } catch {}
   return false;
+};
+
+// Restore purchases from RevenueCat and sync to Supabase
+const restorePurchasesAndSync = async (userId: string): Promise<boolean> => {
+  if (!Capacitor.isNativePlatform()) return false;
+  
+  try {
+    console.log('🔄 Restoring purchases for user:', userId);
+    
+    // First, identify the user to RevenueCat
+    await Purchases.logIn({ appUserID: userId });
+    console.log('🔄 User identified to RevenueCat');
+    
+    // Then restore purchases
+    const { customerInfo } = await Purchases.restorePurchases();
+    console.log('🔄 Restore result:', JSON.stringify(customerInfo?.entitlements?.active, null, 2));
+    
+    const activeEntitlements = customerInfo?.entitlements?.active || {};
+    const hasPremium = PREMIUM_ENTITLEMENT_ID in activeEntitlements || Object.keys(activeEntitlements).length > 0;
+    
+    console.log('🔄 Has premium after restore:', hasPremium);
+    
+    if (hasPremium) {
+      // Persist to localStorage
+      localStorage.setItem(PREMIUM_STATUS_KEY, 'true');
+      
+      // Sync to Supabase
+      await supabase
+        .from('profiles')
+        .update({ is_premium: true, updated_at: new Date().toISOString() })
+        .eq('user_id', userId);
+      
+      console.log('🔄 Premium status restored and synced!');
+    }
+    
+    return hasPremium;
+  } catch (err) {
+    console.error('🔄 Failed to restore purchases:', err);
+    return false;
+  }
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -98,8 +141,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Defer profile fetch with setTimeout to avoid deadlock
         if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id).then(setProfile);
+          setTimeout(async () => {
+            const profileData = await fetchProfile(session.user.id);
+            setProfile(profileData);
+            
+            // On SIGNED_IN event, restore purchases from RevenueCat
+            if (event === 'SIGNED_IN') {
+              console.log('🔐 User signed in, restoring purchases...');
+              const hasPremium = await restorePurchasesAndSync(session.user.id);
+              if (hasPremium) {
+                setIsPremiumState(true);
+              }
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -112,15 +165,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id).then((profileData) => {
-          setProfile(profileData);
-          setIsLoading(false);
-        });
+        const profileData = await fetchProfile(session.user.id);
+        setProfile(profileData);
+        
+        // Also restore purchases on app startup if user is already logged in
+        // This handles the reinstall case
+        const storedPremium = getInitialPremiumFromStorage();
+        if (!storedPremium) {
+          console.log('🔐 App startup: checking RevenueCat for premium...');
+          const hasPremium = await restorePurchasesAndSync(session.user.id);
+          if (hasPremium) {
+            setIsPremiumState(true);
+          }
+        }
+        
+        setIsLoading(false);
       } else {
         setIsLoading(false);
       }
@@ -175,6 +239,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sign out
   const signOut = useCallback(async () => {
+    // Logout from RevenueCat as well
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Purchases.logOut();
+      } catch {}
+    }
+    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -183,6 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsPremiumState(false);
     try {
       localStorage.setItem(PREMIUM_STATUS_KEY, 'false');
+      localStorage.removeItem('dialroad-premium-override');
     } catch {}
   }, []);
 
