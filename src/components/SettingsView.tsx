@@ -110,6 +110,11 @@ export function SettingsView() {
   };
 
   const handlePurchasePremium = async () => {
+    console.log('🛍️ handlePurchasePremium clicked');
+    console.log('🛍️ User:', !!user);
+    console.log('🛍️ Is native:', Capacitor.isNativePlatform());
+    console.log('🛍️ Offerings:', JSON.stringify(offerings, null, 2));
+    
     if (!user) {
       toast.info('Accedi per acquistare Premium');
       navigate('/auth');
@@ -123,16 +128,19 @@ export function SettingsView() {
 
     // Find the default offering and annual package
     const defaultOffering = offerings.find(o => o.identifier === 'default');
+    console.log('🛍️ Default offering:', JSON.stringify(defaultOffering, null, 2));
+    
     const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
+    console.log('🛍️ Annual package:', JSON.stringify(annualPackage, null, 2));
 
     if (!annualPackage) {
       toast.error('Pacchetto non disponibile. Riprova più tardi.');
-      console.error('Annual package not found in offerings:', offerings);
+      console.error('🛍️ Annual package not found in offerings:', offerings);
       return;
     }
 
     setIsPurchasing(true);
-    console.log('Starting purchase...', annualPackage);
+    console.log('🛍️ Starting purchase flow...', annualPackage);
     
     try {
       const success = await Promise.race([
@@ -140,20 +148,20 @@ export function SettingsView() {
         new Promise<false>((resolve) => setTimeout(() => resolve(false), 60000)) // 60s timeout
       ]);
       
-      console.log('Purchase result:', success);
+      console.log('🛍️ Purchase result:', success);
       
       if (success) {
         toast.success('🎉 Benvenuto in Premium! Tutti i banner sono stati rimossi.');
         window.location.reload();
       } else if (!success) {
         // User cancelled or timeout - don't show error
-        console.log('Purchase not completed');
+        console.log('🛍️ Purchase not completed');
       }
     } catch (error) {
-      console.error('Purchase error:', error);
+      console.error('🛍️ Purchase error:', error);
       toast.error('Errore durante l\'acquisto. Riprova.');
     } finally {
-      console.log('Purchase flow complete, resetting state');
+      console.log('🛍️ Purchase flow complete, resetting state');
       setIsPurchasing(false);
     }
   };

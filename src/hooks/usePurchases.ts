@@ -51,32 +51,47 @@ export function usePurchases() {
   // Initialize RevenueCat
   useEffect(() => {
     const initPurchases = async () => {
+      console.log('🛒 Purchases: Starting initialization...');
+      console.log('🛒 Is native platform:', Capacitor.isNativePlatform());
+      console.log('🛒 Platform:', Capacitor.getPlatform());
+      
       if (!Capacitor.isNativePlatform()) {
-        console.log('Purchases: Not running on native platform, skipping initialization');
+        console.log('🛒 Purchases: Not running on native platform, skipping initialization');
         return;
       }
 
       try {
+        console.log('🛒 Loading RevenueCat module...');
         const PurchasesModule = await loadPurchases();
-        if (!PurchasesModule) return;
+        console.log('🛒 RevenueCat module loaded:', !!PurchasesModule);
+        
+        if (!PurchasesModule) {
+          console.error('🛒 RevenueCat module is null!');
+          return;
+        }
 
         const platform = Capacitor.getPlatform();
         const apiKey = platform === 'android' ? REVENUECAT_API_KEY_ANDROID : REVENUECAT_API_KEY_IOS;
+        console.log('🛒 Using API key for platform:', platform);
 
+        console.log('🛒 Configuring RevenueCat...');
         await PurchasesModule.configure({
           apiKey,
         });
 
         setIsInitialized(true);
-        console.log('RevenueCat initialized successfully');
+        console.log('🛒 RevenueCat initialized successfully!');
 
         // Check initial premium status
+        console.log('🛒 Checking premium status...');
         await checkPremiumStatus();
         
         // Load offerings
+        console.log('🛒 Loading offerings...');
         await loadOfferings();
+        console.log('🛒 Initialization complete!');
       } catch (err) {
-        console.error('Failed to initialize RevenueCat:', err);
+        console.error('🛒 Failed to initialize RevenueCat:', err);
         setError('Failed to initialize purchases');
       }
     };
@@ -132,24 +147,41 @@ export function usePurchases() {
 
   // Load available offerings/packages
   const loadOfferings = useCallback(async () => {
-    if (!Capacitor.isNativePlatform()) return;
+    console.log('🛒 loadOfferings called');
+    if (!Capacitor.isNativePlatform()) {
+      console.log('🛒 Not native, skipping offerings');
+      return;
+    }
 
     try {
       const PurchasesModule = await loadPurchases();
-      if (!PurchasesModule) return;
+      if (!PurchasesModule) {
+        console.error('🛒 No PurchasesModule for offerings');
+        return;
+      }
 
+      console.log('🛒 Fetching offerings from RevenueCat...');
       const { offerings: offeringsData } = await PurchasesModule.getOfferings();
+      console.log('🛒 Raw offerings data:', JSON.stringify(offeringsData, null, 2));
+      
       if (offeringsData?.all) {
-        setOfferings(Object.values(offeringsData.all) as Offering[]);
+        const allOfferings = Object.values(offeringsData.all) as Offering[];
+        console.log('🛒 Parsed offerings:', JSON.stringify(allOfferings, null, 2));
+        setOfferings(allOfferings);
+      } else {
+        console.warn('🛒 No offerings found in response!');
       }
     } catch (err) {
-      console.error('Failed to load offerings:', err);
+      console.error('🛒 Failed to load offerings:', err);
     }
   }, []);
 
   // Purchase a package
   const purchasePackage = useCallback(async (packageToPurchase: Package) => {
+    console.log('🛒 purchasePackage called with:', JSON.stringify(packageToPurchase, null, 2));
+    
     if (!Capacitor.isNativePlatform()) {
+      console.log('🛒 Not native platform, cannot purchase');
       setError('Purchases only available on mobile devices');
       return false;
     }
@@ -159,16 +191,23 @@ export function usePurchases() {
 
     try {
       const PurchasesModule = await loadPurchases();
+      console.log('🛒 PurchasesModule for purchase:', !!PurchasesModule);
+      
       if (!PurchasesModule) {
+        console.error('🛒 Purchases not initialized!');
         setError('Purchases not initialized');
         return false;
       }
 
+      console.log('🛒 Calling purchasePackage on RevenueCat...');
       const { customerInfo } = await PurchasesModule.purchasePackage({
         aPackage: packageToPurchase,
       });
+      
+      console.log('🛒 Purchase response - customerInfo:', JSON.stringify(customerInfo, null, 2));
 
       const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
+      console.log('🛒 Has premium after purchase:', hasPremium);
       setIsPremium(hasPremium);
       
       // Sync to Supabase after successful purchase
@@ -179,11 +218,13 @@ export function usePurchases() {
       return hasPremium;
     } catch (err: any) {
       // User cancelled is not an error
-      if (err?.code === 'PURCHASE_CANCELLED') {
-        console.log('Purchase cancelled by user');
+      if (err?.code === 'PURCHASE_CANCELLED' || err?.code === 1) {
+        console.log('🛒 Purchase cancelled by user');
         return false;
       }
-      console.error('Purchase failed:', err);
+      console.error('🛒 Purchase failed:', err);
+      console.error('🛒 Error code:', err?.code);
+      console.error('🛒 Error message:', err?.message);
       setError(err?.message || 'Purchase failed');
       return false;
     } finally {
