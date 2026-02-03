@@ -68,7 +68,19 @@ export function usePurchases() {
 
     try {
       const { customerInfo } = await Purchases.getCustomerInfo();
-      const hasPremium = PREMIUM_ENTITLEMENT_ID in (customerInfo?.entitlements?.active || {});
+      console.log('🛒 customerInfo:', JSON.stringify(customerInfo, null, 2));
+      console.log('🛒 Active entitlements:', JSON.stringify(customerInfo?.entitlements?.active, null, 2));
+      console.log('🛒 All entitlements:', JSON.stringify(customerInfo?.entitlements, null, 2));
+      
+      // Check if ANY entitlement is active (in case the ID is different)
+      const activeEntitlements = customerInfo?.entitlements?.active || {};
+      const hasAnyEntitlement = Object.keys(activeEntitlements).length > 0;
+      const hasPremium = PREMIUM_ENTITLEMENT_ID in activeEntitlements || hasAnyEntitlement;
+      
+      console.log('🛒 Looking for entitlement:', PREMIUM_ENTITLEMENT_ID);
+      console.log('🛒 Has any active entitlement:', hasAnyEntitlement);
+      console.log('🛒 Has premium:', hasPremium);
+      
       setIsPremium(hasPremium);
       
       // Sync to Supabase
