@@ -42,9 +42,9 @@ const createRegionIcon = (color: string): L.DivIcon => {
   return icon;
 };
 
-// User location icon with "TU" text and distinct purple color
+// User location icon - red with white cross (like logo)
 const userLocationIcon = L.divIcon({
-  html: `<svg viewBox="0 0 32 48" width="32" height="48"><path d="M16 44 C16 44 30 28 30 16 C30 8 24 2 16 2 C8 2 2 8 2 16 C2 28 16 44 16 44 Z" fill="#8b5cf6" stroke="white" stroke-width="2"/><text x="16" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold" font-family="system-ui, sans-serif">TU</text></svg>`,
+  html: `<svg viewBox="0 0 32 48" width="32" height="48"><path d="M16 44 C16 44 30 28 30 16 C30 8 24 2 16 2 C8 2 2 8 2 16 C2 28 16 44 16 44 Z" fill="#dc2626" stroke="white" stroke-width="2"/><path d="M16 10 L16 22 M10 16 L22 16" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>`,
   className: "user-location-icon",
   iconSize: [32, 48],
   iconAnchor: [16, 48],
