@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { calculateDistance, formatDistance } from '@/lib/distance';
+import { isCurrentlyOpen } from '@/lib/openingHours';
 import { useCenterImage } from '@/hooks/useCenterImage';
 import { useAIResponses } from '@/hooks/useAIResponses';
 import { CenterComments } from './CenterComments';
@@ -215,17 +216,24 @@ export function CenterBottomSheet() {
                   <ChevronUp className={`w-4 h-4 text-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Status badge */}
-                <div className="absolute bottom-3 left-3">
-                  <span className={`px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md ${
-                    selectedCenter.isOpen 
-                      ? 'bg-green-500/30 text-white border border-green-400/50' 
-                      : 'bg-red-500/30 text-white border border-red-400/50'
-                  }`}>
-                    {selectedCenter.isOpen ? 'Aperto' : 'Chiuso'}
-                  </span>
-                </div>
+                {/* Status badge - based on real opening hours */}
+                {(() => {
+                  const { isOpen, nextChange } = isCurrentlyOpen(selectedCenter.openingHours);
+                  return (
+                    <div className="absolute bottom-3 left-3">
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md ${
+                        isOpen 
+                          ? 'bg-green-500/30 text-white border border-green-400/50' 
+                          : 'bg-red-500/30 text-white border border-red-400/50'
+                      }`}>
+                        {isOpen ? 'Aperto' : 'Chiuso'}
+                        {nextChange && <span className="ml-1 opacity-80">· {nextChange}</span>}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
+
 
               {/* Center info */}
               <div className="px-5 pt-5 pb-6">
