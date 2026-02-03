@@ -117,9 +117,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (authUser) {
       return authIsPremium;
     }
-    // Fallback for non-logged users (localStorage legacy)
+    // Fallback for non-logged users - use persisted premium status
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('dialroad-premium') === 'true';
+      const stored = localStorage.getItem('dialroad-premium-status');
+      if (stored === 'true') return true;
     }
     return false;
   }, [authUser, authIsPremium]);
