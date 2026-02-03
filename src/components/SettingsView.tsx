@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, LogIn, LogOut, User, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, LogIn, LogOut, User, Edit, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePurchases } from '@/hooks/usePurchases';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -25,10 +26,12 @@ export function SettingsView() {
   const navigate = useNavigate();
   const { centers, isPremium } = useApp();
   const { user, profile, signOut, isLoading: authLoading } = useAuth();
+  const { offerings, purchasePackage, restorePurchases, isLoading: purchaseLoading } = usePurchases();
   const { theme, setTheme } = useTheme();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -74,16 +77,21 @@ export function SettingsView() {
       navigate('/auth');
       return;
     }
+
+    if (!Capacitor.isNativePlatform()) {
+      toast.info('Ripristino disponibile solo sull\'app mobile');
+      return;
+    }
     
     setIsRestoring(true);
     
     try {
-      // TODO: Integrate with RevenueCat or Capacitor-InAppPurchase
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const success = await restorePurchases();
       
-      // In production, this will verify with the IAP backend
-      if (isPremium) {
-        toast.success('Stato Premium già attivo!');
+      if (success) {
+        toast.success('🎉 Acquisti ripristinati! Stato Premium attivo.');
+        // Reload to apply premium status
+        window.location.reload();
       } else {
         toast.info('Nessun acquisto precedente trovato per questo account');
       }
@@ -94,6 +102,49 @@ export function SettingsView() {
       setIsRestoring(false);
     }
   };
+
+  const handlePurchasePremium = async () => {
+    if (!user) {
+      toast.info('Accedi per acquistare Premium');
+      navigate('/auth');
+      return;
+    }
+
+    if (!Capacitor.isNativePlatform()) {
+      toast.info('Acquisti disponibili solo sull\'app mobile');
+      return;
+    }
+
+    // Find the default offering and annual package
+    const defaultOffering = offerings.find(o => o.identifier === 'default');
+    const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
+
+    if (!annualPackage) {
+      toast.error('Pacchetto non disponibile. Riprova più tardi.');
+      console.error('Annual package not found in offerings:', offerings);
+      return;
+    }
+
+    setIsPurchasing(true);
+    try {
+      const success = await purchasePackage(annualPackage);
+      if (success) {
+        toast.success('🎉 Benvenuto in Premium! Tutti i banner sono stati rimossi.');
+        // Reload to apply premium status everywhere
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error('Errore durante l\'acquisto. Riprova.');
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  // Get price from offerings if available
+  const defaultOffering = offerings.find(o => o.identifier === 'default');
+  const annualPackage = defaultOffering?.availablePackages.find(p => p.identifier === '$annual');
+  const priceString = annualPackage?.product?.priceString || '€9,99/anno';
 
   const themeOptions: { value: ThemeOption; label: string; icon: React.ReactNode }[] = [
     { value: 'light', label: 'Chiaro', icon: <Sun className="w-4 h-4" /> },
@@ -225,21 +276,32 @@ export function SettingsView() {
         </div>
         
         {!isPremium && (
-          <button
-            onClick={() => {
-              if (!user) {
-                toast.info('Accedi per acquistare Premium');
-                navigate('/auth');
-                return;
-              }
-              // TODO: Trigger in-app purchase
-              toast.info('Acquisto in-app disponibile a breve');
-            }}
-            className="w-full mt-4 py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 bg-white text-amber-600 hover:bg-white/90 shadow-lg"
-          >
-            <Crown className="w-4 h-4" />
-            Attiva Premium
-          </button>
+          <div className="mt-4 space-y-2">
+            {/* Price display */}
+            {Capacitor.isNativePlatform() && (
+              <div className="text-center py-1">
+                <span className="text-lg font-bold text-white">{priceString}</span>
+                <span className="text-white/70 text-xs ml-1">/ anno</span>
+              </div>
+            )}
+            <button
+              onClick={handlePurchasePremium}
+              disabled={isPurchasing || purchaseLoading}
+              className="w-full py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 bg-white text-amber-600 hover:bg-white/90 shadow-lg disabled:opacity-70"
+            >
+              {isPurchasing || purchaseLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Elaborazione...
+                </>
+              ) : (
+                <>
+                  <Crown className="w-4 h-4" />
+                  Attiva Premium
+                </>
+              )}
+            </button>
+          </div>
         )}
         
         {/* Restore Purchases Button */}
