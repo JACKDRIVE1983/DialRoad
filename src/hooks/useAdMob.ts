@@ -26,7 +26,16 @@ let preloadRetryId: number | undefined;
 let appStateSubscription: { remove: () => void } | null = null;
 
 // Track premium ref globally so timers can check it
-let globalIsPremiumRef = false;
+// Initialize from localStorage to prevent ad flash on startup
+let globalIsPremiumRef = (() => {
+  try {
+    const stored = localStorage.getItem('dialroad-premium-status');
+    if (stored === 'true') return true;
+    const override = localStorage.getItem('dialroad-premium-override');
+    if (override === 'true') return true;
+  } catch {}
+  return false;
+})();
 
 function clearAllTimers() {
   if (bannerRefreshId) {
