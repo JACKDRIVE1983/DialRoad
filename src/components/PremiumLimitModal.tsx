@@ -108,6 +108,11 @@ export function PremiumLimitModal({ open, onOpenChange }: PremiumLimitModalProps
                 Possibilità di scrivere recensioni
               </li>
             </ul>
+            
+            {/* Support message */}
+            <p className="mt-4 pt-3 border-t border-amber-200/50 dark:border-amber-800/30 text-xs text-amber-700 dark:text-amber-400 text-center italic">
+              💛 Con il tuo supporto ci aiuti a mantenere l'app aggiornata e gratuita per tutti i pazienti
+            </p>
           </div>
 
           {/* Price badge */}
