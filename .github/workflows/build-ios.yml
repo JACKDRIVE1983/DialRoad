@@ -29,12 +29,12 @@ jobs:
       - name: Build web app
         run: npm run build
         env:
-          # Se usi variabili in .env per la build, aggiungile come GitHub Secrets
-          # e referenzia qui con: NODE_ENV: production
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Add iOS platform (Capacitor)
         run: npx cap add ios
-        continue-on-error: true  # Ignora se ios/ esiste già
+        continue-on-error: true
 
       - name: Sync Capacitor iOS
         run: npx cap sync ios
@@ -50,11 +50,9 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
-            -allowProvisioningUpdates \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            DEVELOPMENT_TEAM="" \
             build
 
       - name: Create IPA
