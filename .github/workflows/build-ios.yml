@@ -39,10 +39,10 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key' }}
 
       - name: Add iOS platform (Capacitor)
-        run: node ./node_modules/@capacitor/cli/bin/cap add ios
+        run: npx cap add ios
 
       - name: Sync Capacitor iOS
-        run: node ./node_modules/@capacitor/cli/bin/cap sync ios
+        run: npx cap sync ios
 
       - name: Debug struttura ios (dove sta il Podfile)
         run: |
