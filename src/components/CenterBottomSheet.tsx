@@ -41,18 +41,11 @@ export function CenterBottomSheet() {
     return `https://www.booking.com/searchresults.it.html?latitude=${lat}&longitude=${lng}&radius=5`;
   };
 
-  const getAirbnbUrl = () => {
+  const getAccommodationUrl = () => {
     if (!selectedCenter) return '';
     const { lat, lng } = selectedCenter.coordinates;
-    const city = selectedCenter.city || '';
-    // Airbnb usa bounding box: aggiungiamo ~5km di raggio
-    const delta = 0.045; // circa 5km
-    const sw_lat = (lat - delta).toFixed(4);
-    const sw_lng = (lng - delta).toFixed(4);
-    const ne_lat = (lat + delta).toFixed(4);
-    const ne_lng = (lng + delta).toFixed(4);
-    const query = encodeURIComponent(`${city}, Italy`);
-    return `https://www.airbnb.com/s/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&query=${query}&sw_lat=${sw_lat}&sw_lng=${sw_lng}&ne_lat=${ne_lat}&ne_lng=${ne_lng}&search_by_map=true&map_toggle=true`;
+    // Google Maps search per alloggi vicino alle coordinate
+    return `https://www.google.com/maps/search/?api=1&query=alloggi%20vicino%20${lat}%2C${lng}`;
   };
 
   
@@ -137,9 +130,9 @@ export function CenterBottomSheet() {
     });
   }, [selectedCenter]);
 
-  // Open Airbnb - same approach as Booking
-  const handleOpenAirbnb = useCallback(() => {
-    const url = getAirbnbUrl();
+  // Open Accommodation search via Google Maps - same approach as Booking
+  const handleOpenAccommodation = useCallback(() => {
+    const url = getAccommodationUrl();
     if (!url) return;
 
     requestAnimationFrame(() => {
@@ -303,7 +296,7 @@ export function CenterBottomSheet() {
                     <span>Cerca Hotel</span>
                   </button>
                   <button
-                    onClick={handleOpenAirbnb}
+                    onClick={handleOpenAccommodation}
                     className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full bg-[#FF5A5F] text-white font-semibold text-sm shadow-lg shadow-[#FF5A5F]/25 hover:shadow-xl hover:bg-[#E04146] transition-all duration-200 active:scale-[0.98]"
                   >
                     <Home className="w-4 h-4" />
