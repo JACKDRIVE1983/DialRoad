@@ -41,7 +41,7 @@ jobs:
 
       - name: Install CocoaPods
         run: |
-          cd ios/App && pod install
+          cd ios/App && pod install --repo-update
 
       - name: Build .app (senza firma, per AltStore/Sideloadly)
         run: |
@@ -50,6 +50,7 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -destination "generic/platform=iOS" \
+            -derivedDataPath ios/App/build \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -57,8 +58,15 @@ jobs:
 
       - name: Create IPA
         run: |
+          APP_PATH=$(find ios/App -name "App.app" -type d 2>/dev/null | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::App.app non trovato. Contenuto di ios/App/build:"
+            find ios/App -type d -name "*.app" 2>/dev/null || true
+            ls -laR ios/App/build 2>/dev/null || true
+            exit 1
+          fi
           mkdir -p Payload
-          cp -r ios/App/build/Release-iphoneos/App.app Payload/
+          cp -r "$APP_PATH" Payload/App.app
           zip -r DialRoad.ipa Payload
           rm -rf Payload
 
