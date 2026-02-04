@@ -6,6 +6,7 @@ import { AppErrorBoundary } from '@/components/AppErrorBoundary';
 import { AppHeader } from '@/components/AppHeader';
 import { AdBanner } from '@/components/AdBanner';
 import { PremiumLimitModal } from '@/components/PremiumLimitModal';
+import { WelcomePremiumModal } from '@/components/WelcomePremiumModal';
 import { FavoritesView } from '@/components/FavoritesView';
 import { useAdMob } from '@/hooks/useAdMob';
 import { Loader2 } from 'lucide-react';
@@ -131,6 +132,9 @@ function AppContent() {
       
       {/* Premium Limit Modal */}
       <PremiumLimitModal open={showLimitModal} onOpenChange={setShowLimitModal} />
+      
+      {/* Welcome Premium Modal - shows once when user becomes premium */}
+      <WelcomePremiumModal isPremium={isPremium} />
       
       {/* Ad Banner - only show for non-premium users */}
       {!isPremium && (
