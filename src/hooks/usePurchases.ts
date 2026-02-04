@@ -186,6 +186,13 @@ export function usePurchases() {
       try {
         const platform = Capacitor.getPlatform();
         const apiKey = platform === 'android' ? REVENUECAT_API_KEY_ANDROID : REVENUECAT_API_KEY_IOS;
+        const isPlaceholderKey = !apiKey || apiKey.includes('YOUR_') || apiKey.length < 20;
+
+        if (isPlaceholderKey) {
+          console.log('🛒 RevenueCat API key non configurata per', platform, '- skip init (app funziona senza acquisti)');
+          return;
+        }
+
         console.log('🛒 Using API key for platform:', platform);
 
         console.log('🛒 Configuring RevenueCat...');
