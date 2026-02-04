@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DialRoad</string>
+    <string name="title_activity_main">DialRoad</string>
+    <string name="package_name">com.dialroad.map</string>
+    <string name="custom_url_scheme">com.dialroad.map</string>
+</resources>

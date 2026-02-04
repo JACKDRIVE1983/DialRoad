@@ -1,0 +1,72 @@
+# Build iOS (Capacitor) - IPA per installazione con AltStore/Sideloadly
+# Nessun certificato Apple richiesto: l'IPA va re-firmata sul PC con il tuo Apple ID
+
+name: Build iOS
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:  # Permette avvio manuale da GitHub → Actions → Run workflow
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    name: Build IPA
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+        env:
+          # Se usi variabili in .env per la build, aggiungile come GitHub Secrets
+          # e referenzia qui con: NODE_ENV: production
+
+      - name: Add iOS platform (Capacitor)
+        run: npx cap add ios
+        continue-on-error: true  # Ignora se ios/ esiste già
+
+      - name: Sync Capacitor iOS
+        run: npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios/App && pod install
+
+      - name: Build .app (senza firma, per AltStore/Sideloadly)
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -allowProvisioningUpdates \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            build
+
+      - name: Create IPA
+        run: |
+          mkdir -p Payload
+          cp -r ios/App/build/Release-iphoneos/App.app Payload/
+          zip -r DialRoad.ipa Payload
+          rm -rf Payload
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: DialRoad.ipa
+          retention-days: 30
