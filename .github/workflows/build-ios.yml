@@ -44,19 +44,25 @@ jobs:
       - name: Sync Capacitor iOS
         run: node ./node_modules/@capacitor/cli/bin/cap sync ios
 
+      - name: Debug struttura ios (dove sta il Podfile)
+        run: |
+          echo "=== Contenuto ios ==="
+          ls -la ios 2>/dev/null || true
+          echo "=== Contenuto ios/App ==="
+          ls -la ios/App 2>/dev/null || true
+          echo "=== Cerca Podfile ==="
+          find ios -name "Podfile" -type f 2>/dev/null || true
+
       - name: Install CocoaPods
         run: |
-          if [ -f ios/App/Podfile ]; then
-            cd ios/App && pod install --repo-update
-          elif [ -f ios/Podfile ]; then
-            cd ios && pod install --repo-update
-          else
-            echo "Podfile non trovato. Contenuto di ios:"
-            ls -la ios 2>/dev/null || true
-            ls -la ios/App 2>/dev/null || true
-            find ios -name "Podfile" 2>/dev/null || true
+          PODFILE=$(find ios -name "Podfile" -type f 2>/dev/null | head -1)
+          if [ -z "$PODFILE" ]; then
+            echo "::error::Nessun Podfile trovato in ios/"
             exit 1
           fi
+          PODFILE_DIR=$(dirname "$PODFILE")
+          echo "Podfile trovato in: $PODFILE_DIR"
+          cd "$PODFILE_DIR" && pod install --repo-update
 
       - name: Build .app (senza firma, per AltStore/Sideloadly)
         run: |
