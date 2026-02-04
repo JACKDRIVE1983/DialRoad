@@ -20,8 +20,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.x"
           cache: "npm"
+
+      - name: Verifica Node (Capacitor richiede >= 22)
+        run: node -v && which node
 
       - name: Configura npm (legacy-peer-deps per react-leaflet-cluster)
         run: echo "legacy-peer-deps=true" >> .npmrc
