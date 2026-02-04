@@ -20,11 +20,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: "22.11.0"
           cache: "npm"
 
       - name: Verifica Node (Capacitor richiede >= 22)
-        run: node -v && which node
+        run: node -v && which node && node -e "if (process.version.slice(1).split('.')[0] < 22) process.exit(1)"
 
       - name: Configura npm (legacy-peer-deps per react-leaflet-cluster)
         run: echo "legacy-peer-deps=true" >> .npmrc
@@ -43,7 +43,7 @@ jobs:
         continue-on-error: true
 
       - name: Sync Capacitor iOS
-        run: npx cap sync ios
+        run: node ./node_modules/@capacitor/cli/bin/cap sync ios
 
       - name: Install CocoaPods
         run: |
