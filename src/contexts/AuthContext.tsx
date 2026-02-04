@@ -48,10 +48,10 @@ const getInitialPremiumFromStorage = (): boolean => {
   return false;
 };
 
-// Restore purchases from RevenueCat and sync to Supabase
+// Restore purchases from RevenueCat and sync to Supabase (skip su iOS se RevenueCat non configurato)
 const restorePurchasesAndSync = async (userId: string): Promise<boolean> => {
   if (!Capacitor.isNativePlatform()) return false;
-  
+  if (Capacitor.getPlatform() === 'ios') return false; // RevenueCat iOS non configurato
   try {
     console.log('🔄 Restoring purchases for user:', userId);
     
@@ -239,8 +239,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sign out
   const signOut = useCallback(async () => {
-    // Logout from RevenueCat as well
-    if (Capacitor.isNativePlatform()) {
+    // Logout from RevenueCat as well (solo Android, iOS non ha RevenueCat configurato)
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
       try {
         await Purchases.logOut();
       } catch {}

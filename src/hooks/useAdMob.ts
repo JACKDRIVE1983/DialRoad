@@ -127,8 +127,8 @@ export function useAdMob(isPremium: boolean = false) {
   }, [isPremium]);
 
   useEffect(() => {
-    // Only run on native platforms
-    if (!Capacitor.isNativePlatform()) {
+    // Only run on native platforms; skip AdMob on iOS (evita crash se plugin non configurato)
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() === 'ios') {
       return;
     }
 

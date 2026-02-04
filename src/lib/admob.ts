@@ -1,4 +1,5 @@
 // AdMob configuration and utilities
+import { Capacitor } from '@capacitor/core';
 import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, AdOptions, InterstitialAdPluginEvents } from '@capacitor-community/admob';
 
 // AdMob IDs - TESTING MODE (use Google universal test IDs)
@@ -97,8 +98,12 @@ export function areAdsDisabled(): boolean {
   return adsDisabled;
 }
 
-// Initialize AdMob
+// Initialize AdMob (skip on iOS per evitare crash se non configurato nativamente)
 export async function initializeAdMob(): Promise<void> {
+  if (Capacitor.getPlatform() === 'ios') {
+    console.log('[AdMob] Skipped on iOS');
+    return;
+  }
   try {
     await AdMob.initialize({
       testingDevices: [],
@@ -113,8 +118,9 @@ export async function initializeAdMob(): Promise<void> {
   }
 }
 
-// Show banner ad
+// Show banner ad (no-op on iOS)
 export async function showBannerAd(): Promise<void> {
+  if (Capacitor.getPlatform() === 'ios') return;
   // Skip if ads disabled (premium user)
   if (adsDisabled) {
     console.log('[AdMob] Banner skipped - ads disabled');
@@ -138,8 +144,9 @@ export async function showBannerAd(): Promise<void> {
   }
 }
 
-// Hide banner ad
+// Hide banner ad (no-op on iOS)
 export async function hideBannerAd(): Promise<void> {
+  if (Capacitor.getPlatform() === 'ios') return;
   try {
     await ensureInitialized();
     await AdMob.hideBanner();
@@ -149,8 +156,9 @@ export async function hideBannerAd(): Promise<void> {
   }
 }
 
-// Remove banner ad completely from DOM
+// Remove banner ad completely from DOM (no-op on iOS)
 export async function removeBannerAd(): Promise<void> {
+  if (Capacitor.getPlatform() === 'ios') return;
   try {
     await ensureInitialized();
     await AdMob.removeBanner();
@@ -160,8 +168,9 @@ export async function removeBannerAd(): Promise<void> {
   }
 }
 
-// Preload interstitial ad with retry logic
+// Preload interstitial ad with retry logic (no-op on iOS)
 export async function prepareInterstitialAd(): Promise<boolean> {
+  if (Capacitor.getPlatform() === 'ios') return false;
   // Skip if ads disabled (premium user)
   if (adsDisabled) {
     console.log('[AdMob] Interstitial preload skipped - ads disabled');
@@ -202,8 +211,9 @@ export async function prepareInterstitialAd(): Promise<boolean> {
   }
 }
 
-// Show interstitial ad with rate limiting and auto-preload
+// Show interstitial ad with rate limiting and auto-preload (no-op on iOS)
 export async function showInterstitialAd(): Promise<boolean> {
+  if (Capacitor.getPlatform() === 'ios') return false;
   // Skip if ads disabled (premium user)
   if (adsDisabled) {
     console.log('[AdMob] Interstitial skipped - ads disabled');
