@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Clock, 
-  MapPin, ChevronUp, Share2, Hotel, Sparkles, Home
+  MapPin, ChevronUp, Share2, Hotel, Sparkles, MapPinned
 } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -46,6 +46,19 @@ export function CenterBottomSheet() {
     const { lat, lng } = selectedCenter.coordinates;
     // Google Maps search per alloggi vicino alle coordinate
     return `https://www.google.com/maps/search/?api=1&query=alloggi%20vicino%20${lat}%2C${lng}`;
+  };
+
+  const getAirbnbUrl = () => {
+    if (!selectedCenter) return '';
+    const { lat, lng } = selectedCenter.coordinates;
+    const centerName = encodeURIComponent(`${selectedCenter.name}, ${selectedCenter.city}`);
+    // Airbnb usa bounding box: aggiungiamo ~5km di raggio
+    const delta = 0.027; // circa 3km
+    const sw_lat = (lat - delta).toFixed(6);
+    const sw_lng = (lng - delta).toFixed(6);
+    const ne_lat = (lat + delta).toFixed(6);
+    const ne_lng = (lng + delta).toFixed(6);
+    return `https://www.airbnb.it/s/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&query=${centerName}&sw_lat=${sw_lat}&sw_lng=${sw_lng}&ne_lat=${ne_lat}&ne_lng=${ne_lng}&search_by_map=true&map_toggle=true`;
   };
 
   
@@ -133,6 +146,18 @@ export function CenterBottomSheet() {
   // Open Accommodation search via Google Maps - same approach as Booking
   const handleOpenAccommodation = useCallback(() => {
     const url = getAccommodationUrl();
+    if (!url) return;
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.location.href = url;
+      }, 50);
+    });
+  }, [selectedCenter]);
+
+  // Open Airbnb
+  const handleOpenAirbnb = useCallback(() => {
+    const url = getAirbnbUrl();
     if (!url) return;
 
     requestAnimationFrame(() => {
@@ -290,17 +315,26 @@ export function CenterBottomSheet() {
                 <div className="flex gap-2 mb-5">
                   <button
                     onClick={handleOpenBooking}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-[#003580] text-white font-semibold text-xs shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                   >
                     <Hotel className="w-4 h-4" />
-                    <span>Cerca Hotel</span>
+                    <span>Hotel</span>
                   </button>
                   <button
                     onClick={handleOpenAccommodation}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full bg-[#FF5A5F] text-white font-semibold text-sm shadow-lg shadow-[#FF5A5F]/25 hover:shadow-xl hover:bg-[#E04146] transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-gradient-to-r from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white font-semibold text-xs shadow-lg shadow-[#4285F4]/25 hover:shadow-xl hover:opacity-90 transition-all duration-200 active:scale-[0.98]"
                   >
-                    <Home className="w-4 h-4" />
-                    <span>Cerca Alloggio</span>
+                    <MapPinned className="w-4 h-4" />
+                    <span>Alloggi</span>
+                  </button>
+                  <button
+                    onClick={handleOpenAirbnb}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-[#FF5A5F] text-white font-semibold text-xs shadow-lg shadow-[#FF5A5F]/25 hover:shadow-xl hover:bg-[#E04146] transition-all duration-200 active:scale-[0.98]"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 17.703c-.457.732-1.082 1.198-1.765 1.198-.571 0-1.029-.285-1.485-.799-.343-.399-.629-.912-.857-1.426-.229.514-.514 1.027-.857 1.426-.456.514-.914.799-1.485.799-.684 0-1.308-.466-1.765-1.198-.571-.912-.857-2.167-.857-3.422 0-2.51 1.485-4.563 3.25-4.563.571 0 1.086.228 1.543.627.114.114.228.228.343.399.114-.171.228-.285.343-.399.457-.399.971-.627 1.543-.627 1.765 0 3.25 2.053 3.25 4.563 0 1.255-.286 2.51-.857 3.422h-.001z"/>
+                    </svg>
+                    <span>Airbnb</span>
                   </button>
                 </div>
 
