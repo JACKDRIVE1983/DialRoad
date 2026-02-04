@@ -318,23 +318,23 @@ export function CenterBottomSheet() {
                 <div className="flex gap-2 mb-5">
                   <button
                     onClick={handleOpenBooking}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3 px-3 rounded-full bg-[#003580] text-white font-semibold text-xs shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/30 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                   >
-                    <img src={logoBooking} alt="Booking" className="w-5 h-5 rounded object-contain" />
+                    <img src={logoBooking} alt="Booking" className="w-6 h-6 rounded object-contain" />
                     <span>Hotel</span>
                   </button>
                   <button
                     onClick={handleOpenAccommodation}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3 px-3 rounded-full bg-white text-gray-700 font-semibold text-xs shadow-lg shadow-gray-300/50 hover:shadow-xl hover:bg-gray-50 transition-all duration-200 active:scale-[0.98] border border-gray-200"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-gradient-to-r from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white font-semibold text-sm shadow-lg shadow-[#4285F4]/30 hover:shadow-xl hover:opacity-95 transition-all duration-200 active:scale-[0.98]"
                   >
-                    <img src={logoGoogleMaps} alt="Google Maps" className="w-5 h-5 object-contain" />
+                    <img src={logoGoogleMaps} alt="Google Maps" className="w-6 h-6 object-contain bg-white rounded-full p-0.5" />
                     <span>Alloggi</span>
                   </button>
                   <button
                     onClick={handleOpenAirbnb}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3 px-3 rounded-full bg-white text-[#FF5A5F] font-semibold text-xs shadow-lg shadow-[#FF5A5F]/20 hover:shadow-xl hover:bg-gray-50 transition-all duration-200 active:scale-[0.98] border border-[#FF5A5F]/30"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/30 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                   >
-                    <img src={logoAirbnb} alt="Airbnb" className="w-5 h-5 object-contain" />
+                    <img src={logoAirbnb} alt="Airbnb" className="w-6 h-6 object-contain bg-white rounded-full p-0.5" />
                     <span>Airbnb</span>
                   </button>
                 </div>
