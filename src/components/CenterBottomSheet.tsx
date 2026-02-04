@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
   X, Phone, Navigation, Clock, 
-  MapPin, ChevronUp, Share2, Hotel, Sparkles
+  MapPin, ChevronUp, Share2, Hotel, Sparkles, Home
 } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -36,13 +36,15 @@ export function CenterBottomSheet() {
   );
 
   const getBookingUrl = () => {
-    // Ricerca per coordinate geografiche dell'ospedale
-    // Booking mostra hotel vicini alle coordinate fornite
     if (!selectedCenter) return '';
-
     const { lat, lng } = selectedCenter.coordinates;
-    // latitude, longitude e label per la ricerca geolocalizzata
     return `https://www.booking.com/searchresults.it.html?latitude=${lat}&longitude=${lng}&radius=5`;
+  };
+
+  const getAirbnbUrl = () => {
+    if (!selectedCenter) return '';
+    const { lat, lng } = selectedCenter.coordinates;
+    return `https://www.airbnb.it/s/homes?lat=${lat}&lng=${lng}&zoom=14`;
   };
 
   
@@ -118,6 +120,18 @@ export function CenterBottomSheet() {
   // Open Booking - uses window.location.href which opens in system browser on Android
   const handleOpenBooking = useCallback(() => {
     const url = getBookingUrl();
+    if (!url) return;
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.location.href = url;
+      }, 50);
+    });
+  }, [selectedCenter]);
+
+  // Open Airbnb - same approach as Booking
+  const handleOpenAirbnb = useCallback(() => {
+    const url = getAirbnbUrl();
     if (!url) return;
 
     requestAnimationFrame(() => {
@@ -271,14 +285,23 @@ export function CenterBottomSheet() {
                   </div>
                 </div>
 
-                {/* Booking.com Hotel Search - Opens directly in external browser */}
-                <button
-                  onClick={handleOpenBooking}
-                  className="w-full flex items-center justify-center gap-2 py-3 mb-5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
-                >
-                  <Hotel className="w-5 h-5" />
-                  <span>Cerca Hotel Vicini</span>
-                </button>
+                {/* Accommodation Search Buttons */}
+                <div className="flex gap-2 mb-5">
+                  <button
+                    onClick={handleOpenBooking}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/25 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
+                  >
+                    <Hotel className="w-4 h-4" />
+                    <span>Cerca Hotel</span>
+                  </button>
+                  <button
+                    onClick={handleOpenAirbnb}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-full bg-[#FF5A5F] text-white font-semibold text-sm shadow-lg shadow-[#FF5A5F]/25 hover:shadow-xl hover:bg-[#E04146] transition-all duration-200 active:scale-[0.98]"
+                  >
+                    <Home className="w-4 h-4" />
+                    <span>Cerca Alloggio</span>
+                  </button>
+                </div>
 
                 {/* AI Assistant Section */}
                 <div className="mb-5 p-4 rounded-2xl bg-gradient-to-br from-teal-500/10 to-indigo-500/10 border border-teal-500/20">
