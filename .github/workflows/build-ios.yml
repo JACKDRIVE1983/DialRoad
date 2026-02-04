@@ -39,15 +39,24 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key' }}
 
       - name: Add iOS platform (Capacitor)
-        run: npx cap add ios
-        continue-on-error: true
+        run: node ./node_modules/@capacitor/cli/bin/cap add ios
 
       - name: Sync Capacitor iOS
         run: node ./node_modules/@capacitor/cli/bin/cap sync ios
 
       - name: Install CocoaPods
         run: |
-          cd ios/App && pod install --repo-update
+          if [ -f ios/App/Podfile ]; then
+            cd ios/App && pod install --repo-update
+          elif [ -f ios/Podfile ]; then
+            cd ios && pod install --repo-update
+          else
+            echo "Podfile non trovato. Contenuto di ios:"
+            ls -la ios 2>/dev/null || true
+            ls -la ios/App 2>/dev/null || true
+            find ios -name "Podfile" 2>/dev/null || true
+            exit 1
+          fi
 
       - name: Build .app (senza firma, per AltStore/Sideloadly)
         run: |
