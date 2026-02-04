@@ -150,7 +150,8 @@ export function CenterBottomSheet() {
   const handleOpenAccommodation = useCallback(() => {
     if (!selectedCenter) return;
     const { lat, lng } = selectedCenter.coordinates;
-    const url = `https://www.google.com/maps/search/?api=1&query=alloggi+vicino+${lat},${lng}`;
+    // Formato esatto con URL encoding: %20 per spazi, %2C per virgola
+    const url = `https://www.google.com/maps/search/?api=1&query=alloggi%20vicino%20${lat}%2C${lng}`;
 
     console.log('[Accommodation] Opening URL with coordinates:', { lat, lng, url });
 
