@@ -148,8 +148,11 @@ export function CenterBottomSheet() {
 
   // Open Accommodation search via Google Maps - same approach as Booking
   const handleOpenAccommodation = useCallback(() => {
-    const url = getAccommodationUrl();
-    if (!url) return;
+    if (!selectedCenter) return;
+    const { lat, lng } = selectedCenter.coordinates;
+    const url = `https://www.google.com/maps/search/?api=1&query=alloggi+vicino+${lat},${lng}`;
+
+    console.log('[Accommodation] Opening URL with coordinates:', { lat, lng, url });
 
     requestAnimationFrame(() => {
       setTimeout(() => {
