@@ -23,8 +23,11 @@ jobs:
           node-version: "20"
           cache: "npm"
 
+      - name: Configura npm (legacy-peer-deps per react-leaflet-cluster)
+        run: echo "legacy-peer-deps=true" >> .npmrc
+
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Build web app
         run: npm run build
