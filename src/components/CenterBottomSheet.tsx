@@ -44,7 +44,13 @@ export function CenterBottomSheet() {
   const getAirbnbUrl = () => {
     if (!selectedCenter) return '';
     const { lat, lng } = selectedCenter.coordinates;
-    return `https://www.airbnb.it/s/homes?lat=${lat}&lng=${lng}&zoom=14`;
+    // Airbnb usa bounding box: aggiungiamo ~5km di raggio
+    const delta = 0.045; // circa 5km
+    const sw_lat = lat - delta;
+    const sw_lng = lng - delta;
+    const ne_lat = lat + delta;
+    const ne_lng = lng + delta;
+    return `https://www.airbnb.it/s/homes?sw_lat=${sw_lat}&sw_lng=${sw_lng}&ne_lat=${ne_lat}&ne_lng=${ne_lng}`;
   };
 
   
