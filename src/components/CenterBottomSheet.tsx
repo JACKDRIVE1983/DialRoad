@@ -47,8 +47,8 @@ export function CenterBottomSheet() {
   const getAccommodationUrl = () => {
     if (!selectedCenter) return '';
     const { lat, lng } = selectedCenter.coordinates;
-    // Google Maps search per alloggi vicino alle coordinate
-    return `https://www.google.com/maps/search/?api=1&query=alloggi%20vicino%20${lat}%2C${lng}`;
+    // Google Maps search per alloggi vicino alle coordinate - formato corretto
+    return `https://www.google.com/maps/search/?api=1&query=alloggi+vicino+${lat},${lng}`;
   };
 
   const getAirbnbUrl = () => {

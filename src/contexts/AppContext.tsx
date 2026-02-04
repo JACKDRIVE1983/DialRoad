@@ -298,6 +298,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     if (!query) return baseFiltered;
     
+    // Check if query matches a region name (search across all centers, not just filtered)
+    const hasRegionMatch = centers.some(center => center.region.toLowerCase().includes(query));
+    if (hasRegionMatch) {
+      // Return all centers from matching regions
+      return centers
+        .filter(center => {
+          const matchesRegionQuery = center.region.toLowerCase().includes(query);
+          const matchesServices = selectedServices.length === 0 ||
+            selectedServices.some(service => center.services.includes(service));
+          return matchesRegionQuery && matchesServices;
+        })
+        .sort((a, b) => a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
+    }
+    
     const hasExactCityMatch = baseFiltered.some(center => center.city.toLowerCase() === query);
     const hasStartsWithCityMatch = baseFiltered.some(center => center.city.toLowerCase().startsWith(query));
     const hasContainsCityMatch = baseFiltered.some(center => center.city.toLowerCase().includes(query));
