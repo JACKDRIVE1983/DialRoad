@@ -7,7 +7,6 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
     <uses-permission android:name="com.android.vending.BILLING" />
 
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -15,10 +14,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAEATtH1AArIEUUnZbz6T4Xr27_riOdjCI"
+        />
 
-        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyAEATtH1AArIEUUnZbz6T4Xr27_riOdjCI" />
-
-        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-1836089076727059~3797268338"/>
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1836089076727059~3797268338"
+        />
 
         <activity
             android:name=".MainActivity"
@@ -47,7 +51,7 @@
                     android:scheme="https"
                     android:host="id-preview--06f106cb-9fa2-4cec-abad-afaaa638c89c.lovable.app"
                     android:pathPrefix="/auth"
-                    />
+                />
             </intent-filter>
         </activity>
 

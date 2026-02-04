@@ -134,9 +134,8 @@ function MapViewComponent() {
     }
   }, [setUserLocation]);
 
-  useEffect(() => {
-    handleLocate();
-  }, [handleLocate]);
+  // Non richiedere posizione in automatico: l'app non chiede il permesso all'avvio.
+  // La posizione si aggiorna solo se l'utente tocca il pulsante "Mia posizione".
 
   const tileUrl = useMemo(() => 
     isDarkMode
