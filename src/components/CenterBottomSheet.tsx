@@ -44,13 +44,15 @@ export function CenterBottomSheet() {
   const getAirbnbUrl = () => {
     if (!selectedCenter) return '';
     const { lat, lng } = selectedCenter.coordinates;
+    const city = selectedCenter.city || '';
     // Airbnb usa bounding box: aggiungiamo ~5km di raggio
     const delta = 0.045; // circa 5km
-    const sw_lat = lat - delta;
-    const sw_lng = lng - delta;
-    const ne_lat = lat + delta;
-    const ne_lng = lng + delta;
-    return `https://www.airbnb.it/s/homes?sw_lat=${sw_lat}&sw_lng=${sw_lng}&ne_lat=${ne_lat}&ne_lng=${ne_lng}`;
+    const sw_lat = (lat - delta).toFixed(4);
+    const sw_lng = (lng - delta).toFixed(4);
+    const ne_lat = (lat + delta).toFixed(4);
+    const ne_lng = (lng + delta).toFixed(4);
+    const query = encodeURIComponent(`${city}, Italy`);
+    return `https://www.airbnb.com/s/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&query=${query}&sw_lat=${sw_lat}&sw_lng=${sw_lng}&ne_lat=${ne_lat}&ne_lng=${ne_lng}&search_by_map=true&map_toggle=true`;
   };
 
   
