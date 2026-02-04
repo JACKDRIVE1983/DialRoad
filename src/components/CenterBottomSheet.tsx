@@ -325,16 +325,16 @@ export function CenterBottomSheet() {
                   </button>
                   <button
                     onClick={handleOpenAccommodation}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-gradient-to-r from-[#4285F4] via-[#34A853] to-[#FBBC05] text-white font-semibold text-sm shadow-lg shadow-[#4285F4]/30 hover:shadow-xl hover:opacity-95 transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/30 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                   >
-                    <img src={logoGoogleMaps} alt="Google Maps" className="w-6 h-6 object-contain bg-white rounded-full p-0.5" />
+                    <img src={logoGoogleMaps} alt="Google Maps" className="w-6 h-6 rounded object-contain" />
                     <span>Alloggi</span>
                   </button>
                   <button
                     onClick={handleOpenAirbnb}
                     className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/30 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                   >
-                    <img src={logoAirbnb} alt="Airbnb" className="w-6 h-6 object-contain bg-white rounded-full p-0.5" />
+                    <img src={logoAirbnb} alt="Airbnb" className="w-6 h-6 rounded object-contain bg-white p-0.5" />
                     <span>Airbnb</span>
                   </button>
                 </div>
@@ -368,9 +368,9 @@ export function CenterBottomSheet() {
                   </button>
                   <button
                     onClick={handleNavigate}
-                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-accent text-accent-foreground font-semibold text-sm shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 transition-all duration-200 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-[#003580] text-white font-semibold text-sm shadow-lg shadow-[#003580]/30 hover:shadow-xl hover:bg-[#00265c] transition-all duration-200 active:scale-[0.98]"
                   >
-                    <Navigation className="w-5 h-5" />
+                    <img src={logoGoogleMaps} alt="Google Maps" className="w-5 h-5 rounded object-contain" />
                     <span>Naviga</span>
                   </button>
                   <button
