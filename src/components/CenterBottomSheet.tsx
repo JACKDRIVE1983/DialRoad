@@ -146,14 +146,14 @@ export function CenterBottomSheet() {
     });
   }, [selectedCenter]);
 
-  // Open Accommodation search via Google Maps - same approach as Booking
+  // Open Accommodation search via Google Maps - search at specific coordinates
   const handleOpenAccommodation = useCallback(() => {
     if (!selectedCenter) return;
     const { lat, lng } = selectedCenter.coordinates;
-    // Formato esatto con URL encoding: %20 per spazi, %2C per virgola
-    const url = `https://www.google.com/maps/search/?api=1&query=alloggi%20vicino%20${lat}%2C${lng}`;
+    // Formato Google Maps: cerca "alloggi" centrato su coordinate specifiche
+    const url = `https://www.google.com/maps/search/alloggi/@${lat},${lng},15z`;
 
-    console.log('[Accommodation] Opening URL with coordinates:', { lat, lng, url });
+    console.log('[Accommodation] Opening URL:', url, 'for center:', selectedCenter.name, 'coords:', lat, lng);
 
     requestAnimationFrame(() => {
       setTimeout(() => {
