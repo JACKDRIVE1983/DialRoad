@@ -15,7 +15,9 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: false
   },
   ios: {
-    contentInset: 'automatic'
+    contentInset: 'automatic',
+    // Solo questi plugin: esclude AdMob e RevenueCat così non si avviano in nativo e l'app parte
+    includePlugins: ['@capacitor/app', '@capacitor/browser']
   }
 };
 
