@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, LogIn, LogOut, User, Edit, Trash2, AlertTriangle, Loader2, Heart, ChevronRight } from 'lucide-react';
+import { Info, Sun, Moon, Smartphone, MessageSquare, Send, Crown, RotateCcw, LogIn, LogOut, User, Edit, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePurchases } from '@/hooks/usePurchases';
-import { useFavorites } from '@/hooks/useFavorites';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -23,16 +22,11 @@ declare const __BUILD_TIME__: string;
 
 type ThemeOption = 'light' | 'dark' | 'system';
 
-interface SettingsViewProps {
-  onShowFavorites?: () => void;
-}
-
-export function SettingsView({ onShowFavorites }: SettingsViewProps) {
+export function SettingsView() {
   const navigate = useNavigate();
   const { centers, isPremium } = useApp();
   const { user, profile, signOut, isLoading: authLoading } = useAuth();
   const { offerings, purchasePackage, restorePurchases, isLoading: purchaseLoading } = usePurchases();
-  const { favorites } = useFavorites();
   const { theme, setTheme } = useTheme();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -351,38 +345,12 @@ export function SettingsView({ onShowFavorites }: SettingsViewProps) {
         </button>
       </motion.div>
 
-      {/* Favorites Section */}
-      <motion.div
-        className="glass-card rounded-xl p-4 mb-4"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 }}
-      >
-        <button
-          onClick={onShowFavorites}
-          className="flex items-center gap-4 w-full text-left"
-        >
-          <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-            <Heart className="w-5 h-5 text-red-500" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-medium text-foreground">I miei Preferiti</h3>
-            <p className="text-sm text-muted-foreground">
-              {user 
-                ? `${favorites.length} ${favorites.length === 1 ? 'centro salvato' : 'centri salvati'}`
-                : 'Accedi per vedere i preferiti'}
-            </p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
-        </button>
-      </motion.div>
-
       {/* Theme Selector */}
       <motion.div
         className="glass-card rounded-xl p-4 mb-4"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.08 }}
       >
         <div className="flex items-center gap-4 mb-4">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
