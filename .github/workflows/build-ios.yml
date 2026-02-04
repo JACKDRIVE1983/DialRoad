@@ -48,6 +48,15 @@ jobs:
         run: npx @capacitor/assets generate --ios
         continue-on-error: true
 
+      - name: Aggiungi permesso posizione iOS (Info.plist)
+        run: |
+          PLIST="ios/App/App/Info.plist"
+          DESC='DialRoad usa la posizione per mostrarti i centri dialisi più vicini e la tua posizione sulla mappa.'
+          /usr/libexec/PlistBuddy -c "Add :NSLocationWhenInUseUsageDescription string '$DESC'" "$PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :NSLocationWhenInUseUsageDescription '$DESC'" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSLocationAlwaysAndWhenInUseUsageDescription string '$DESC'" "$PLIST" 2>/dev/null || \
+          /usr/libexec/PlistBuddy -c "Set :NSLocationAlwaysAndWhenInUseUsageDescription '$DESC'" "$PLIST"
+
       - name: Install CocoaPods (solo se esiste Podfile; Capacitor 8 usa SPM di default)
         run: |
           PODFILE=$(find ios -name "Podfile" -type f 2>/dev/null | head -1)
