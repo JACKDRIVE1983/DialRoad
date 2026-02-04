@@ -112,6 +112,14 @@ Anche con Sideloadly, con account gratuito l’app di solito va reinstallata/rin
 
 ---
 
+## Cambiare l'icona dell'app
+
+1. Sostituisci il file **`assets/icon-only.png`** con la tua icona (formato PNG, **1024×1024 pixel**).
+2. Fai commit e push; alla prossima build iOS l’IPA avrà la nuova icona.
+3. Per aggiornare anche l’icona **Android** in locale: `npx @capacitor/assets generate --android` e poi commit delle modifiche in `android/app/src/main/res`.
+
+---
+
 ## Riepilogo passi
 
 | Step | Dove | Cosa fare |

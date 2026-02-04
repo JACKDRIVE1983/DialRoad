@@ -44,6 +44,10 @@ jobs:
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
+      - name: Genera icona app (iOS da assets/icon-only.png)
+        run: npx @capacitor/assets generate --ios
+        continue-on-error: true
+
       - name: Install CocoaPods (solo se esiste Podfile; Capacitor 8 usa SPM di default)
         run: |
           PODFILE=$(find ios -name "Podfile" -type f 2>/dev/null | head -1)
