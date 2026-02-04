@@ -50,11 +50,7 @@ const ListTabContent = memo(function ListTabContent({
   );
 });
 
-const SettingsTabContent = memo(function SettingsTabContent({ 
-  onShowFavorites 
-}: { 
-  onShowFavorites: () => void 
-}) {
+const SettingsTabContent = memo(function SettingsTabContent() {
   return (
     <div className="flex flex-col pt-14 pb-[calc(32px+env(safe-area-inset-bottom))] h-[calc(100vh-32px-env(safe-area-inset-bottom))]">
       <div className="pt-4 px-4">
@@ -63,7 +59,7 @@ const SettingsTabContent = memo(function SettingsTabContent({
         </h1>
       </div>
       <Suspense fallback={<LoadingFallback />}>
-        <SettingsView onShowFavorites={onShowFavorites} />
+        <SettingsView />
       </Suspense>
     </div>
   );
@@ -122,12 +118,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <AppHeader activeTab={activeTab} onTabChange={setActiveTab} onShowFavorites={() => setShowFavorites(true)} />
       
       {/* Removed AnimatePresence for better performance on low-end devices */}
       {activeTab === 'map' && <MapTabContent />}
       {activeTab === 'list' && <ListTabContent onSelectCenter={trySelectCenter} />}
-      {activeTab === 'settings' && <SettingsTabContent onShowFavorites={() => setShowFavorites(true)} />}
+      {activeTab === 'settings' && <SettingsTabContent />}
 
       <Suspense fallback={null}>
         <CenterBottomSheet />

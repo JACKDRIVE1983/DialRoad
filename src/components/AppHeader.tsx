@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Shield, HelpCircle, Crown, Mail, Map, List, Settings, Moon, Sun, Search, SlidersHorizontal, MapPin, User, LogIn } from 'lucide-react';
+import { Menu, X, Shield, HelpCircle, Crown, Mail, Map, List, Settings, Moon, Sun, Search, SlidersHorizontal, MapPin, User, LogIn, Heart } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { regions } from '@/data/mockCenters';
@@ -19,9 +19,10 @@ interface AppHeaderProps {
   isSearchFocused?: boolean;
   activeTab?: TabType;
   onTabChange?: (tab: TabType) => void;
+  onShowFavorites?: () => void;
 }
 
-export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
+export function AppHeader({ activeTab = 'map', onTabChange, onShowFavorites }: AppHeaderProps) {
   const navigate = useNavigate();
   const { 
     isPremium, 
@@ -79,7 +80,6 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
   const tabs = [
     { id: 'map' as TabType, icon: Map, label: 'Mappa' },
     { id: 'list' as TabType, icon: List, label: 'Lista' },
-    { id: 'settings' as TabType, icon: Settings, label: 'Impostazioni' },
   ];
 
   const hasActiveFilters = selectedRegion !== 'Tutte le Regioni';
@@ -101,21 +101,12 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
           transition={{ type: 'spring', stiffness: 200 }}
         >
           <div className="flex items-center justify-between px-4 py-2">
-            {/* Left: Logo + Menu */}
-            <div className="flex items-center gap-3">
-              <img
-                src={logoIcon}
-                alt="DialRoad"
-                className="w-10 h-10 object-cover rounded-lg flex-shrink-0"
-              />
-              <span className="font-display font-bold text-sm text-foreground hidden sm:inline">
-                DialRoad
-              </span>
-              
-              {/* Menu button */}
+            {/* Left: Menu + Logo */}
+            <div className="flex items-center gap-2">
+              {/* Menu button - FIRST */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-muted ml-1 flex-shrink-0"
+                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:bg-muted flex-shrink-0"
                 aria-label="Menu"
               >
                 <AnimatePresence mode="wait">
@@ -142,6 +133,16 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
                   )}
                 </AnimatePresence>
               </button>
+              
+              {/* Logo + Title */}
+              <img
+                src={logoIcon}
+                alt="DialRoad"
+                className="w-9 h-9 object-cover rounded-lg flex-shrink-0"
+              />
+              <span className="font-display font-bold text-sm text-foreground hidden sm:inline">
+                DialRoad
+              </span>
             </div>
 
             {/* Center: Tabs */}
@@ -309,11 +310,33 @@ export function AppHeader({ activeTab = 'map', onTabChange }: AppHeaderProps) {
               className="absolute left-4 top-14 z-50"
             >
               <div 
-                className="rounded-xl overflow-hidden backdrop-blur-xl min-w-[180px] bg-white dark:bg-card border border-border"
+                className="rounded-xl overflow-hidden backdrop-blur-xl min-w-[200px] bg-white dark:bg-card border border-border"
                 style={{
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)'
                 }}
               >
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onTabChange?.('settings');
+                  }}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-foreground hover:bg-muted transition-colors text-left"
+                >
+                  <Settings className="w-5 h-5 text-primary" />
+                  <span className="font-medium text-sm">Impostazioni</span>
+                </button>
+                <div className="h-px bg-border" />
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onShowFavorites?.();
+                  }}
+                  className="w-full px-4 py-3 flex items-center gap-3 text-foreground hover:bg-muted transition-colors text-left"
+                >
+                  <Heart className="w-5 h-5 text-red-500" />
+                  <span className="font-medium text-sm">I miei Preferiti</span>
+                </button>
+                <div className="h-px bg-border" />
                 <button
                   onClick={() => handleMenuItemClick('privacy')}
                   className="w-full px-4 py-3 flex items-center gap-3 text-foreground hover:bg-muted transition-colors text-left"
